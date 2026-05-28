@@ -21,10 +21,12 @@ export function HeroCanvas() {
     let dino: import("three").Object3D | null = null;
     let running = true;
     let io: IntersectionObserver | null = null;
-    let onScroll: (() => void) | null = null;
+    let onMove: ((e: MouseEvent) => void) | null = null;
     let onResize: (() => void) | null = null;
     let disposed = false;
-    let targetRotY = 0;
+    // Base orientation that makes the dino face the camera; cursor adds ±yaw.
+    const BASE_ROT_Y = 0; // model faces the camera (+z) at yaw 0
+    let targetRotY = 0; // cursor-driven offset, starts centered (facing forward)
     let curRotY = 0;
 
     const init = async () => {
@@ -66,17 +68,16 @@ export function HeroCanvas() {
           const center = new THREE.Vector3();
           box.getSize(size);
           box.getCenter(center);
-          const small = w < 700;
-          const scale = (small ? 2.7 : 3.9) / Math.max(size.x, size.y, size.z);
+          const scale = 3.6 / Math.max(size.x, size.y, size.z);
           dino.scale.setScalar(scale);
           dino.position.sub(center.multiplyScalar(scale));
 
           const pivot = new THREE.Group();
           pivot.add(dino);
-          // Tuck to the right; smaller and slightly lower on phones.
-          pivot.position.x = small ? 1.1 : 2.6;
-          pivot.position.y = small ? -0.5 : -0.2;
-          pivot.rotation.y = -0.5;
+          // Parked on the right side of the hero, facing the camera.
+          pivot.position.x = 2.3;
+          pivot.position.y = -0.2;
+          pivot.rotation.y = BASE_ROT_Y;
           scene.add(pivot);
           dino = pivot;
 
@@ -95,24 +96,23 @@ export function HeroCanvas() {
         const dt = clock.getDelta();
         if (mixer) mixer.update(dt);
         if (dino) {
-          // Ease current rotation toward the scroll-driven target.
-          curRotY += (targetRotY - curRotY) * 0.08;
-          dino.rotation.y = -0.5 + curRotY;
-          if (reduce) dino.rotation.y = -0.5; // no scroll spin if reduced motion
+          // Ease current yaw toward the cursor-driven target (left/right only).
+          curRotY += (targetRotY - curRotY) * 0.07;
+          dino.rotation.y = BASE_ROT_Y + (reduce ? 0 : curRotY);
         }
         renderer.render(scene, camera);
         raf = requestAnimationFrame(animate);
       };
       animate();
 
-      const computeRot = () => {
-        // Distance-based so it visibly spins through the first ~2 screens of
-        // scroll (page height is huge, so a normalized 0–1 would barely move).
-        targetRotY = window.scrollY / 180; // ~1130px of scroll ≈ one full turn
+      // Follow the cursor's horizontal position: turn the dino to "look" toward
+      // it, left/right only. Starts centered (facing forward) until the mouse moves.
+      onMove = (e: MouseEvent) => {
+        if (reduce) return;
+        const nx = (e.clientX / window.innerWidth) * 2 - 1; // -1 (left) … 1 (right)
+        targetRotY = nx * 0.7; // ~±40° of yaw
       };
-      onScroll = () => computeRot();
-      computeRot();
-      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("mousemove", onMove, { passive: true });
 
       onResize = () => {
         if (!renderer || !mount) return;
@@ -145,7 +145,7 @@ export function HeroCanvas() {
       if (cic) cic(idleId);
       clearTimeout(idleId);
       io?.disconnect();
-      if (onScroll) window.removeEventListener("scroll", onScroll);
+      if (onMove) window.removeEventListener("mousemove", onMove);
       if (onResize) window.removeEventListener("resize", onResize);
       mixer?.stopAllAction();
       if (renderer) {
