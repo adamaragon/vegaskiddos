@@ -23,6 +23,7 @@ export function HeroCanvas() {
     let io: IntersectionObserver | null = null;
     let onMove: ((e: MouseEvent) => void) | null = null;
     let onResize: (() => void) | null = null;
+    let placeDino: (() => void) | null = null;
     let disposed = false;
     // Base orientation that makes the dino face the camera; cursor adds ±yaw.
     const BASE_ROT_Y = 0; // model faces the camera (+z) at yaw 0
@@ -74,12 +75,20 @@ export function HeroCanvas() {
 
           const pivot = new THREE.Group();
           pivot.add(dino);
-          // Parked on the right side of the hero, facing the camera.
-          pivot.position.x = 2.3;
           pivot.position.y = -0.2;
           pivot.rotation.y = BASE_ROT_Y;
           scene.add(pivot);
           dino = pivot;
+
+          // Flush the dino to the right edge of the (very wide) hero. Horizontal
+          // span depends on aspect, so derive it from the camera frustum.
+          const radius = Math.max(size.x, size.z) * scale * 0.5;
+          placeDino = () => {
+            const vH = 2 * Math.tan((camera.fov * Math.PI) / 180 / 2) * camera.position.z;
+            const vW = vH * camera.aspect;
+            pivot.position.x = vW / 2 - radius - 0.15; // right edge, small margin
+          };
+          placeDino();
 
           if (gltf.animations.length && !reduce) {
             mixer = new THREE.AnimationMixer(gltf.scene);
@@ -120,6 +129,7 @@ export function HeroCanvas() {
         camera.aspect = nw / nh;
         camera.updateProjectionMatrix();
         renderer.setSize(nw, nh);
+        placeDino?.(); // keep him pinned to the right edge after resize
       };
       window.addEventListener("resize", onResize);
 
