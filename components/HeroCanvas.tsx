@@ -10,6 +10,9 @@ export function HeroCanvas() {
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Skip the WebGL dino on phones — parsing the rigged model blocks the main
+    // thread (big mobile TBT hit). Phones get the static crayon hero instead.
+    if (window.innerWidth < 768) return;
 
     let raf = 0;
     let idleId = 0;
