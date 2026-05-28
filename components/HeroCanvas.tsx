@@ -26,7 +26,7 @@ export function HeroCanvas() {
     let placeDino: (() => void) | null = null;
     let disposed = false;
     // Base orientation that makes the dino face the camera; cursor adds ±yaw.
-    const BASE_ROT_Y = 0; // model faces the camera (+z) at yaw 0
+    const BASE_ROT_Y = Math.PI / 2; // model's front is -x; +90° turns it to face the camera (+z)
     let targetRotY = 0; // cursor-driven offset, starts centered (facing forward)
     let curRotY = 0;
 
@@ -82,11 +82,12 @@ export function HeroCanvas() {
 
           // Flush the dino to the right edge of the (very wide) hero. Horizontal
           // span depends on aspect, so derive it from the camera frustum.
-          const radius = Math.max(size.x, size.z) * scale * 0.5;
           placeDino = () => {
             const vH = 2 * Math.tan((camera.fov * Math.PI) / 180 / 2) * camera.position.z;
             const vW = vH * camera.aspect;
-            pivot.position.x = vW / 2 - radius - 0.15; // right edge, small margin
+            // Centered in the right ~quarter of the hero (the carved-out space),
+            // fully on-screen rather than flush to the edge.
+            pivot.position.x = vW * 0.26;
           };
           placeDino();
 
