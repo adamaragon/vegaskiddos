@@ -1,0 +1,8 @@
+node_modules
+.next
+out
+.env*.local
+.DS_Store
+*.log
+.netlify
+next-env.d.ts
