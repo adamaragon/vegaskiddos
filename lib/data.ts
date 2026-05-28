@@ -49,16 +49,27 @@ export async function getEvents(): Promise<KidEvent[]> {
     return [...MOCK_EVENTS].sort((a, b) => a.start.localeCompare(b.start));
   }
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE}/${encodeURIComponent(
-      AIRTABLE_TABLE
-    )}?filterByFormula=${encodeURIComponent("{Approved}=1")}&pageSize=100`;
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
-      next: { revalidate: 600 },
-    });
-    if (!res.ok) throw new Error(`Airtable ${res.status}`);
-    const data = (await res.json()) as { records: AirtableRecord[] };
-    const events = data.records
+    // Only approved, upcoming events (today onward). Paginate through all pages.
+    const formula = "AND({Approved}=1, IS_AFTER({Start}, DATEADD(NOW(),-1,'days')))";
+    const records: AirtableRecord[] = [];
+    let offset: string | undefined;
+    do {
+      const url = new URL(
+        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${encodeURIComponent(AIRTABLE_TABLE)}`
+      );
+      url.searchParams.set("filterByFormula", formula);
+      url.searchParams.set("pageSize", "100");
+      if (offset) url.searchParams.set("offset", offset);
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
+        next: { revalidate: 600 },
+      });
+      if (!res.ok) throw new Error(`Airtable ${res.status}`);
+      const data = (await res.json()) as { records: AirtableRecord[]; offset?: string };
+      records.push(...data.records);
+      offset = data.offset;
+    } while (offset);
+    const events = records
       .map(mapRecord)
       .filter((e): e is KidEvent => e !== null)
       .sort((a, b) => a.start.localeCompare(b.start));

@@ -1,0 +1,107 @@
+// Hand-drawn, crayon-style SVG doodles used as decorative flair throughout the
+// site. The <CrayonDefs/> filter gives strokes a rough, waxy, child-drawn edge.
+// All decorative — aria-hidden, pointer-events none.
+
+import type { CSSProperties } from "react";
+
+export function CrayonDefs() {
+  return (
+    <svg width="0" height="0" aria-hidden className="absolute">
+      <defs>
+        <filter id="crayonFilter" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.2" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+    </svg>
+  );
+}
+
+type DoodleProps = {
+  className?: string;
+  style?: CSSProperties;
+  color?: string;
+};
+const base = (c?: string) => ({
+  stroke: c || "currentColor",
+  strokeWidth: 5,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  fill: "none",
+  filter: "url(#crayonFilter)",
+});
+
+export function Sun({ className, style, color = "#FFC93C" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} style={style} aria-hidden>
+      <circle cx="50" cy="50" r="20" {...base(color)} />
+      {Array.from({ length: 8 }).map((_, i) => {
+        const a = (i * Math.PI) / 4;
+        return (
+          <line key={i}
+            x1={50 + Math.cos(a) * 28} y1={50 + Math.sin(a) * 28}
+            x2={50 + Math.cos(a) * 42} y2={50 + Math.sin(a) * 42}
+            {...base(color)} />
+        );
+      })}
+    </svg>
+  );
+}
+
+export function Star({ className, style, color = "#FF6B5E" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} style={style} aria-hidden>
+      <path d="M50 12 L60 40 L90 42 L66 60 L75 90 L50 72 L25 90 L34 60 L10 42 L40 40 Z" {...base(color)} />
+    </svg>
+  );
+}
+
+export function Heart({ className, style, color = "#FF6B5E" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} style={style} aria-hidden>
+      <path d="M50 84 C20 60 12 40 26 26 C38 14 50 26 50 34 C50 26 62 14 74 26 C88 40 80 60 50 84 Z" {...base(color)} />
+    </svg>
+  );
+}
+
+export function Cloud({ className, style, color = "#23C4B5" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 140 80" className={className} style={style} aria-hidden>
+      <path d="M30 60 C10 60 10 36 30 36 C32 18 60 16 64 32 C70 18 98 20 96 38 C116 36 118 60 98 60 Z" {...base(color)} />
+    </svg>
+  );
+}
+
+export function Squiggle({ className, style, color = "#7B5EA7" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 200 30" className={className} style={style} aria-hidden>
+      <path d="M5 15 Q25 0 45 15 T85 15 T125 15 T165 15 T200 15" {...base(color)} />
+    </svg>
+  );
+}
+
+export function Scribble({ className, style, color = "#FFC93C" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 120 120" className={className} style={style} aria-hidden>
+      <path d="M20 60 C20 30 50 20 70 35 C90 50 70 80 50 75 C30 70 40 40 65 45 C85 49 80 70 60 68" {...base(color)} strokeWidth={6} />
+    </svg>
+  );
+}
+
+export function Arrow({ className, style, color = "#23C4B5" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 120 80" className={className} style={style} aria-hidden>
+      <path d="M10 50 C40 10 70 70 105 25" {...base(color)} />
+      <path d="M90 18 L107 22 L98 38" {...base(color)} />
+    </svg>
+  );
+}
+
+// A crayon underline that animates its stroke when revealed (pair with `draw-line reveal`).
+export function Underline({ className, style, color = "#FFC93C" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 300 24" className={className} style={style} aria-hidden preserveAspectRatio="none">
+      <path d="M6 14 C70 4 150 22 220 10 C255 4 280 12 294 9" {...base(color)} strokeWidth={8} />
+    </svg>
+  );
+}

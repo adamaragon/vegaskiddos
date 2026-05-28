@@ -19,8 +19,14 @@ export function Header() {
             Events
           </Link>
           <Link
+            href="/features"
+            className="hidden rounded-full px-3 py-2 text-ink/70 transition hover:bg-white hover:text-ink sm:block"
+          >
+            Ideas
+          </Link>
+          <Link
             href="/about"
-            className="rounded-full px-3 py-2 text-ink/70 transition hover:bg-white hover:text-ink"
+            className="hidden rounded-full px-3 py-2 text-ink/70 transition hover:bg-white hover:text-ink sm:block"
           >
             About
           </Link>

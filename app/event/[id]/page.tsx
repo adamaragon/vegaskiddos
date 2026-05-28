@@ -26,6 +26,16 @@ export default async function EventPage({
     event.address || event.venue
   )}`;
 
+  // "Add to Google Calendar" — a feature no LV competitor offers per event.
+  const gcalFmt = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const gcalEnd = event.end || new Date(new Date(event.start).getTime() + 3600000).toISOString();
+  const gcalHref =
+    `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+    `&text=${encodeURIComponent(event.title)}` +
+    `&dates=${gcalFmt(event.start)}/${gcalFmt(gcalEnd)}` +
+    `&details=${encodeURIComponent((event.description || "") + (event.url ? `\n\n${event.url}` : ""))}` +
+    `&location=${encodeURIComponent(event.address || event.venue)}`;
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <Link
@@ -97,6 +107,14 @@ export default async function EventPage({
               className="rounded-full bg-teal px-5 py-3 font-800 text-white shadow-pop transition hover:bg-teal-dark"
             >
               🗺️ Get directions
+            </a>
+            <a
+              href={gcalHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full bg-grape px-5 py-3 font-800 text-white shadow-pop transition hover:bg-grape-dark"
+            >
+              📅 Add to calendar
             </a>
             {event.url && (
               <a
