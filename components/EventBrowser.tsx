@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { KidEvent } from "@/lib/types";
 import { EventCard } from "./EventCard";
@@ -59,6 +59,9 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
     update(next);
   }
 
+  const PAGE = 30;
+  const [visible, setVisible] = useState(PAGE);
+
   const filtered = useMemo(() => {
     return events.filter((e) => {
       if (ages.size && !e.ageTiers.some((a) => ages.has(a))) return false;
@@ -67,6 +70,9 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
       return true;
     });
   }, [events, ages, prices, hoods]);
+
+  // Reset the visible window whenever the filter set changes.
+  useEffect(() => setVisible(PAGE), [ages, prices, hoods]);
 
   const activeCount = ages.size + prices.size + hoods.size;
 
@@ -154,11 +160,24 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
             <p className="text-sm">Try clearing a filter or two.</p>
           </div>
         ) : view === "list" ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((e) => (
-              <EventCard key={e.id} event={e} />
-            ))}
-          </div>
+          <>
+            <h2 className="sr-only">Upcoming events</h2>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.slice(0, visible).map((e) => (
+                <EventCard key={e.id} event={e} />
+              ))}
+            </div>
+            {visible < filtered.length && (
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setVisible((v) => v + PAGE)}
+                  className="hover-pop rounded-full bg-teal px-6 py-3 font-800 text-white shadow-pop"
+                >
+                  Show more events ({filtered.length - visible} left)
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <MapView events={filtered} />
         )}
@@ -176,7 +195,7 @@ function FilterRow({
 }) {
   return (
     <div className="mb-3 flex flex-col gap-2 last:mb-0 sm:flex-row sm:items-center">
-      <span className="w-14 shrink-0 font-display text-sm font-600 text-ink/50">
+      <span className="w-14 shrink-0 font-display text-sm font-600 text-ink/70">
         {label}
       </span>
       <div className="flex flex-wrap gap-2">{children}</div>

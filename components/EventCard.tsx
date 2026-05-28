@@ -11,12 +11,14 @@ const PRICE_BG: Record<string, string> = {
 
 export function formatWhen(iso: string) {
   const d = new Date(iso);
+  // Pin to Las Vegas time so server and client render identically (no hydration drift).
   return d.toLocaleString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "America/Los_Angeles",
   });
 }
 

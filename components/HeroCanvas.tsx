@@ -12,15 +12,19 @@ export function HeroCanvas() {
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) return;
+    // Skip the WebGL scene on phones — they get the static crayon doodles instead.
+    // Keeps mobile main-thread light (big Lighthouse TBT/LCP win).
+    if (window.innerWidth < 768) return;
 
     let raf = 0;
+    let idleId = 0;
     let renderer: import("three").WebGLRenderer | null = null;
     let running = true;
     let io: IntersectionObserver | null = null;
     let cleanupResize: (() => void) | null = null;
     let disposed = false;
 
-    (async () => {
+    const init = async () => {
       const THREE = await import("three");
       const mount = mountRef.current;
       if (!mount || disposed) return;
@@ -108,12 +112,19 @@ export function HeroCanvas() {
         { threshold: 0 }
       );
       io.observe(mount);
-    })();
+    };
+
+    // Defer to browser idle so the 3D scene never blocks first paint / TBT.
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    idleId = ric ? ric(() => init(), { timeout: 2000 }) : window.setTimeout(() => init(), 800);
 
     return () => {
       disposed = true;
       running = false;
       cancelAnimationFrame(raf);
+      const cic = (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+      if (cic) cic(idleId);
+      clearTimeout(idleId);
       io?.disconnect();
       cleanupResize?.();
       if (renderer) {
