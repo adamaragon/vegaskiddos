@@ -106,11 +106,12 @@ export function classifyAges(text: string): AgeTierId[] {
 }
 
 const KID_INCLUDE =
-  /\b(kid|kids|child|children|family|families|toddler|baby|babies|infant|storytime|story time|preschool|pre-?k|all ages|youth|tween|teen|sensory|lego|stem|craft|crafts|puppet|dino|story ?hour|read|reading|music & movement|sing|petting|playgroup|playdate|mommy|daddy|parent|nursery|junior)\b/i;
+  /\b(kid|kids|child|children|family|families|toddler|baby|babies|infant|storytime|story time|preschool|pre-?k|all ages|youth|tween|teen|sensory|lego|stem|science|craft|crafts|puppet|dino|dinosaur|exhibit|museum|gallery|planetarium|aquarium|zoo|garden|story ?hour|read|reading|music & movement|sing|petting|playgroup|playdate|mommy|daddy|parent|nursery|junior|splash|park|festival|parade|magic show|theater|theatre|ballet|circus)\b/i;
 
 const ADULT_EXCLUDE =
   /\b(21\+|18\+|nightclub|night club|bar crawl|pub crawl|wine|winery|beer|brewery|cocktail|happy hour|ladies night|burlesque|casino|gambling|poker|blackjack|dispensary|cannabis|420|adult only|adults only|bogo|brunch|dating|singles|speed dating|hookah|vape|strip club|topless)\b/i;
 
+// Strict relevance for broad "things to do" sources (e.g. Vegas Family Guide).
 export function isKidRelevant(
   text: string,
   categories: string[] = []
@@ -119,6 +120,12 @@ export function isKidRelevant(
   if (ADULT_EXCLUDE.test(text)) return false;
   if (/kids|moms|family|all ages|parks/.test(catBlob)) return true;
   return KID_INCLUDE.test(text);
+}
+
+// Relaxed relevance for already family-vetted sources (e.g. Nevada Moms):
+// include everything that isn't clearly adult-only.
+export function passesAdultFilter(text: string): boolean {
+  return !ADULT_EXCLUDE.test(text);
 }
 
 export function stripHtml(html?: string | null): string {

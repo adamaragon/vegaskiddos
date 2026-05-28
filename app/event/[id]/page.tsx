@@ -1,14 +1,47 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEvent, getEvents } from "@/lib/data";
 import { ageTier, priceTier, neighborhood } from "@/lib/constants";
 import { formatWhen } from "@/components/EventCard";
+import { ShareButtons } from "@/components/ShareButtons";
+import { JsonLd } from "@/components/JsonLd";
 
 export const revalidate = 600;
 
 export async function generateStaticParams() {
   const events = await getEvents();
   return events.map((e) => ({ id: e.id }));
+}
+
+const SITE = "https://vegaskiddos.com";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const event = await getEvent(id);
+  if (!event) return { title: "Event not found — Vegas Kiddos" };
+  const hood = neighborhood(event.neighborhood);
+  const desc =
+    (event.description || `${event.title} at ${event.venue}.`).slice(0, 155);
+  const title = `${event.title} — ${event.venue}, ${hood.label}`;
+  const url = `${SITE}/event/${event.id}`;
+  return {
+    title: `${event.title} | Vegas Kiddos`,
+    description: desc,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description: desc,
+      url,
+      type: "website",
+      images: [event.image || `${SITE}/opengraph-image`],
+    },
+    twitter: { card: "summary_large_image", title, description: desc },
+  };
 }
 
 export default async function EventPage({
@@ -36,8 +69,39 @@ export default async function EventPage({
     `&details=${encodeURIComponent((event.description || "") + (event.url ? `\n\n${event.url}` : ""))}` +
     `&location=${encodeURIComponent(event.address || event.venue)}`;
 
+  const shareUrl = `${SITE}/event/${event.id}`;
+  const eventLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: event.title,
+    description: event.description,
+    startDate: event.start,
+    ...(event.end ? { endDate: event.end } : {}),
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: {
+      "@type": "Place",
+      name: event.venue,
+      address: event.address || event.venue,
+      ...(event.lat && event.lng
+        ? { geo: { "@type": "GeoCoordinates", latitude: event.lat, longitude: event.lng } }
+        : {}),
+    },
+    ...(event.image ? { image: [event.image] } : {}),
+    offers: {
+      "@type": "Offer",
+      price: event.priceTier === "free" ? "0" : undefined,
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: event.url || shareUrl,
+    },
+    url: shareUrl,
+    isAccessibleForFree: event.priceTier === "free",
+  };
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
+      <JsonLd data={eventLd} />
       <Link
         href="/"
         className="text-sm font-700 text-teal-dark hover:underline"
@@ -126,6 +190,12 @@ export default async function EventPage({
                 🔗 Event details / RSVP
               </a>
             )}
+          </div>
+
+          <div className="mt-6 border-t border-ink/10 pt-5">
+            <p className="mb-2 text-sm font-700 text-ink/60">Share this event</p>
+            <ShareButtons url={shareUrl} title={event.title}
+              text={`${event.title} — a kid-friendly event in ${hood.label}, Las Vegas`} />
           </div>
 
           <p className="mt-6 text-xs text-ink/40">

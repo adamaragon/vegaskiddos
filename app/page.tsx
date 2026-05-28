@@ -2,15 +2,38 @@ import { getEvents } from "@/lib/data";
 import { EventBrowser } from "@/components/EventBrowser";
 import { Reveal } from "@/components/Reveal";
 import { HeroCanvas } from "@/components/HeroCanvas";
+import { ShareButtons } from "@/components/ShareButtons";
+import { JsonLd } from "@/components/JsonLd";
 import { Sun, Cloud, Star } from "@/components/Doodles";
 
 export const revalidate = 600;
+
+const SITE = "https://vegaskiddos.com";
+const siteLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Vegas Kiddos",
+    url: SITE,
+    description:
+      "Find kid-safe Las Vegas family events by age, price, and neighborhood.",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Vegas Kiddos",
+    url: SITE,
+    founder: ["Adam Aragon", "Michelle Aragon"],
+    parentOrganization: { "@type": "Organization", name: "Threesided Studios", url: "https://threesided.com" },
+  },
+];
 
 export default async function HomePage() {
   const events = await getEvents();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
+      <JsonLd data={siteLd} />
       {/* Hero with Three.js backdrop */}
       <section className="relative isolate overflow-hidden rounded-blob bg-gradient-to-br from-coral via-coral to-sunny p-8 text-white shadow-card sm:p-12">
         <HeroCanvas />
@@ -53,6 +76,11 @@ export default async function HomePage() {
           <a href="/submit" className="hover-pop mt-4 inline-block rounded-full bg-coral px-6 py-3 font-800 text-white shadow-pop">
             + Add an event
           </a>
+          <div className="mt-6 flex flex-col items-center gap-2 border-t border-ink/10 pt-5">
+            <p className="text-sm font-700 text-ink/60">Love it? Share Vegas Kiddos with other parents</p>
+            <ShareButtons url={SITE} title="Vegas Kiddos"
+              text="Vegas Kiddos — find kid-safe Las Vegas family events by age, price & neighborhood" />
+          </div>
         </div>
       </Reveal>
     </div>

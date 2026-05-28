@@ -1,5 +1,6 @@
 import type { ScrapedEvent, SourceResult } from "./types";
 import { fetchVegasFamilyGuide } from "./sources/vegasFamilyGuide";
+import { fetchNevadaMoms } from "./sources/nevadaMoms";
 import { existingExternalIds, insertEvents } from "./airtable";
 
 export interface RunSummary {
@@ -15,6 +16,7 @@ export interface RunSummary {
 // Registered source adapters. Add new ones here as they're built.
 const SOURCES: (() => Promise<SourceResult>)[] = [
   () => fetchVegasFamilyGuide({ pages: 4, perPage: 50 }),
+  () => fetchNevadaMoms(),
 ];
 
 export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary> {

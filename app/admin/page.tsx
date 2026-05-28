@@ -13,9 +13,12 @@ export default function AdminPage() {
   const [queue, setQueue] = useState<"pending" | "approved">("pending");
   const [events, setEvents] = useState<AdminEvent[]>([]);
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [scraping, setScraping] = useState(false);
+  const [scrapeMsg, setScrapeMsg] = useState("");
 
   const load = useCallback(async (q: "pending" | "approved") => {
     setLoading(true);
@@ -34,10 +37,25 @@ export default function AdminPage() {
     setErr("");
     const res = await fetch("/api/admin/login", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: pw }),
+      body: JSON.stringify({ email, password: pw }),
     });
     if (res.ok) { setPw(""); load(queue); }
-    else setErr("That password didn't work.");
+    else setErr("Wrong email or password.");
+  }
+
+  async function runScrape() {
+    setScraping(true);
+    setScrapeMsg("");
+    try {
+      const res = await fetch("/api/admin/scrape", { method: "POST" });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "failed");
+      setScrapeMsg(`Found ${d.totalFound} events · ${d.inserted} new added to the queue.`);
+      if (queue === "pending") load("pending");
+    } catch (e) {
+      setScrapeMsg(`Scrape failed: ${(e as Error).message}`);
+    }
+    setScraping(false);
   }
 
   async function act(id: string, action: "approve" | "reject" | "unapprove") {
@@ -67,8 +85,11 @@ export default function AdminPage() {
           <h1 className="mt-3 font-display text-2xl font-700">Admin sign-in</h1>
           <p className="mt-1 text-sm text-ink/60">For the Vegas Kiddos team only.</p>
           <form onSubmit={login} className="mt-6 space-y-3">
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email" autoFocus autoComplete="username"
+              className="w-full rounded-2xl border-2 border-ink/15 px-4 py-3 text-center outline-none focus:border-teal" />
             <input type="password" value={pw} onChange={(e) => setPw(e.target.value)}
-              placeholder="Password" autoFocus
+              placeholder="Password" autoComplete="current-password"
               className="w-full rounded-2xl border-2 border-ink/15 px-4 py-3 text-center outline-none focus:border-teal" />
             {err && <p className="text-sm font-700 text-coral-dark">{err}</p>}
             <button type="submit"
@@ -85,8 +106,17 @@ export default function AdminPage() {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-700">Admin 🛠️</h1>
-        <button onClick={logout} className="text-sm font-700 text-ink/50 hover:text-coral">Sign out</button>
+        <div className="flex items-center gap-3">
+          <button onClick={runScrape} disabled={scraping}
+            className="hover-pop rounded-full bg-grape px-4 py-2 text-sm font-800 text-white shadow-pop disabled:opacity-50">
+            {scraping ? "🔄 Scraping…" : "🔄 Scrape now"}
+          </button>
+          <button onClick={logout} className="text-sm font-700 text-ink/50 hover:text-coral">Sign out</button>
+        </div>
       </div>
+      {scrapeMsg && (
+        <p className="mt-3 rounded-2xl bg-grape/10 px-4 py-2 text-sm font-700 text-grape">{scrapeMsg}</p>
+      )}
 
       <div className="mt-4 flex rounded-full border-2 border-ink/15 bg-white p-1">
         {(["pending", "approved"] as const).map((q) => (

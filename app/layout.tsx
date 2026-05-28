@@ -21,11 +21,26 @@ export const metadata: Metadata = {
   description:
     "Find baby, toddler, kid, and tween events near you in Las Vegas. Filter by neighborhood, age, and price. A free resource for local parents.",
   metadataBase: new URL("https://vegaskiddos.com"),
+  keywords: [
+    "Las Vegas kids events", "Las Vegas family events", "toddler activities Las Vegas",
+    "free kids events Las Vegas", "things to do with kids Las Vegas", "Summerlin", "Henderson",
+  ],
+  alternates: { canonical: "https://vegaskiddos.com" },
   openGraph: {
     title: "Vegas Kiddos",
     description: "Kid-safe events across Las Vegas, sorted by age, price, and neighborhood.",
     type: "website",
+    url: "https://vegaskiddos.com",
+    siteName: "Vegas Kiddos",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vegas Kiddos",
+    description: "Kid-safe events across Las Vegas, sorted by age, price, and neighborhood.",
+  },
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
 };
 
 export default function RootLayout({
@@ -71,6 +86,7 @@ export default function RootLayout({
                   ["/submit", "Add an event"],
                   ["/contact", "Contact & feedback"],
                   ["/style-guide", "Style guide"],
+                  ["/admin", "Admin"],
                 ].map(([href, label]) => (
                   <li key={href}>
                     <Link href={href} className="hover:text-coral">{label}</Link>
