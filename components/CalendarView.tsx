@@ -12,6 +12,13 @@ const PRICE_DOT: Record<string, string> = {
   mid: "bg-coral",
   premium: "bg-grape",
 };
+// Tinted label chips (used on larger screens instead of plain dots).
+const PRICE_CHIP: Record<string, string> = {
+  free: "bg-teal/15 text-teal-dark",
+  under10: "bg-sunny/30 text-ink/80",
+  mid: "bg-coral/15 text-coral-dark",
+  premium: "bg-grape/15 text-grape",
+};
 
 // Day key in Las Vegas time, e.g. "2026-05-28".
 const fmtKey = new Intl.DateTimeFormat("en-CA", {
@@ -113,7 +120,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
               <button
                 key={k}
                 onClick={() => setSelected(k)}
-                className={`flex aspect-square flex-col items-center rounded-xl border-2 p-1 transition sm:aspect-[4/3] ${
+                className={`flex aspect-square flex-col items-center rounded-xl border-2 p-1 text-left transition sm:aspect-auto sm:min-h-[5.5rem] sm:items-stretch ${
                   isSelected
                     ? "border-teal bg-teal/10"
                     : dayEvents.length
@@ -121,15 +128,31 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
                     : "border-transparent hover:bg-sand"
                 }`}
               >
-                <span className={`text-xs font-800 sm:text-sm ${isToday ? "flex h-5 w-5 items-center justify-center rounded-full bg-coral text-white" : "text-ink/70"}`}>
+                <span className={`self-center text-xs font-800 sm:self-start sm:text-sm ${isToday ? "flex h-5 w-5 items-center justify-center rounded-full bg-coral text-white" : "text-ink/70"}`}>
                   {day}
                 </span>
+
                 {dayEvents.length > 0 && (
-                  <span className="mt-auto flex flex-wrap items-center justify-center gap-0.5 pb-0.5">
-                    {dayEvents.slice(0, 4).map((e, j) => (
-                      <span key={j} className={`h-1.5 w-1.5 rounded-full ${PRICE_DOT[e.priceTier] || "bg-ink/40"}`} />
-                    ))}
-                  </span>
+                  <>
+                    {/* Mobile: compact dots */}
+                    <span className="mt-auto flex flex-wrap items-center justify-center gap-0.5 pb-0.5 sm:hidden">
+                      {dayEvents.slice(0, 4).map((e, j) => (
+                        <span key={j} className={`h-1.5 w-1.5 rounded-full ${PRICE_DOT[e.priceTier] || "bg-ink/40"}`} />
+                      ))}
+                    </span>
+                    {/* Larger: event title labels */}
+                    <span className="mt-1 hidden flex-col gap-0.5 sm:flex">
+                      {dayEvents.slice(0, 2).map((e, j) => (
+                        <span key={j} title={e.title}
+                          className={`truncate rounded px-1 py-0.5 text-[10px] font-700 leading-tight ${PRICE_CHIP[e.priceTier] || "bg-ink/10 text-ink/70"}`}>
+                          {e.title}
+                        </span>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <span className="px-1 text-[10px] font-800 text-ink/45">+{dayEvents.length - 2} more</span>
+                      )}
+                    </span>
+                  </>
                 )}
               </button>
             );

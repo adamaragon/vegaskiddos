@@ -133,10 +133,11 @@ export function stripHtml(html?: string | null): string {
   return html
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n))) // numeric entities, e.g. &#038; -> &
     .replace(/&amp;/g, "&")
-    .replace(/&#8217;|&rsquo;/g, "'")
-    .replace(/&#8211;|&#8212;/g, "–")
+    .replace(/&rsquo;/g, "'")
     .replace(/&quot;/g, '"')
+    .replace(/&[a-z]+;/g, " ") // strip any remaining named entities
     .replace(/\s+/g, " ")
     .trim();
 }
