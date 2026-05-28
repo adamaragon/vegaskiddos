@@ -35,7 +35,7 @@ so you can develop with zero configuration.
    | Description | Long text | |
    | Venue | Single line text | required |
    | Address | Single line text | |
-   | Neighborhood | Single select | `summerlin`, `henderson`, `north-lv`, `southwest`, `downtown` |
+   | Neighborhood | Single select | `summerlin`, `henderson`, `north-lv`, `spring-valley`, `enterprise`, `downtown` |
    | Lat | Number (decimal) | for the map |
    | Lng | Number (decimal) | for the map |
    | Start | Date (incl. time) | required |

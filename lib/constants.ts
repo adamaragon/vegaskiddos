@@ -22,7 +22,8 @@ export const NEIGHBORHOODS = [
   { id: "summerlin", label: "Summerlin / West", center: [36.1716, -115.3286] },
   { id: "henderson", label: "Henderson / Southeast", center: [36.0395, -114.9817] },
   { id: "north-lv", label: "North Las Vegas", center: [36.2333, -115.1394] },
-  { id: "southwest", label: "Southwest / Spring Valley", center: [36.0828, -115.2628] },
+  { id: "spring-valley", label: "Spring Valley", center: [36.0828, -115.2628] },
+  { id: "enterprise", label: "Enterprise / Southwest", center: [36.0269, -115.2547] },
   { id: "downtown", label: "Downtown / Arts District", center: [36.1663, -115.1391] },
 ] as const;
 
