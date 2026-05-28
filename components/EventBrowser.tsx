@@ -24,7 +24,16 @@ const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), {
   ),
 });
 
-type View = "list" | "map";
+const CalendarView = dynamic(() => import("./CalendarView").then((m) => m.CalendarView), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-[420px] w-full items-center justify-center rounded-blob border border-ink/10 bg-white text-ink/40">
+      Loading calendar…
+    </div>
+  ),
+});
+
+type View = "list" | "calendar" | "map";
 
 function Chip({
   active,
@@ -187,15 +196,15 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
           {filtered.length} {filtered.length === 1 ? "event" : "events"}
         </p>
         <div className="flex rounded-full border-2 border-ink/15 bg-white p-1">
-          {(["list", "map"] as View[]).map((v) => (
+          {(["list", "calendar", "map"] as View[]).map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`rounded-full px-4 py-1.5 text-sm font-800 capitalize transition ${
+              className={`rounded-full px-3 py-1.5 text-sm font-800 capitalize transition sm:px-4 ${
                 view === v ? "bg-teal text-white" : "text-ink/60"
               }`}
             >
-              {v === "list" ? "📋 List" : "🗺️ Map"}
+              {v === "list" ? "📋 List" : v === "calendar" ? "📅 Calendar" : "🗺️ Map"}
             </button>
           ))}
         </div>
@@ -226,6 +235,8 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
               </div>
             )}
           </>
+        ) : view === "calendar" ? (
+          <CalendarView events={filtered} />
         ) : (
           <MapView events={filtered} />
         )}
