@@ -58,7 +58,7 @@ export default function RootLayout({
           <div className="mx-auto grid max-w-5xl gap-8 px-4 py-10 sm:grid-cols-3">
             <div>
               <p className="font-display text-xl font-700">
-                <span className="text-coral">Vegas</span> <span className="text-teal">Kiddos</span> 🌵
+                <span className="text-coral-dark">Vegas</span> <span className="text-teal-dark">Kiddos</span> 🌵
               </p>
               <p className="mt-2 text-sm text-ink/60">
                 A free, kid-safe guide to Las Vegas family events — sorted by age, price, and neighborhood.
@@ -103,7 +103,7 @@ export default function RootLayout({
             <p className="mt-1 text-xs text-ink/50">
               A{" "}
               <a href="https://threesided.com" target="_blank" rel="noopener noreferrer"
-                className="font-700 text-grape hover:underline">
+                className="font-700 text-grape underline">
                 Threesided Studios
               </a>{" "}
               project · Always confirm details with the venue.

@@ -88,7 +88,7 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
               onClick={() => toggle(ages, a.id, setAges)}
             >
               {a.emoji} {a.label}{" "}
-              <span className="font-400 opacity-70">{a.sublabel}</span>
+              <span className="font-400 opacity-90">{a.sublabel}</span>
             </Chip>
           ))}
         </FilterRow>

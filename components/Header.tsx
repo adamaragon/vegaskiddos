@@ -7,8 +7,8 @@ export function Header() {
         <Link href="/" className="flex items-center gap-2">
           <span className="animate-wiggle text-2xl">🌵</span>
           <span className="font-display text-2xl font-700 leading-none">
-            <span className="text-coral">Vegas</span>{" "}
-            <span className="text-teal">Kiddos</span>
+            <span className="text-coral-dark">Vegas</span>{" "}
+            <span className="text-teal-dark">Kiddos</span>
           </span>
         </Link>
         <nav className="flex items-center gap-1 text-sm font-700 sm:gap-2">
