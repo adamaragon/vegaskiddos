@@ -2,11 +2,11 @@ import Link from "next/link";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-[1000] border-b border-ink/10 bg-sand/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="animate-wiggle text-2xl">🌵</span>
-          <span className="font-display text-2xl font-700 leading-none">
+    <header className="sticky top-0 z-[1000] border-b-2 border-ink/10 bg-white/85 shadow-[0_4px_20px_-8px_rgba(45,42,50,0.25)] backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
+        <Link href="/" className="flex items-center gap-2.5">
+          <span className="animate-wiggle text-3xl sm:text-4xl">🌵</span>
+          <span className="font-display text-3xl font-700 leading-none sm:text-4xl">
             <span className="text-coral-dark">Vegas</span>{" "}
             <span className="text-teal-dark">Kiddos</span>
           </span>

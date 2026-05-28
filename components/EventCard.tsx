@@ -22,13 +22,16 @@ export function formatWhen(iso: string) {
   });
 }
 
-export function EventCard({ event }: { event: KidEvent }) {
+export function EventCard({ event, index = 0 }: { event: KidEvent; index?: number }) {
   const price = priceTier(event.priceTier);
   const hood = neighborhood(event.neighborhood);
+  // Stagger the dramatic entrance within each loaded batch.
+  const delay = (index % 30) * 45;
   return (
     <Link
       href={`/event/${event.id}`}
-      className="group flex flex-col overflow-hidden rounded-blob border border-ink/10 bg-white shadow-card transition hover:-translate-y-1 hover:shadow-lg"
+      style={{ animationDelay: `${delay}ms` }}
+      className="animate-card-in group flex flex-col overflow-hidden rounded-blob border border-ink/10 bg-white shadow-card transition-shadow hover:-translate-y-1 hover:shadow-lg"
     >
       <div className="flex items-start justify-between gap-2 p-5 pb-3">
         <div>

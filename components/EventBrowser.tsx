@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { KidEvent } from "@/lib/types";
 import { EventCard } from "./EventCard";
@@ -8,6 +8,8 @@ import {
   AGE_TIERS,
   PRICE_TIERS,
   NEIGHBORHOODS,
+  neighborhoodsForZip,
+  neighborhood as hoodById,
   type AgeTierId,
   type PriceTierId,
   type NeighborhoodId,
@@ -52,11 +54,29 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
   const [ages, setAges] = useState<Set<AgeTierId>>(new Set());
   const [prices, setPrices] = useState<Set<PriceTierId>>(new Set());
   const [hoods, setHoods] = useState<Set<NeighborhoodId>>(new Set());
+  const [zip, setZip] = useState("");
+  const [zipNote, setZipNote] = useState("");
 
   function toggle<T>(set: Set<T>, value: T, update: (s: Set<T>) => void) {
     const next = new Set(set);
     next.has(value) ? next.delete(value) : next.add(value);
     update(next);
+  }
+
+  function applyZip(raw: string) {
+    const z = raw.replace(/\D/g, "").slice(0, 5);
+    setZip(z);
+    if (z.length === 5) {
+      const near = neighborhoodsForZip(z);
+      if (near.length) {
+        setHoods(new Set(near));
+        setZipNote(`Showing ${near.map((n) => hoodById(n).label.split(" / ")[0]).join(", ")} near ${z}`);
+      } else {
+        setZipNote(`We don't recognize ${z} yet — try picking an area below.`);
+      }
+    } else {
+      setZipNote("");
+    }
   }
 
   const PAGE = 30;
@@ -73,6 +93,21 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
 
   // Reset the visible window whenever the filter set changes.
   useEffect(() => setVisible(PAGE), [ages, prices, hoods]);
+
+  // Auto-load more as the sentinel scrolls into view (infinite scroll).
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || view !== "list") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setVisible((v) => v + PAGE);
+      },
+      { rootMargin: "600px 0px" } // prefetch before it's actually visible
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [view, filtered.length]);
 
   const activeCount = ages.size + prices.size + hoods.size;
 
@@ -115,7 +150,20 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
               {n.label}
             </Chip>
           ))}
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm text-ink/40">or</span>
+            <input
+              inputMode="numeric"
+              value={zip}
+              onChange={(e) => applyZip(e.target.value)}
+              placeholder="📍 ZIP code"
+              aria-label="Find events near a ZIP code"
+              className="w-32 rounded-full border-2 border-ink/15 bg-white px-3.5 py-1.5 text-sm font-700 text-ink/80 outline-none transition focus:border-teal"
+            />
+          </div>
         </FilterRow>
+
+        {zipNote && <p className="mt-1 text-sm font-700 text-teal-dark">{zipNote}</p>}
 
         {activeCount > 0 && (
           <button
@@ -123,8 +171,10 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
               setAges(new Set());
               setPrices(new Set());
               setHoods(new Set());
+              setZip("");
+              setZipNote("");
             }}
-            className="mt-1 text-sm font-700 text-coral underline-offset-2 hover:underline"
+            className="mt-1 block text-sm font-700 text-coral underline-offset-2 hover:underline"
           >
             Clear all filters ({activeCount})
           </button>
@@ -163,18 +213,16 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
           <>
             <h2 className="sr-only">Upcoming events</h2>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.slice(0, visible).map((e) => (
-                <EventCard key={e.id} event={e} />
+              {filtered.slice(0, visible).map((e, i) => (
+                <EventCard key={e.id} event={e} index={i} />
               ))}
             </div>
             {visible < filtered.length && (
-              <div className="mt-8 text-center">
-                <button
-                  onClick={() => setVisible((v) => v + PAGE)}
-                  className="hover-pop rounded-full bg-teal px-6 py-3 font-800 text-white shadow-pop"
-                >
-                  Show more events ({filtered.length - visible} left)
-                </button>
+              <div ref={sentinelRef} className="mt-8 flex items-center justify-center gap-2 py-4 text-ink/40">
+                <span className="h-3 w-3 animate-bounce rounded-full bg-coral" />
+                <span className="h-3 w-3 animate-bounce rounded-full bg-sunny" style={{ animationDelay: "0.15s" }} />
+                <span className="h-3 w-3 animate-bounce rounded-full bg-teal" style={{ animationDelay: "0.3s" }} />
+                <span className="ml-2 text-sm font-700">Loading more fun…</span>
               </div>
             )}
           </>

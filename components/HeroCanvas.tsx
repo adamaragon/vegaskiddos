@@ -2,30 +2,31 @@
 
 import { useEffect, useRef } from "react";
 
-// A lightweight, performant Three.js backdrop: a dozen floating low-poly
-// "toy" shapes (balloons, blocks, stars) in brand colors, gently bobbing.
-// Perf guards: capped DPR, paused when offscreen, disabled for reduced-motion
-// and on very small/low-power screens. Loaded lazily (dynamic import).
+// Three.js hero: the Baby Dino model walking in place on the right, rotating as
+// you scroll. Lazy (idle), reduced-motion aware, capped DPR, paused offscreen.
+// Model: "Baby Dino" by rickymorgue (CC-BY-4.0), credited in the footer.
 export function HeroCanvas() {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
-    // Skip the WebGL scene on phones — they get the static crayon doodles instead.
-    // Keeps mobile main-thread light (big Lighthouse TBT/LCP win).
-    if (window.innerWidth < 768) return;
 
     let raf = 0;
     let idleId = 0;
     let renderer: import("three").WebGLRenderer | null = null;
+    let mixer: import("three").AnimationMixer | null = null;
+    let dino: import("three").Object3D | null = null;
     let running = true;
     let io: IntersectionObserver | null = null;
-    let cleanupResize: (() => void) | null = null;
+    let onScroll: (() => void) | null = null;
+    let onResize: (() => void) | null = null;
     let disposed = false;
+    let targetRotY = 0;
+    let curRotY = 0;
 
     const init = async () => {
       const THREE = await import("three");
+      const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
       const mount = mountRef.current;
       if (!mount || disposed) return;
 
@@ -33,66 +34,84 @@ export function HeroCanvas() {
       const h = mount.clientHeight;
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 100);
-      camera.position.z = 14;
+      const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+      camera.position.set(0, 0.4, 6);
 
       renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(w, h);
       mount.appendChild(renderer.domElement);
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-      const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-      dir.position.set(5, 8, 6);
-      scene.add(dir);
+      scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+      const key = new THREE.DirectionalLight(0xffffff, 1.4);
+      key.position.set(3, 6, 5);
+      scene.add(key);
+      const rim = new THREE.DirectionalLight(0xffd9a0, 0.7);
+      rim.position.set(-4, 2, -3);
+      scene.add(rim);
 
-      const palette = [0xff6b5e, 0xffc93c, 0x23c4b5, 0x7b5ea7, 0xffffff];
-      const geos = [
-        new THREE.IcosahedronGeometry(1, 0),
-        new THREE.BoxGeometry(1.4, 1.4, 1.4),
-        new THREE.SphereGeometry(1, 16, 16),
-        new THREE.TetrahedronGeometry(1.3, 0),
-        new THREE.TorusGeometry(0.9, 0.35, 12, 24),
-      ];
-      const count = w < 640 ? 8 : 14;
-      const toys: { mesh: import("three").Mesh; sp: number; ph: number; amp: number }[] = [];
+      const loader = new GLTFLoader();
+      loader.load(
+        "/models/baby-dino/scene.gltf",
+        (gltf) => {
+          if (disposed) return;
+          dino = gltf.scene;
 
-      for (let i = 0; i < count; i++) {
-        const geo = geos[i % geos.length];
-        const mat = new THREE.MeshStandardMaterial({
-          color: palette[i % palette.length],
-          flatShading: true,
-          roughness: 0.6,
-          metalness: 0.05,
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        const s = 0.5 + Math.random() * 0.8;
-        mesh.scale.setScalar(s);
-        mesh.position.set(
-          (Math.random() - 0.5) * 22,
-          (Math.random() - 0.5) * 12,
-          (Math.random() - 0.5) * 6 - 2
-        );
-        mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
-        scene.add(mesh);
-        toys.push({ mesh, sp: 0.2 + Math.random() * 0.5, ph: Math.random() * 10, amp: 0.4 + Math.random() * 0.6 });
-      }
+          // Center + scale to a consistent size, then park on the right.
+          const box = new THREE.Box3().setFromObject(dino);
+          const size = new THREE.Vector3();
+          const center = new THREE.Vector3();
+          box.getSize(size);
+          box.getCenter(center);
+          const small = w < 700;
+          const scale = (small ? 2.7 : 3.9) / Math.max(size.x, size.y, size.z);
+          dino.scale.setScalar(scale);
+          dino.position.sub(center.multiplyScalar(scale));
+
+          const pivot = new THREE.Group();
+          pivot.add(dino);
+          // Tuck to the right; smaller and slightly lower on phones.
+          pivot.position.x = small ? 1.1 : 2.6;
+          pivot.position.y = small ? -0.5 : -0.2;
+          pivot.rotation.y = -0.5;
+          scene.add(pivot);
+          dino = pivot;
+
+          if (gltf.animations.length && !reduce) {
+            mixer = new THREE.AnimationMixer(gltf.scene);
+            mixer.clipAction(gltf.animations[0]).play();
+          }
+        },
+        undefined,
+        (err) => console.error("dino load failed", err)
+      );
 
       const clock = new THREE.Clock();
       const animate = () => {
         if (!running || !renderer) return;
-        const t = clock.getElapsedTime();
-        for (const o of toys) {
-          o.mesh.rotation.x += o.sp * 0.004;
-          o.mesh.rotation.y += o.sp * 0.006;
-          o.mesh.position.y += Math.sin(t * o.sp + o.ph) * 0.004 * o.amp;
+        const dt = clock.getDelta();
+        if (mixer) mixer.update(dt);
+        if (dino) {
+          // Ease current rotation toward the scroll-driven target.
+          curRotY += (targetRotY - curRotY) * 0.08;
+          dino.rotation.y = -0.5 + curRotY;
+          if (reduce) dino.rotation.y = -0.5; // no scroll spin if reduced motion
         }
         renderer.render(scene, camera);
         raf = requestAnimationFrame(animate);
       };
       animate();
 
-      const onResize = () => {
+      const computeRot = () => {
+        // Distance-based so it visibly spins through the first ~2 screens of
+        // scroll (page height is huge, so a normalized 0–1 would barely move).
+        targetRotY = window.scrollY / 180; // ~1130px of scroll ≈ one full turn
+      };
+      onScroll = () => computeRot();
+      computeRot();
+      window.addEventListener("scroll", onScroll, { passive: true });
+
+      onResize = () => {
         if (!renderer || !mount) return;
         const nw = mount.clientWidth, nh = mount.clientHeight;
         camera.aspect = nw / nh;
@@ -100,9 +119,7 @@ export function HeroCanvas() {
         renderer.setSize(nw, nh);
       };
       window.addEventListener("resize", onResize);
-      cleanupResize = () => window.removeEventListener("resize", onResize);
 
-      // Pause render loop when the hero scrolls offscreen.
       io = new IntersectionObserver(
         ([e]) => {
           running = e.isIntersecting;
@@ -114,9 +131,8 @@ export function HeroCanvas() {
       io.observe(mount);
     };
 
-    // Defer to browser idle so the 3D scene never blocks first paint / TBT.
     const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
-    idleId = ric ? ric(() => init(), { timeout: 2000 }) : window.setTimeout(() => init(), 800);
+    idleId = ric ? ric(() => init(), { timeout: 2000 }) : window.setTimeout(() => init(), 600);
 
     return () => {
       disposed = true;
@@ -126,7 +142,9 @@ export function HeroCanvas() {
       if (cic) cic(idleId);
       clearTimeout(idleId);
       io?.disconnect();
-      cleanupResize?.();
+      if (onScroll) window.removeEventListener("scroll", onScroll);
+      if (onResize) window.removeEventListener("resize", onResize);
+      mixer?.stopAllAction();
       if (renderer) {
         renderer.dispose();
         renderer.domElement.remove();

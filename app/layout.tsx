@@ -108,6 +108,17 @@ export default function RootLayout({
               </a>{" "}
               project · Always confirm details with the venue.
             </p>
+            <p className="mt-2 text-[11px] text-ink/40">
+              Hero model:{" "}
+              <a href="https://sketchfab.com/3d-models/baby-dino-7f6990157fd44a0c88c5834b5fe04413"
+                target="_blank" rel="noopener noreferrer" className="underline">
+                &ldquo;Baby Dino&rdquo;
+              </a>{" "}
+              by rickymorgue, licensed under{" "}
+              <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="underline">
+                CC-BY-4.0
+              </a>.
+            </p>
           </div>
         </footer>
       </body>

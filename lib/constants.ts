@@ -31,6 +31,33 @@ export type NeighborhoodId = (typeof NEIGHBORHOODS)[number]["id"];
 
 export const LV_CENTER: [number, number] = [36.1147, -115.1728];
 
+// Las Vegas ZIP → primary neighborhood (client-safe; mirrors the scraper map).
+const ZIP_TO_NEIGHBORHOOD: Record<string, NeighborhoodId> = {
+  "89134": "summerlin", "89135": "summerlin", "89138": "summerlin", "89144": "summerlin", "89145": "summerlin", "89128": "summerlin", "89129": "summerlin",
+  "89002": "henderson", "89011": "henderson", "89012": "henderson", "89014": "henderson", "89015": "henderson", "89052": "henderson", "89074": "henderson", "89044": "henderson",
+  "89030": "north-lv", "89031": "north-lv", "89032": "north-lv", "89084": "north-lv", "89081": "north-lv", "89086": "north-lv", "89085": "north-lv",
+  "89117": "spring-valley", "89146": "spring-valley", "89147": "spring-valley", "89103": "spring-valley", "89102": "spring-valley", "89148": "spring-valley",
+  "89113": "enterprise", "89139": "enterprise", "89141": "enterprise", "89178": "enterprise", "89183": "enterprise", "89123": "enterprise",
+  "89101": "downtown", "89104": "downtown", "89106": "downtown", "89107": "downtown", "89109": "downtown", "89169": "downtown",
+};
+
+// Geographic adjacency for "this area + nearby".
+const NEARBY: Record<NeighborhoodId, NeighborhoodId[]> = {
+  summerlin: ["spring-valley", "downtown"],
+  "spring-valley": ["summerlin", "enterprise", "downtown"],
+  enterprise: ["spring-valley", "henderson"],
+  henderson: ["enterprise", "downtown"],
+  "north-lv": ["downtown"],
+  downtown: ["north-lv", "spring-valley", "summerlin", "henderson"],
+};
+
+// Returns the neighborhoods to filter for a given ZIP: its own + adjacent.
+export function neighborhoodsForZip(zip: string): NeighborhoodId[] {
+  const primary = ZIP_TO_NEIGHBORHOOD[zip.slice(0, 5)];
+  if (!primary) return [];
+  return [primary, ...NEARBY[primary]];
+}
+
 export function priceTier(id: PriceTierId) {
   return PRICE_TIERS.find((p) => p.id === id)!;
 }

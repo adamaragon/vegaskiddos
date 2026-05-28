@@ -8,9 +8,10 @@ export function CrayonDefs() {
   return (
     <svg width="0" height="0" aria-hidden className="absolute">
       <defs>
-        <filter id="crayonFilter" x="-20%" y="-20%" width="140%" height="140%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="noise" />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.2" xChannelSelector="R" yChannelSelector="G" />
+        {/* Coarser, wavier displacement = a much more obvious waxy crayon edge. */}
+        <filter id="crayonFilter" x="-30%" y="-30%" width="160%" height="160%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.045 0.06" numOctaves="3" seed="7" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </defs>
     </svg>
