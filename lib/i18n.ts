@@ -99,6 +99,18 @@ export const STRINGS = {
   },
   ev_more_at: { en: "More at", es: "Más en" },
   ev_more_in: { en: "More in", es: "Más en" },
+  nl_title: { en: "📬 This week's kid events, in your inbox", es: "📬 Los eventos para niños de esta semana, en tu correo" },
+  nl_sub: {
+    en: "Free weekly email — the best upcoming events for Vegas families.",
+    es: "Correo semanal gratis — los mejores eventos para las familias de Las Vegas.",
+  },
+  nl_email_ph: { en: "you@email.com", es: "tu@correo.com" },
+  nl_all_areas: { en: "All areas", es: "Todas las zonas" },
+  nl_area_label: { en: "Your area (optional)", es: "Tu zona (opcional)" },
+  nl_button: { en: "Get the digest", es: "Recibir el boletín" },
+  nl_done: { en: "🎉 You're in! Watch your inbox each week.", es: "🎉 ¡Listo! Revisa tu correo cada semana." },
+  nl_err_again: { en: "Try again.", es: "Inténtalo de nuevo." },
+  nl_err_generic: { en: "Something went wrong.", es: "Algo salió mal." },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

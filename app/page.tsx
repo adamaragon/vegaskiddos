@@ -66,11 +66,11 @@ export default async function HomePage() {
       <Reveal as="section" variant="pop" className="mt-8">
         <div className="flex flex-col items-center gap-3 rounded-blob bg-gradient-to-br from-teal to-grape p-6 text-center text-white shadow-card sm:flex-row sm:justify-between sm:text-left">
           <div>
-            <h2 className="font-display text-xl font-700">📬 This week&apos;s kid events, in your inbox</h2>
-            <p className="text-sm text-white/90">Free weekly email — the best upcoming events for Vegas families.</p>
+            <h2 className="font-display text-xl font-700">{t(lang, "nl_title")}</h2>
+            <p className="text-sm text-white/90">{t(lang, "nl_sub")}</p>
           </div>
           <div className="w-full max-w-sm rounded-full bg-white/10 p-1.5 sm:w-auto">
-            <SubscribeBox />
+            <SubscribeBox lang={lang} />
           </div>
         </div>
       </Reveal>
