@@ -5,7 +5,12 @@ import { Header } from "@/components/Header";
 import { CrayonDefs, Star } from "@/components/Doodles";
 import { PWARegister } from "@/components/PWARegister";
 import type { Viewport } from "next";
+import Script from "next/script";
 import Link from "next/link";
+
+// Privacy-friendly, cookieless analytics — only loads when a domain is set
+// (NEXT_PUBLIC_PLAUSIBLE_DOMAIN). Zero cost / no tracking until enabled.
+const PLAUSIBLE = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
 
 export const viewport: Viewport = {
   themeColor: "#FF6B5E",
@@ -58,6 +63,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${fredoka.variable} ${nunito.variable}`}>
       <body className="font-body min-h-screen antialiased">
+        {PLAUSIBLE && (
+          <Script defer data-domain={PLAUSIBLE} src="https://plausible.io/js/script.js" strategy="afterInteractive" />
+        )}
         <PWARegister />
         <CrayonDefs />
         <Header />

@@ -41,46 +41,53 @@ const events = (await airtableAll("Events", `&filterByFormula=${encodeURICompone
   .sort((a, b) => String(a.Start).localeCompare(String(b.Start)))
   .slice(0, 18);
 
-const subs = (await airtableAll("Subscribers", `&filterByFormula=${encodeURIComponent("{Active}=1")}`)).map((r) => r.fields.Email).filter(Boolean);
+const subs = (await airtableAll("Subscribers", `&filterByFormula=${encodeURIComponent("{Active}=1")}`))
+  .map((r) => ({ email: r.fields.Email, hood: (r.fields.Neighborhood || "").trim() }))
+  .filter((s) => s.email);
 
 console.log(`digest: ${events.length} events, ${subs.length} subscribers`);
 if (!events.length || !subs.length) { console.log("nothing to send"); process.exit(0); }
 
-const rows = events.map((f) => `
+const rowsFor = (list) => list.map((f) => `
   <tr><td style="padding:14px 0;border-bottom:1px solid #eee">
     <div style="font-size:12px;font-weight:700;color:#0FA89A;text-transform:uppercase">${fmt(f.Start, f.Recurrence)}</div>
     <a href="${SITE}/event/${f.id || ""}" style="font-size:18px;font-weight:700;color:#2D2A32;text-decoration:none">${f.Title}</a>
     <div style="font-size:13px;color:#666">📍 ${f.Venue || ""} · ${f.PriceText || (f.PriceTier === "free" ? "Free" : "")}</div>
   </td></tr>`).join("");
 
-const html = `<!doctype html><html><body style="margin:0;background:#FFF8EE;font-family:-apple-system,Segoe UI,sans-serif">
+const htmlFor = (list, hoodLabel, unsub) => `<!doctype html><html><body style="margin:0;background:#FFF8EE;font-family:-apple-system,Segoe UI,sans-serif">
   <div style="max-width:600px;margin:0 auto;padding:24px">
     <div style="background:linear-gradient(135deg,#FF6B5E,#FFC93C);border-radius:24px;padding:28px;text-align:center;color:#fff">
       <div style="font-size:40px">🌵</div>
       <h1 style="margin:6px 0;font-size:26px">This Week for Vegas Kids</h1>
-      <p style="margin:0;opacity:.95">${events.length} family-friendly events around the valley</p>
+      <p style="margin:0;opacity:.95">${list.length} family-friendly events${hoodLabel ? ` in ${hoodLabel}` : " around the valley"}</p>
     </div>
-    <table width="100%" style="margin-top:8px">${rows}</table>
+    <table width="100%" style="margin-top:8px">${rowsFor(list)}</table>
     <div style="text-align:center;margin-top:20px">
       <a href="${SITE}" style="background:#FF6B5E;color:#fff;padding:12px 24px;border-radius:999px;font-weight:800;text-decoration:none">See all events →</a>
     </div>
-    <p style="text-align:center;color:#999;font-size:12px;margin-top:24px">Vegas Kiddos · a Threesided Studios project · always confirm details with the venue<br>{{UNSUB}}</p>
+    <p style="text-align:center;color:#999;font-size:12px;margin-top:24px">Vegas Kiddos · a Threesided Studios project · always confirm details with the venue<br><a href="${unsub}" style="color:#999">Unsubscribe</a></p>
   </div></body></html>`;
 
 if (!process.env.RESEND_API_KEY) {
-  console.log("RESEND_API_KEY not set — preview only (no send). First 400 chars:\n", html.slice(0, 400));
+  console.log("RESEND_API_KEY not set — preview only (no send). Sample:\n", htmlFor(events.slice(0, 5), "", "#").slice(0, 300));
   process.exit(0);
 }
 
 let sent = 0;
-for (const to of subs) {
-  const unsub = `${SITE}/unsubscribe?e=${encodeURIComponent(to)}&t=${unsubToken(to)}`;
-  const personalHtml = html.replace("{{UNSUB}}", `<a href="${unsub}" style="color:#999">Unsubscribe</a>`);
+for (const s of subs) {
+  // Neighborhood-targeted: only that area's events (fall back to all if none for that area, or no area chosen).
+  let list = events;
+  if (s.hood) {
+    const local = events.filter((f) => f.Neighborhood === s.hood);
+    if (local.length >= 3) list = local; // keep it worthwhile
+  }
+  const unsub = `${SITE}/unsubscribe?e=${encodeURIComponent(s.email)}&t=${unsubToken(s.email)}`;
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: FROM, to, subject: `🌵 ${events.length} kid events in Las Vegas this week`, html: personalHtml, headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }),
+    body: JSON.stringify({ from: FROM, to: s.email, subject: `🌵 ${list.length} kid events in Las Vegas this week`, html: htmlFor(list, "", unsub), headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }),
   });
-  if (r.ok) sent++; else console.error("send fail", to, r.status, (await r.text()).slice(0, 120));
+  if (r.ok) sent++; else console.error("send fail", s.email, r.status, (await r.text()).slice(0, 120));
 }
 console.log(`sent ${sent}/${subs.length}`);

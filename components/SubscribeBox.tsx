@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { NEIGHBORHOODS } from "@/lib/constants";
 
 // Email capture for the weekly digest. Posts to /api/subscribe.
 export function SubscribeBox({ compact = false }: { compact?: boolean }) {
@@ -9,13 +10,13 @@ export function SubscribeBox({ compact = false }: { compact?: boolean }) {
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const email = new FormData(e.currentTarget).get("email");
+    const fd = new FormData(e.currentTarget);
     setStatus("sending");
     try {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: fd.get("email"), neighborhood: fd.get("neighborhood") || "" }),
       });
       const d = await res.json();
       if (!res.ok) { setStatus("error"); setMsg(d.error || "Try again."); return; }
@@ -38,6 +39,17 @@ export function SubscribeBox({ compact = false }: { compact?: boolean }) {
         placeholder="you@email.com"
         className={`min-w-0 flex-1 rounded-full border-2 border-ink/15 bg-white px-4 outline-none focus:border-teal ${compact ? "py-2 text-sm" : "py-2.5"}`}
       />
+      <select
+        name="neighborhood"
+        aria-label="Your area (optional)"
+        defaultValue=""
+        className={`min-w-0 rounded-full border-2 border-ink/15 bg-white px-3 text-ink/70 outline-none focus:border-teal ${compact ? "py-2 text-sm" : "py-2.5"}`}
+      >
+        <option value="">All areas</option>
+        {NEIGHBORHOODS.map((n) => (
+          <option key={n.id} value={n.id}>{n.label.split(" / ")[0]}</option>
+        ))}
+      </select>
       <button
         type="submit"
         disabled={status === "sending"}

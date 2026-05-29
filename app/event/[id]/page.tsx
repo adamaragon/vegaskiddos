@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEvent, getEvents } from "@/lib/data";
-import { ageTier, priceTier, neighborhood } from "@/lib/constants";
+import { ageTier, priceTier, neighborhood, venueSlug } from "@/lib/constants";
 import { formatWhen } from "@/components/EventCard";
 import { ShareButtons } from "@/components/ShareButtons";
 import { JsonLd } from "@/components/JsonLd";
@@ -131,7 +131,13 @@ export default async function EventPage({
           <h1 className="mt-2 font-display text-3xl font-700 sm:text-4xl">
             {event.title}
           </h1>
-          <p className="mt-2 text-white/90">📍 {event.venue}</p>
+          <p className="mt-2 text-white/90">
+            📍 {event.venue ? (
+              <Link href={`/venue/${venueSlug(event.venue)}`} className="underline decoration-white/40 underline-offset-2 hover:decoration-white">
+                {event.venue}
+              </Link>
+            ) : "Las Vegas"}
+          </p>
         </div>
 
         <div className="p-6 sm:p-8">

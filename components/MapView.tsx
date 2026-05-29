@@ -23,6 +23,7 @@ export function MapView({ events }: { events: KidEvent[] }) {
     let cancelled = false;
     (async () => {
       const L = (await import("leaflet")).default;
+      await import("leaflet.markercluster"); // extends L with markerClusterGroup
       if (cancelled || !containerRef.current || mapRef.current) return;
 
       const map = L.map(containerRef.current, {
@@ -35,7 +36,10 @@ export function MapView({ events }: { events: KidEvent[] }) {
         maxZoom: 19,
       }).addTo(map);
       mapRef.current = map;
-      layerRef.current = L.layerGroup().addTo(map);
+      // Cluster nearby pins so the valley-wide map stays readable.
+      layerRef.current = (L as unknown as { markerClusterGroup: (o?: object) => import("leaflet").LayerGroup })
+        .markerClusterGroup({ maxClusterRadius: 50, showCoverageOnHover: false });
+      map.addLayer(layerRef.current);
     })();
     return () => {
       cancelled = true;

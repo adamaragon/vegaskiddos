@@ -58,6 +58,9 @@ export function neighborhoodsForZip(zip: string): NeighborhoodId[] {
   return [primary, ...NEARBY[primary]];
 }
 
+export const venueSlug = (v: string) =>
+  (v || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
 export function priceTier(id: PriceTierId) {
   return PRICE_TIERS.find((p) => p.id === id)!;
 }
