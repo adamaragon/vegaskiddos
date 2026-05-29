@@ -35,7 +35,6 @@ export async function generateMetadata({
   return {
     title: `${event.title} | Vegas Kiddos`,
     description: desc,
-    alternates: { canonical: url },
     openGraph: {
       title,
       description: desc,

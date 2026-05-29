@@ -5,33 +5,33 @@ import { venueSlug } from "@/lib/constants";
 
 const BASE = "https://vegaskiddos.com";
 
+// Each content URL exists in English (canonical) and Spanish (/es). Emit the
+// English URL with an `es` alternate so Google indexes both — matches the
+// reciprocal hreflang tags rendered in the page <head>.
+function entry(
+  path: string,
+  opts: { changeFrequency?: MetadataRoute.Sitemap[number]["changeFrequency"]; priority?: number } = {},
+): MetadataRoute.Sitemap[number] {
+  const suffix = path === "/" ? "" : path;
+  return {
+    url: `${BASE}${suffix}`,
+    lastModified: new Date(),
+    changeFrequency: opts.changeFrequency,
+    priority: opts.priority,
+    alternates: { languages: { es: `${BASE}/es${suffix}` } },
+  };
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const events = await getEvents();
-  const eventUrls = events.map((e) => ({
-    url: `${BASE}/event/${e.id}`,
-    lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: 0.7,
-  }));
-  const collectionUrls = COLLECTIONS.map((c) => ({
-    url: `${BASE}/${c.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "daily" as const,
-    priority: 0.8,
-  }));
   const venueSlugs = [...new Set(events.map((e) => venueSlug(e.venue || "")).filter(Boolean))];
-  const venueUrls = venueSlugs.map((slug) => ({
-    url: `${BASE}/venue/${slug}`,
-    changeFrequency: "weekly" as const,
-    priority: 0.5,
-  }));
 
   return [
-    { url: BASE, lastModified: new Date(), changeFrequency: "daily", priority: 1 },
-    ...collectionUrls,
-    { url: `${BASE}/about`, changeFrequency: "monthly", priority: 0.4 },
-    { url: `${BASE}/submit`, changeFrequency: "monthly", priority: 0.5 },
-    ...venueUrls,
-    ...eventUrls,
+    entry("/", { changeFrequency: "daily", priority: 1 }),
+    ...COLLECTIONS.map((c) => entry(`/${c.slug}`, { changeFrequency: "daily", priority: 0.8 })),
+    entry("/about", { changeFrequency: "monthly", priority: 0.4 }),
+    entry("/submit", { changeFrequency: "monthly", priority: 0.5 }),
+    ...venueSlugs.map((slug) => entry(`/venue/${slug}`, { changeFrequency: "weekly", priority: 0.5 })),
+    ...events.map((e) => entry(`/event/${e.id}`, { changeFrequency: "weekly", priority: 0.7 })),
   ];
 }

@@ -9,7 +9,7 @@ const SLUG = "free";
 
 export function generateMetadata(): Metadata {
   const m = getCollectionMeta(SLUG)!;
-  return { title: `${m.title} | Vegas Kiddos`, description: m.description, alternates: { canonical: `https://vegaskiddos.com/${SLUG}` } };
+  return { title: `${m.title} | Vegas Kiddos`, description: m.description };
 }
 
 export default async function Page() {

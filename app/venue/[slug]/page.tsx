@@ -27,7 +27,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${name} — Kids events | Vegas Kiddos`,
     description: `Upcoming kid-friendly events at ${name} in Las Vegas.`,
-    alternates: { canonical: `https://vegaskiddos.com/venue/${slug}` },
   };
 }
 

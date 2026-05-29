@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { CrayonDefs, Star } from "@/components/Doodles";
 import { PWARegister } from "@/components/PWARegister";
 import { LangToggle } from "@/components/LangToggle";
-import { getLang } from "@/lib/lang-server";
+import { getLang, getPath } from "@/lib/lang-server";
 import { t } from "@/lib/i18n";
 import type { Viewport } from "next";
 import Script from "next/script";
@@ -29,33 +29,51 @@ const nunito = Nunito({
   variable: "--font-nunito",
 });
 
-export const metadata: Metadata = {
-  title: "Vegas Kiddos — Kid-safe events across Las Vegas",
-  description:
-    "Find baby, toddler, kid, and tween events near you in Las Vegas. Filter by neighborhood, age, and price. A free resource for local parents.",
-  metadataBase: new URL("https://vegaskiddos.com"),
-  keywords: [
-    "Las Vegas kids events", "Las Vegas family events", "toddler activities Las Vegas",
-    "free kids events Las Vegas", "things to do with kids Las Vegas", "Summerlin", "Henderson",
-  ],
-  alternates: { canonical: "https://vegaskiddos.com" },
-  openGraph: {
-    title: "Vegas Kiddos",
-    description: "Kid-safe events across Las Vegas, sorted by age, price, and neighborhood.",
-    type: "website",
-    url: "https://vegaskiddos.com",
-    siteName: "Vegas Kiddos",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Vegas Kiddos",
-    description: "Kid-safe events across Las Vegas, sorted by age, price, and neighborhood.",
-  },
-  verification: process.env.GOOGLE_SITE_VERIFICATION
-    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
-    : undefined,
-  appleWebApp: { capable: true, title: "Vegas Kiddos", statusBarStyle: "default" },
-};
+const SITE = "https://vegaskiddos.com";
+
+// Per-request metadata: localizes title/description for the /es tree and emits
+// canonical + reciprocal hreflang so Google indexes both languages correctly.
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang();
+  const path = await getPath();
+  const suffix = path === "/" ? "" : path;
+  const enUrl = `${SITE}${suffix}`;
+  const esUrl = `${SITE}/es${suffix}`;
+  const canonical = lang === "es" ? esUrl : enUrl;
+  const title = t(lang, "meta_title");
+  const description = t(lang, "meta_desc");
+  return {
+    title,
+    description,
+    metadataBase: new URL(SITE),
+    keywords: [
+      "Las Vegas kids events", "Las Vegas family events", "toddler activities Las Vegas",
+      "free kids events Las Vegas", "things to do with kids Las Vegas", "Summerlin", "Henderson",
+    ],
+    alternates: {
+      canonical,
+      languages: { en: enUrl, es: esUrl, "x-default": enUrl },
+    },
+    openGraph: {
+      title: "Vegas Kiddos",
+      description,
+      type: "website",
+      url: canonical,
+      siteName: "Vegas Kiddos",
+      locale: lang === "es" ? "es_US" : "en_US",
+      alternateLocale: lang === "es" ? "en_US" : "es_US",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Vegas Kiddos",
+      description,
+    },
+    verification: process.env.GOOGLE_SITE_VERIFICATION
+      ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+      : undefined,
+    appleWebApp: { capable: true, title: "Vegas Kiddos", statusBarStyle: "default" },
+  };
+}
 
 export default async function RootLayout({
   children,

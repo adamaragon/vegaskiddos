@@ -187,6 +187,15 @@ export const STRINGS = {
     en: "We're building Vegas Kiddos in the open. Here's everything we've shipped.",
     es: "Estamos construyendo Vegas Kiddos a la vista de todos. Esto es todo lo que hemos lanzado.",
   },
+  // <head> metadata (localized per /es vs / URL for SEO)
+  meta_title: {
+    en: "Vegas Kiddos — Kid-safe events across Las Vegas",
+    es: "Vegas Kiddos — Eventos seguros para niños en Las Vegas",
+  },
+  meta_desc: {
+    en: "Find baby, toddler, kid, and tween events near you in Las Vegas. Filter by neighborhood, age, and price. A free resource for local parents.",
+    es: "Encuentra eventos para bebés, niños pequeños y preadolescentes cerca de ti en Las Vegas. Filtra por vecindario, edad y precio. Un recurso gratuito para papás locales.",
+  },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;
