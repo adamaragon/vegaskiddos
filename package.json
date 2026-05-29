@@ -9,7 +9,9 @@
     "lint": "next lint",
     "translate": "node tools/translate-backfill.mjs",
     "ensure-sub-lang": "node tools/ensure-subscriber-lang.mjs",
-    "check-links": "node tools/check-links.mjs"
+    "ensure-fb-fields": "node tools/ensure-fb-fields.mjs",
+    "check-links": "node tools/check-links.mjs",
+    "fb-post": "node tools/fb-post.mjs"
   },
   "dependencies": {
     "leaflet": "1.9.4",

@@ -1,0 +1,48 @@
+name: Facebook auto-post
+
+# Publishes to the Vegas Kiddos Facebook Page via the Graph API:
+#   • a single-event highlight most days
+#   • a "this weekend" roundup on Fridays
+# Posting is skipped (compose-only) unless FB_PAGE_ID + FB_PAGE_TOKEN secrets
+# are set, so enabling it is just a matter of adding those two secrets.
+
+on:
+  schedule:
+    - cron: "0 18 * * 0-4,6" # 11:00 PT — daily highlight (Sun–Thu, Sat)
+    - cron: "0 16 * * 5"     # 09:00 PT Fri — weekend roundup
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Which post to publish"
+        type: choice
+        default: daily
+        options: [daily, roundup]
+      dry_run:
+        description: "Compose only, do not post"
+        type: boolean
+        default: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Publish to Facebook Page
+        env:
+          AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+        run: |
+          # Friday's roundup cron vs. the daily highlight; manual runs use the input.
+          if [ "${{ github.event.schedule }}" = "0 16 * * 5" ]; then
+            MODE=roundup
+          else
+            MODE="${{ github.event.inputs.mode || 'daily' }}"
+          fi
+          DRY=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then DRY="--dry-run"; fi
+          echo "Running fb-post in '$MODE' mode $DRY"
+          node tools/fb-post.mjs "$MODE" $DRY
