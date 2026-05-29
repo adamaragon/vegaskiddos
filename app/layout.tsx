@@ -4,6 +4,9 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { CrayonDefs, Star } from "@/components/Doodles";
 import { PWARegister } from "@/components/PWARegister";
+import { LangToggle } from "@/components/LangToggle";
+import { getLang } from "@/lib/lang-server";
+import { t } from "@/lib/i18n";
 import type { Viewport } from "next";
 import Script from "next/script";
 import Link from "next/link";
@@ -55,20 +58,21 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Vegas Kiddos", statusBarStyle: "default" },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const lang = await getLang();
   return (
-    <html lang="en" className={`${fredoka.variable} ${nunito.variable}`}>
+    <html lang={lang} className={`${fredoka.variable} ${nunito.variable}`}>
       <body className="font-body min-h-screen antialiased">
         {PLAUSIBLE && (
           <Script defer data-domain={PLAUSIBLE} src="https://plausible.io/js/script.js" strategy="afterInteractive" />
         )}
         <PWARegister />
         <CrayonDefs />
-        <Header />
+        <Header lang={lang} />
         <main>{children}</main>
         <footer className="mt-16 border-t-2 border-dashed border-ink/15 bg-white/70">
           <div className="mx-auto grid max-w-5xl gap-8 px-4 py-10 sm:grid-cols-3">
@@ -76,12 +80,11 @@ export default function RootLayout({
               <p className="font-display text-xl font-700">
                 <span className="text-coral-dark">Vegas</span> <span className="text-teal-dark">Kiddos</span> 🌵
               </p>
-              <p className="mt-2 text-sm text-ink/60">
-                A free, kid-safe guide to Las Vegas family events — sorted by age, price, and neighborhood.
-              </p>
+              <p className="mt-2 text-sm text-ink/60">{t(lang, "foot_tagline")}</p>
+              <div className="mt-3"><LangToggle lang={lang} /></div>
             </div>
             <nav className="text-sm">
-              <p className="font-display font-600 text-ink/80">Explore</p>
+              <p className="font-display font-600 text-ink/80">{t(lang, "foot_explore")}</p>
               <ul className="mt-2 space-y-1.5 text-ink/60">
                 {[
                   ["/", "Events"],
@@ -96,7 +99,7 @@ export default function RootLayout({
               </ul>
             </nav>
             <nav className="text-sm">
-              <p className="font-display font-600 text-ink/80">More</p>
+              <p className="font-display font-600 text-ink/80">{t(lang, "foot_more")}</p>
               <ul className="mt-2 space-y-1.5 text-ink/60">
                 {[
                   ["/submit", "Add an event"],
@@ -113,7 +116,7 @@ export default function RootLayout({
           </div>
           <div className="border-t border-ink/10 py-5 text-center text-sm text-ink/60">
             <p className="flex items-center justify-center gap-1.5">
-              Made with <Star className="inline h-4 w-4 text-coral" /> by{" "}
+              {t(lang, "foot_madeby")} <Star className="inline h-4 w-4 text-coral" /> {lang === "es" ? "por" : "by"}{" "}
               <span className="font-700 text-ink/80">Adam &amp; Michelle Aragon</span>
             </p>
             <p className="mt-1 text-xs text-ink/50">
@@ -122,7 +125,7 @@ export default function RootLayout({
                 className="font-700 text-grape underline">
                 Threesided Studios
               </a>{" "}
-              project · Always confirm details with the venue.
+              · {t(lang, "foot_confirm")}
             </p>
             <p className="mt-2 text-[11px] text-ink/40">
               Hero model:{" "}

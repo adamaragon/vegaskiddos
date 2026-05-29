@@ -6,6 +6,8 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { SubscribeBox } from "@/components/SubscribeBox";
 import { JsonLd } from "@/components/JsonLd";
 import { Sun, Cloud, Star, Underline, Scribble } from "@/components/Doodles";
+import { getLang } from "@/lib/lang-server";
+import { t } from "@/lib/i18n";
 
 export const revalidate = 600;
 
@@ -31,6 +33,7 @@ const siteLd = [
 
 export default async function HomePage() {
   const events = await getEvents();
+  const lang = await getLang();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -42,18 +45,17 @@ export default async function HomePage() {
         <Cloud className="pointer-events-none absolute bottom-4 left-8 hidden h-16 w-24 animate-float opacity-30 sm:block" color="#FFFFFF" />
         <div className="relative z-10">
           <h1 className="font-display text-4xl font-700 leading-tight drop-shadow-sm sm:text-5xl">
-            Kid-safe fun, all over Las&nbsp;Vegas.
+            {t(lang, "hero_title")}
           </h1>
           <Underline className="-mt-1 h-5 w-64 max-w-[80%]" color="#FFFFFF" />
           <p className="mt-3 max-w-xl text-lg text-white/90">
-            Find the right event for the right little human — sorted by age, price,
-            and neighborhood. Made by local parents, for local parents.
+            {t(lang, "hero_sub")}
           </p>
           <div className="mt-5 flex flex-wrap gap-2 text-sm font-700">
-            {["👶 Baby", "🧸 Toddler", "🎨 Kids", "🛹 Tweens"].map((t) => (
-              <span key={t}
+            {["👶 Baby", "🧸 Toddler", "🎨 Kids", "🛹 Tweens"].map((tag) => (
+              <span key={tag}
                 className="hover-pop cursor-default rounded-full bg-white/20 px-3 py-1.5 backdrop-blur-sm">
-                {t}
+                {tag}
               </span>
             ))}
           </div>
@@ -85,15 +87,13 @@ export default async function HomePage() {
           <Star className="pointer-events-none absolute right-4 bottom-2 h-8 w-8 animate-float text-teal" />
           <Scribble className="pointer-events-none absolute right-8 top-3 hidden h-14 w-14 text-coral/60 sm:block" />
           <Scribble className="pointer-events-none absolute left-10 bottom-3 hidden h-10 w-10 text-grape/50 sm:block" />
-          <h2 className="font-display text-2xl font-700">Know a great kid event?</h2>
-          <p className="mx-auto mt-2 max-w-md text-ink/70">
-            Help other Vegas families find it. Submit it in a minute — we review every one.
-          </p>
+          <h2 className="font-display text-2xl font-700">{t(lang, "cta_title")}</h2>
+          <p className="mx-auto mt-2 max-w-md text-ink/70">{t(lang, "cta_sub")}</p>
           <a href="/submit" className="hover-pop mt-4 inline-block rounded-full bg-coral px-6 py-3 font-800 text-white shadow-pop">
-            + Add an event
+            {t(lang, "nav_add")}
           </a>
           <div className="mt-6 flex flex-col items-center gap-2 border-t border-ink/10 pt-5">
-            <p className="text-sm font-700 text-ink/60">Love it? Share Vegas Kiddos with other parents</p>
+            <p className="text-sm font-700 text-ink/60">{t(lang, "cta_share")}</p>
             <ShareButtons url={SITE} title="Vegas Kiddos"
               text="Vegas Kiddos — find kid-safe Las Vegas family events by age, price & neighborhood" />
           </div>
