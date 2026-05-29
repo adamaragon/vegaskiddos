@@ -14,6 +14,7 @@ import {
   type PriceTierId,
   type NeighborhoodId,
 } from "@/lib/constants";
+import { getFavorites, getSavedAges, saveAges } from "@/lib/favorites";
 
 const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), {
   ssr: false,
@@ -114,6 +115,35 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
   const [dateRange, setDateRange] = useState<DateRangeId>("any");
   const [zip, setZip] = useState("");
   const [zipNote, setZipNote] = useState("");
+  const [onlyFavs, setOnlyFavs] = useState(false);
+  const [favs, setFavs] = useState<Set<string>>(new Set());
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoMsg, setGeoMsg] = useState("");
+
+  // Personalization: restore saved kid ages once, keep favorites in sync.
+  useEffect(() => {
+    const saved = getSavedAges();
+    if (saved.length) setAges(new Set(saved as AgeTierId[]));
+    const sync = () => setFavs(new Set(getFavorites()));
+    sync();
+    window.addEventListener("vk-prefs", sync);
+    return () => window.removeEventListener("vk-prefs", sync);
+  }, []);
+
+  function setAgesPersist(next: Set<AgeTierId>) {
+    setAges(next);
+    saveAges([...next]);
+  }
+
+  function useMyLocation() {
+    if (!navigator.geolocation) { setGeoMsg("Location isn't available on this device."); return; }
+    setGeoMsg("Finding events near you…");
+    navigator.geolocation.getCurrentPosition(
+      (p) => { setCoords({ lat: p.coords.latitude, lng: p.coords.longitude }); setGeoMsg("📍 Sorted by distance from you"); },
+      () => setGeoMsg("Couldn't get your location — allow location access and try again."),
+      { timeout: 8000 }
+    );
+  }
 
   function toggle<T>(set: Set<T>, value: T, update: (s: Set<T>) => void) {
     const next = new Set(set);
@@ -141,17 +171,24 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
   const [visible, setVisible] = useState(PAGE);
 
   const filtered = useMemo(() => {
-    return events.filter((e) => {
+    const list = events.filter((e) => {
+      if (onlyFavs && !favs.has(e.id)) return false;
       if (ages.size && !e.ageTiers.some((a) => ages.has(a))) return false;
       if (prices.size && !prices.has(e.priceTier)) return false;
       if (hoods.size && !hoods.has(e.neighborhood)) return false;
       if (!inDateRange(e.start, dateRange)) return false;
       return true;
     });
-  }, [events, ages, prices, hoods, dateRange]);
+    if (coords) {
+      const d = (e: KidEvent) =>
+        e.lat && e.lng ? (e.lat - coords.lat) ** 2 + (e.lng - coords.lng) ** 2 : Infinity;
+      list.sort((a, b) => d(a) - d(b));
+    }
+    return list;
+  }, [events, ages, prices, hoods, dateRange, onlyFavs, favs, coords]);
 
   // Reset the visible window whenever the filter set changes.
-  useEffect(() => setVisible(PAGE), [ages, prices, hoods, dateRange]);
+  useEffect(() => setVisible(PAGE), [ages, prices, hoods, dateRange, onlyFavs, coords]);
 
   // Auto-load more as the sentinel scrolls into view (infinite scroll).
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -172,16 +209,35 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
     ages.size + prices.size + hoods.size + (dateRange !== "any" ? 1 : 0);
 
   function clearAll() {
-    setAges(new Set());
+    setAgesPersist(new Set());
     setPrices(new Set());
     setHoods(new Set());
     setDateRange("any");
     setZip("");
     setZipNote("");
+    setOnlyFavs(false);
+    setCoords(null);
+    setGeoMsg("");
   }
 
   return (
     <div>
+      {/* Quick picks */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="font-display text-sm font-600 text-ink/50">Quick picks:</span>
+        <button onClick={() => { setPrices(new Set(["free"])); setDateRange("weekend"); }}
+          className="hover-pop rounded-full bg-teal px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">✨ Free this weekend</button>
+        <button onClick={() => { setPrices(new Set(["free"])); useMyLocation(); }}
+          className="hover-pop rounded-full bg-coral px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">📍 Free near me</button>
+        <button onClick={() => setDateRange("today")}
+          className="rounded-full border-2 border-ink/15 bg-white px-3.5 py-1.5 text-sm font-700 text-ink/70 hover:border-teal">Today</button>
+        <button onClick={() => setOnlyFavs((v) => !v)}
+          className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-800 transition ${onlyFavs ? "border-coral bg-coral text-white" : "border-ink/15 bg-white text-ink/70 hover:border-coral"}`}>
+          ❤️ My List{favs.size ? ` (${favs.size})` : ""}
+        </button>
+      </div>
+      {geoMsg && <p className="mb-3 text-sm font-700 text-teal-dark">{geoMsg}</p>}
+
       {/* Filter panel */}
       <div className="rounded-blob border border-ink/10 bg-white p-4 shadow-card sm:p-6">
         <FilterRow label="When">
@@ -194,7 +250,7 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
 
         <FilterRow label="Age">
           {AGE_TIERS.map((a) => (
-            <Chip key={a.id} active={ages.has(a.id)} onClick={() => toggle(ages, a.id, setAges)}>
+            <Chip key={a.id} active={ages.has(a.id)} onClick={() => toggle(ages, a.id, setAgesPersist)}>
               {a.emoji} {a.label} <span className="font-400 opacity-90">{a.sublabel}</span>
             </Chip>
           ))}

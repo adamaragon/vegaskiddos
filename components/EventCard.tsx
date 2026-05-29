@@ -3,6 +3,7 @@ import type { KidEvent } from "@/lib/types";
 import { ageTier, priceTier, neighborhood } from "@/lib/constants";
 import { nextOccurrenceISO } from "@/lib/recurrence";
 import { EventThumb } from "./EventThumb";
+import { FavButton } from "./FavButton";
 
 const PRICE_BG: Record<string, string> = {
   teal: "bg-teal text-white",
@@ -36,7 +37,10 @@ export function EventCard({ event, index = 0 }: { event: KidEvent; index?: numbe
       style={{ animationDelay: `${delay}ms` }}
       className="animate-card-in group flex flex-col overflow-hidden rounded-blob border border-ink/10 bg-white shadow-card transition-shadow hover:-translate-y-1 hover:shadow-lg"
     >
-      <EventThumb event={event} />
+      <div className="relative">
+        <EventThumb event={event} />
+        <FavButton id={event.id} className="absolute right-2 top-2" />
+      </div>
       <div className="flex items-start justify-between gap-2 p-5 pb-3">
         <div>
           <p className="flex flex-wrap items-center gap-1.5 text-xs font-700 uppercase tracking-wide text-teal-dark">
