@@ -24,7 +24,7 @@ try {
 
 const AT = process.env.AIRTABLE_TOKEN, BASE = process.env.AIRTABLE_BASE_ID;
 if (!AT || !BASE) { console.error("AIRTABLE_TOKEN / AIRTABLE_BASE_ID required"); process.exit(1); }
-const PAGE_ID = process.env.FB_PAGE_ID, PAGE_TOKEN = process.env.FB_PAGE_TOKEN;
+const PAGE_ID = (process.env.FB_PAGE_ID || "").trim(), PAGE_TOKEN = (process.env.FB_PAGE_TOKEN || "").trim();
 const SITE = "https://vegaskiddos.com";
 const GRAPH = "https://graph.facebook.com/v21.0";
 
