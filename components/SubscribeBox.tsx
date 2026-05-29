@@ -18,7 +18,7 @@ export function SubscribeBox({ compact = false, lang = "en" }: { compact?: boole
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: fd.get("email"), neighborhood: fd.get("neighborhood") || "" }),
+        body: JSON.stringify({ email: fd.get("email"), neighborhood: fd.get("neighborhood") || "", lang }),
       });
       const d = await res.json();
       if (!res.ok) { setStatus("error"); setMsg(d.error || tr("nl_err_again")); return; }
