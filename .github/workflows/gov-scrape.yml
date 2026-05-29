@@ -1,0 +1,27 @@
+name: Gov calendar scraper
+
+# Headless-browser scraper for JS-rendered government calendars (City of Las
+# Vegas, Clark County). Runs daily and on demand; upserts to the Airtable
+# review queue. Kept out of the Netlify build because it needs a real browser.
+
+on:
+  schedule:
+    - cron: "30 15 * * *" # 08:30 PT daily
+  workflow_dispatch: {}
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install deps (incl. Puppeteer Chromium)
+        run: npm ci
+      - name: Run gov scraper
+        env:
+          AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+        run: node tools/gov-scrape.mjs
