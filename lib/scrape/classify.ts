@@ -141,6 +141,11 @@ export function isBarOrAdult(text: string): boolean {
 export function stripHtml(html?: string | null): string {
   if (!html) return "";
   return html
+    // Remove script/style blocks entirely (content + tags) — ad sliders, etc.
+    .replace(/<(script|style|noscript)[\s\S]*?<\/\1>/gi, "")
+    // Strip leftover inline JS that some feeds dump without script tags.
+    .replace(/\(\s*window\.[\s\S]*?\}\s*\)\s*;?/g, "")
+    .replace(/jQuery\([\s\S]*?\}\s*\)\s*;?/g, "")
     // Preserve structure: turn block/line tags into newlines before stripping.
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, "\n")
@@ -156,10 +161,10 @@ export function stripHtml(html?: string | null): string {
     // Divider runs of dashes -> a clean separator line.
     .replace(/\s*[—–-]{3,}\s*/g, "\n•••\n")
     .replace(/[ \t]+/g, " ")
-    // Single-spaced clean lines: trim each, drop blanks.
+    // Single-spaced clean lines: trim each, drop blanks + ad labels + JS scraps.
     .split("\n")
     .map((l) => l.trim())
-    .filter((l) => l !== "")
+    .filter((l) => l !== "" && !/^(sponsors?|advertisements?|advertisement)$/i.test(l) && !/^[(){};.]+$/.test(l) && !/function\s*\(|\.unslider\(|jQuery\(|window\./.test(l))
     .join("\n")
     .trim();
 }
