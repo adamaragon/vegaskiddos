@@ -32,6 +32,13 @@ export function Header({ lang = "en" }: { lang?: Lang }) {
             {t(lang, "nav_about")}
           </Link>
           <Link
+            href="/my-list"
+            aria-label="My saved list"
+            className="rounded-full px-3 py-2 text-ink/70 transition hover:bg-white hover:text-ink"
+          >
+            ⭐
+          </Link>
+          <Link
             href="/submit"
             className="whitespace-nowrap rounded-full bg-coral px-4 py-2 text-white shadow-pop transition hover:bg-coral-dark"
           >

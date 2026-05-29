@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEvent, getEvents } from "@/lib/data";
 import { ageTier, priceTier, neighborhood, venueSlug } from "@/lib/constants";
-import { formatWhen } from "@/components/EventCard";
+import { formatWhen, EventCard } from "@/components/EventCard";
 import { ShareButtons } from "@/components/ShareButtons";
 import { JsonLd } from "@/components/JsonLd";
 import { nextOccurrenceISO } from "@/lib/recurrence";
@@ -57,6 +57,13 @@ export default async function EventPage({
 
   const price = priceTier(event.priceTier);
   const hood = neighborhood(event.neighborhood);
+  const allEvents = await getEvents();
+  const moreAtVenue = event.venue
+    ? allEvents.filter((e) => e.id !== event.id && e.venue === event.venue).slice(0, 3)
+    : [];
+  const moreNearby = allEvents
+    .filter((e) => e.id !== event.id && e.neighborhood === event.neighborhood && e.venue !== event.venue)
+    .slice(0, 3);
   const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     event.address || event.venue
   )}`;
@@ -223,6 +230,24 @@ export default async function EventPage({
           </p>
         </div>
       </div>
+
+      {moreAtVenue.length > 0 && (
+        <section className="mt-10">
+          <h2 className="font-display text-2xl font-700">More at {event.venue}</h2>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {moreAtVenue.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
+          </div>
+        </section>
+      )}
+
+      {moreNearby.length > 0 && (
+        <section className="mt-10">
+          <h2 className="font-display text-2xl font-700">More in {hood.label}</h2>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {moreNearby.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
