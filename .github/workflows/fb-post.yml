@@ -7,16 +7,23 @@ name: Facebook auto-post
 # are set, so enabling it is just a matter of adding those two secrets.
 
 on:
-  schedule:
-    - cron: "0 18 * * 0-4,6" # 11:00 PT — daily highlight (Sun–Thu, Sat)
-    - cron: "0 16 * * 5"     # 09:00 PT Fri — weekend roundup
+  # Recurring crons are PAUSED while a Facebook-native scheduled batch covers
+  # the next ~2 weeks (created via `mode: schedule`). Those posts publish
+  # server-side and don't need this workflow to run. Re-enable these once the
+  # Page token is extended to long-lived, to resume token-dependent live posts.
+  # schedule:
+  #   - cron: "0 18 * * 0-4,6" # 11:00 PT — daily highlight (Sun–Thu, Sat)
+  #   - cron: "0 16 * * 5"     # 09:00 PT Fri — weekend roundup
   workflow_dispatch:
     inputs:
       mode:
-        description: "Which post to publish"
+        description: "daily = post now · roundup = weekend list · schedule = queue a batch"
         type: choice
-        default: daily
-        options: [daily, roundup]
+        default: schedule
+        options: [schedule, daily, roundup]
+      count:
+        description: "How many posts to queue (schedule mode only)"
+        default: "14"
       dry_run:
         description: "Compose only, do not post"
         type: boolean
@@ -36,13 +43,9 @@ jobs:
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
         run: |
-          # Friday's roundup cron vs. the daily highlight; manual runs use the input.
-          if [ "${{ github.event.schedule }}" = "0 16 * * 5" ]; then
-            MODE=roundup
-          else
-            MODE="${{ github.event.inputs.mode || 'daily' }}"
-          fi
+          MODE="${{ github.event.inputs.mode || 'schedule' }}"
+          COUNT="${{ github.event.inputs.count || '14' }}"
           DRY=""
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then DRY="--dry-run"; fi
-          echo "Running fb-post in '$MODE' mode $DRY"
-          node tools/fb-post.mjs "$MODE" $DRY
+          echo "Running fb-post: mode=$MODE count=$COUNT $DRY"
+          node tools/fb-post.mjs "$MODE" "$COUNT" $DRY

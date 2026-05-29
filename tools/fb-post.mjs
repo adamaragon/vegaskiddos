@@ -80,13 +80,54 @@ async function diagnoseToken() {
   console.error(`token looks like a ${me?.category ? "PAGE token" : "USER token (← needs to be the PAGE token)"}; pages_manage_posts granted: ${grantedPosts}`);
 }
 
-async function publish(message, link) {
+// Publishes immediately, or — when `whenUnix` is given — hands Facebook a
+// scheduled post. Scheduled posts publish server-side at that time even if our
+// token has since expired, so a batch created now survives token expiry.
+async function publish(message, link, whenUnix) {
   const params = new URLSearchParams({ message, access_token: PAGE_TOKEN });
   if (link) params.set("link", link);
+  if (whenUnix) { params.set("published", "false"); params.set("scheduled_publish_time", String(whenUnix)); }
   const r = await fetch(`${GRAPH}/${PAGE_ID}/feed`, { method: "POST", body: params });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) { await diagnoseToken(); throw new Error(`Graph API ${r.status}: ${JSON.stringify(data).slice(0, 300)}`); }
   return data.id; // "{pageid}_{postid}"
+}
+
+// Single-event post body (shared by daily + schedule modes).
+function eventPost(rec) {
+  const f = rec.fields;
+  const url = `${SITE}/event/${rec.id}`;
+  const price = priceOf(f);
+  const message = [
+    `🌵 ${f.Title}`,
+    `📅 ${fmtWhen(f.Start, f.Recurrence)}${f.Venue ? `   📍 ${f.Venue}` : ""}${price ? `   ·   ${price}` : ""}`,
+    "",
+    `Find this and every kid-safe event in Vegas — sorted by age, price & neighborhood 👇`,
+    url,
+    "",
+    HASHTAGS,
+  ].join("\n");
+  return { message, url };
+}
+
+async function stampPosted(id, when = new Date()) {
+  const patch = await airtable("PATCH", "Events", { records: [{ id, fields: { FBPostedAt: when.toISOString() } }], typecast: true });
+  if (!patch.ok) console.error("warn: could not set FBPostedAt:", patch.status, (await patch.text()).slice(0, 150));
+}
+
+// All approved, not-yet-posted events (with Title), soonest first.
+async function unpostedEvents() {
+  try {
+    const formula = "AND({Approved}=1, {FBPostedAt}=BLANK())";
+    const recs = await airtableAll("Events", `&filterByFormula=${encodeURIComponent(formula)}&sort%5B0%5D%5Bfield%5D=Start&sort%5B0%5D%5Bdirection%5D=asc`);
+    return recs.filter((r) => r.fields.Title);
+  } catch (e) {
+    if (/FBPostedAt/.test(String(e)) || /INVALID_FILTER/.test(String(e))) {
+      console.error("Missing 'FBPostedAt' field on Events — run `npm run ensure-fb-fields` first.");
+      process.exit(1);
+    }
+    throw e;
+  }
 }
 
 function preview(label, message, link) {
@@ -98,43 +139,60 @@ function preview(label, message, link) {
 
 // ── daily: one upcoming highlight, deduped via FBPostedAt ───────────────────
 async function runDaily() {
-  let recs;
-  try {
-    // Soonest upcoming approved event we haven't posted yet.
-    const formula = "AND({Approved}=1, {FBPostedAt}=BLANK(), IS_AFTER({Start}, DATEADD(NOW(),-2,'hours')))";
-    recs = await airtableAll("Events", `&filterByFormula=${encodeURIComponent(formula)}&sort%5B0%5D%5Bfield%5D=Start&sort%5B0%5D%5Bdirection%5D=asc`);
-  } catch (e) {
-    if (/FBPostedAt/.test(String(e)) || /INVALID_FILTER/.test(String(e))) {
-      console.error("Missing 'FBPostedAt' field on Events — run `npm run ensure-fb-fields` first.");
-      process.exit(1);
-    }
-    throw e;
-  }
-  const rec = recs.find((r) => r.fields.Title && r.fields.Start);
+  const rec = (await unpostedEvents()).find((r) => r.fields.Start);
   if (!rec) { console.log("daily: no un-posted upcoming events — nothing to post."); return; }
-
-  const f = rec.fields;
-  const url = `${SITE}/event/${rec.id}`;
-  const when = fmtWhen(f.Start, f.Recurrence);
-  const price = priceOf(f);
-  const lines = [
-    `🌵 ${f.Title}`,
-    `📅 ${when}${f.Venue ? `   📍 ${f.Venue}` : ""}${price ? `   ·   ${price}` : ""}`,
-    "",
-    `Find this and every kid-safe event in Vegas — sorted by age, price & neighborhood 👇`,
-    url,
-    "",
-    HASHTAGS,
-  ];
-  const message = lines.join("\n");
+  const { message, url } = eventPost(rec);
   preview("DAILY HIGHLIGHT", message, url);
-
   if (DRY) return;
   const id = await publish(message, url);
   console.log(`✅ posted: ${id}`);
-  // Mark as posted so we don't repeat it.
-  const patch = await airtable("PATCH", "Events", { records: [{ id: rec.id, fields: { FBPostedAt: new Date().toISOString() } }], typecast: true });
-  if (!patch.ok) console.error("warn: could not set FBPostedAt:", patch.status, (await patch.text()).slice(0, 150));
+  await stampPosted(rec.id);
+}
+
+// ── schedule: queue N daily highlights with Facebook (publishes server-side
+// even after our token expires). Default 14 posts, one/day at ~11am PT. ──────
+async function runSchedule() {
+  const count = Math.max(1, Math.min(60, parseInt(process.argv[3] || process.env.FB_SCHEDULE_COUNT || "14", 10)));
+  const candidates = await unpostedEvents();
+  if (!candidates.length) { console.log("schedule: no un-posted events available."); return; }
+
+  // Build daily 18:00 UTC (~11:00 PT) slots, starting the next one >15min out.
+  const nowMs = Date.now();
+  const slots = [];
+  let d = new Date(); d.setUTCHours(18, 0, 0, 0);
+  while (slots.length < count) {
+    if (d.getTime() > nowMs + 15 * 60 * 1000) slots.push(new Date(d));
+    d = new Date(d.getTime() + 86400000);
+  }
+
+  // Assign an event to each slot: recurring events are always valid; one-time
+  // events only if they're still upcoming when the post goes live.
+  const used = new Set();
+  const plan = [];
+  for (const slot of slots) {
+    const ev = candidates.find((r) => {
+      if (used.has(r.id)) return false;
+      const f = r.fields;
+      return f.Recurrence || (f.Start && new Date(f.Start).getTime() > slot.getTime());
+    });
+    if (!ev) break;
+    used.add(ev.id);
+    plan.push({ rec: ev, slot });
+  }
+  if (!plan.length) { console.log("schedule: no events match the upcoming slots."); return; }
+
+  console.log(`Scheduling ${plan.length} post(s)${DRY ? " (DRY RUN)" : ""}:`);
+  for (const { rec, slot } of plan) {
+    const when = slot.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
+    console.log(`  • ${when} PT  →  ${rec.fields.Title}`);
+    if (DRY) continue;
+    const { message, url } = eventPost(rec);
+    const id = await publish(message, url, Math.floor(slot.getTime() / 1000));
+    await stampPosted(rec.id, slot);
+    console.log(`      ✅ scheduled: ${id}`);
+  }
+  if (DRY) console.log("\n(DRY RUN — nothing was scheduled.)");
+  else console.log(`\n✅ Queued ${plan.length} posts. Review/edit them in Meta Business Suite → Planner.`);
 }
 
 // ── roundup: "this weekend" multi-event list (bilingual), weekly ────────────
@@ -175,4 +233,5 @@ if (DRY && (!PAGE_ID || !PAGE_TOKEN)) {
 }
 if (mode === "roundup") await runRoundup();
 else if (mode === "daily") await runDaily();
-else { console.error(`Unknown mode "${mode}". Use: daily | roundup`); process.exit(1); }
+else if (mode === "schedule") await runSchedule();
+else { console.error(`Unknown mode "${mode}". Use: daily | roundup | schedule`); process.exit(1); }
