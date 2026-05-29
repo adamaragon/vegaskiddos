@@ -7,13 +7,13 @@ name: Facebook auto-post
 # are set, so enabling it is just a matter of adding those two secrets.
 
 on:
-  # Recurring crons are PAUSED while a Facebook-native scheduled batch covers
-  # the next ~2 weeks (created via `mode: schedule`). Those posts publish
-  # server-side and don't need this workflow to run. Re-enable these once the
-  # Page token is extended to long-lived, to resume token-dependent live posts.
-  # schedule:
-  #   - cron: "0 18 * * 0-4,6" # 11:00 PT — daily highlight (Sun–Thu, Sat)
-  #   - cron: "0 16 * * 5"     # 09:00 PT Fri — weekend roundup
+  # Crons run daily, but the daily/roundup modes self-pause (RESUME_AFTER in
+  # fb-post.mjs) until Jun 13 so they don't double up with the Facebook-native
+  # scheduled batch that covers through Jun 12. After that date they resume
+  # automatically — no manual re-enable needed.
+  schedule:
+    - cron: "0 18 * * 0-4,6" # 11:00 PT — daily highlight (Sun–Thu, Sat)
+    - cron: "0 16 * * 5"     # 09:00 PT Fri — weekend roundup
   workflow_dispatch:
     inputs:
       mode:

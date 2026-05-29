@@ -30,6 +30,17 @@ const GRAPH = "https://graph.facebook.com/v21.0";
 
 const mode = (process.argv[2] || "daily").toLowerCase();
 const DRY = process.argv.includes("--dry-run") || !PAGE_ID || !PAGE_TOKEN;
+const FORCE = process.argv.includes("--force") || process.env.FB_FORCE === "1";
+
+// The recurring daily/roundup crons are live, but a Facebook-native scheduled
+// batch covers posting through Jun 12. To avoid doubling up, those modes no-op
+// until this resume date, then pick up on their own. Bypass with --force.
+const RESUME_AFTER = Date.parse("2026-06-13T00:00:00-07:00");
+function pausedUntilResume(label) {
+  if (FORCE || Date.now() >= RESUME_AFTER) return false;
+  console.log(`${label}: paused until ${new Date(RESUME_AFTER).toISOString()} — scheduled batch covers this period (use --force to override).`);
+  return true;
+}
 
 async function airtable(method, path, body) {
   const r = await fetch(`https://api.airtable.com/v0/${BASE}/${path}`, {
@@ -139,6 +150,7 @@ function preview(label, message, link) {
 
 // ── daily: one upcoming highlight, deduped via FBPostedAt ───────────────────
 async function runDaily() {
+  if (pausedUntilResume("daily")) return;
   const rec = (await unpostedEvents()).find((r) => r.fields.Start);
   if (!rec) { console.log("daily: no un-posted upcoming events — nothing to post."); return; }
   const { message, url } = eventPost(rec);
@@ -200,6 +212,7 @@ async function runSchedule() {
 
 // ── roundup: "this weekend" multi-event list (bilingual), weekly ────────────
 async function runRoundup() {
+  if (pausedUntilResume("roundup")) return;
   const formula = "AND({Approved}=1, OR(NOT({Recurrence}=BLANK()), AND(IS_AFTER({Start}, DATEADD(NOW(),-1,'days')), IS_BEFORE({Start}, DATEADD(NOW(),4,'days')))))";
   const events = (await airtableAll("Events", `&filterByFormula=${encodeURIComponent(formula)}`))
     .map((r) => r.fields)
