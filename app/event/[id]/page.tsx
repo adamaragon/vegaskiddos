@@ -166,7 +166,7 @@ export default async function EventPage({
             })}
           </div>
 
-          <p className="mt-6 text-lg leading-relaxed text-ink/80">
+          <p className="mt-6 whitespace-pre-line text-lg leading-relaxed text-ink/80">
             {event.description}
           </p>
 
