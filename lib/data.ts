@@ -2,6 +2,7 @@ import type { KidEvent } from "./types";
 import { MOCK_EVENTS } from "./mock-events";
 import type { AgeTierId, PriceTierId, NeighborhoodId } from "./constants";
 import { nextOccurrenceISO } from "./recurrence";
+import type { Lang } from "./i18n";
 
 // Sort by the next real occurrence (recurring series use their computed next date).
 function byNextOccurrence(a: KidEvent, b: KidEvent) {
@@ -33,6 +34,8 @@ function mapRecord(rec: AirtableRecord): KidEvent | null {
     id: rec.id,
     title: String(f.Title),
     description: String(f.Description || ""),
+    titleEs: f.TitleEs ? String(f.TitleEs) : undefined,
+    descriptionEs: f.DescriptionEs ? String(f.DescriptionEs) : undefined,
     venue: String(f.Venue || ""),
     address: String(f.Address || ""),
     neighborhood: (f.Neighborhood as NeighborhoodId) || "downtown",
@@ -53,9 +56,20 @@ function mapRecord(rec: AirtableRecord): KidEvent | null {
   };
 }
 
-export async function getEvents(): Promise<KidEvent[]> {
+// When rendering in Spanish, swap in the stored translation (falling back to
+// the source text if a given event hasn't been translated yet).
+function localize(events: KidEvent[], lang: Lang): KidEvent[] {
+  if (lang !== "es") return events;
+  return events.map((e) =>
+    e.titleEs || e.descriptionEs
+      ? { ...e, title: e.titleEs || e.title, description: e.descriptionEs || e.description }
+      : e
+  );
+}
+
+export async function getEvents(lang: Lang = "en"): Promise<KidEvent[]> {
   if (!isAirtableConfigured()) {
-    return [...MOCK_EVENTS].sort(byNextOccurrence);
+    return localize([...MOCK_EVENTS].sort(byNextOccurrence), lang);
   }
   try {
     // Approved events that are either upcoming OR recurring (recurring series
@@ -84,14 +98,14 @@ export async function getEvents(): Promise<KidEvent[]> {
       .map(mapRecord)
       .filter((e): e is KidEvent => e !== null)
       .sort(byNextOccurrence);
-    return events.length ? events : MOCK_EVENTS;
+    return localize(events.length ? events : MOCK_EVENTS, lang);
   } catch (err) {
     console.error("Airtable fetch failed, using seed data:", err);
-    return [...MOCK_EVENTS].sort(byNextOccurrence);
+    return localize([...MOCK_EVENTS].sort(byNextOccurrence), lang);
   }
 }
 
-export async function getEvent(id: string): Promise<KidEvent | undefined> {
-  const events = await getEvents();
+export async function getEvent(id: string, lang: Lang = "en"): Promise<KidEvent | undefined> {
+  const events = await getEvents(lang);
   return events.find((e) => e.id === id);
 }

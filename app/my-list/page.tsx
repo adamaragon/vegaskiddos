@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getEvents } from "@/lib/data";
 import { MyList } from "@/components/MyList";
+import { getLang } from "@/lib/lang-server";
 
 export const revalidate = 600;
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MyListPage() {
-  const events = await getEvents();
+  const lang = await getLang();
+  const events = await getEvents(lang);
   return <MyList events={events} />;
 }

@@ -1,6 +1,17 @@
 // Lightweight bilingual support (English / Spanish). Locale is stored in the
 // `vk_lang` cookie; server components read it and render the right strings, the
-// LangToggle sets it and reloads. Event content stays in its source language.
+// LangToggle sets it and reloads. Event titles/descriptions are translated at
+// scrape time and stored in Airtable (TitleEs/DescriptionEs); the data layer
+// swaps them in when lang === "es".
+
+import {
+  AGE_TIERS,
+  PRICE_TIERS,
+  NEIGHBORHOODS,
+  type AgeTierId,
+  type PriceTierId,
+  type NeighborhoodId,
+} from "./constants";
 
 export type Lang = "en" | "es";
 
@@ -50,10 +61,85 @@ export const STRINGS = {
   indoor: { en: "🏠 Indoor", es: "🏠 Interior" },
   outdoor: { en: "🌳 Outdoor", es: "🌳 Aire libre" },
   zip_ph: { en: "Enter ZIP code", es: "Código postal" },
+  // quick picks
+  quick_picks: { en: "Quick picks:", es: "Atajos:" },
+  qp_free_weekend: { en: "✨ Free this weekend", es: "✨ Gratis este finde" },
+  qp_free_near: { en: "📍 Free near me", es: "📍 Gratis cerca de mí" },
+  qp_today: { en: "Today", es: "Hoy" },
+  qp_filters: { en: "Filters", es: "Filtros" },
+  qp_hide_filters: { en: "Hide filters", es: "Ocultar filtros" },
+  my_list: { en: "❤️ My List", es: "❤️ Mi lista" },
+  // date filters
+  d_any: { en: "Any time", es: "Cualquier día" },
+  d_today: { en: "Today", es: "Hoy" },
+  d_weekend: { en: "This weekend", es: "Este finde" },
+  d_week: { en: "This week", es: "Esta semana" },
+  d_month: { en: "This month", es: "Este mes" },
+  d_next_month: { en: "Next month", es: "Próximo mes" },
+  // geolocation / zip notes
+  geo_unavailable: { en: "Location isn't available on this device.", es: "La ubicación no está disponible en este dispositivo." },
+  geo_finding: { en: "Finding events near you…", es: "Buscando eventos cerca de ti…" },
+  geo_sorted: { en: "📍 Sorted by distance from you", es: "📍 Ordenado por distancia desde ti" },
+  geo_failed: { en: "Couldn't get your location — allow location access and try again.", es: "No pudimos obtener tu ubicación — permite el acceso e inténtalo de nuevo." },
+  no_match: { en: "No events match those filters.", es: "Ningún evento coincide con esos filtros." },
+  no_match_hint: { en: "Try clearing a filter or two.", es: "Prueba a quitar uno o dos filtros." },
+  // event detail page
+  ev_back: { en: "← All events", es: "← Todos los eventos" },
+  ev_next: { en: "Next:", es: "Próximo:" },
+  ev_repeats: { en: "🔁 Repeats", es: "🔁 Se repite" },
+  ev_via: { en: "via", es: "vía" },
+  ev_directions: { en: "🗺️ Get directions", es: "🗺️ Cómo llegar" },
+  ev_calendar: { en: "📅 Add to calendar", es: "📅 Añadir al calendario" },
+  ev_rsvp: { en: "🔗 Event details / RSVP", es: "🔗 Detalles / Reservar" },
+  ev_address: { en: "Address:", es: "Dirección:" },
+  ev_share: { en: "Share this event", es: "Comparte este evento" },
+  ev_disclaimer: {
+    en: "Vegas Kiddos aggregates public listings. Always confirm date, time, and price with the venue before heading out.",
+    es: "Vegas Kiddos reúne listados públicos. Confirma siempre la fecha, hora y precio con el lugar antes de salir.",
+  },
+  ev_more_at: { en: "More at", es: "Más en" },
+  ev_more_in: { en: "More in", es: "Más en" },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;
 
 export function t(lang: Lang, key: StringKey): string {
   return STRINGS[key][lang] ?? STRINGS[key].en;
+}
+
+// ── Localized taxonomy labels ──────────────────────────────────────────────
+// Spanish overrides for the shared age/price/neighborhood taxonomy. English
+// falls back to the canonical labels in constants.ts.
+const AGE_ES: Record<AgeTierId, { label: string; sublabel: string }> = {
+  baby: { label: "Bebé", sublabel: "0–1 año" },
+  toddler: { label: "Pequeñín", sublabel: "1–3 años" },
+  kids: { label: "Niños", sublabel: "3–12 años" },
+  tweens: { label: "Preadolescentes", sublabel: "12+ años" },
+};
+const PRICE_ES: Record<PriceTierId, string> = {
+  free: "Gratis",
+  under10: "$1–10",
+  mid: "$11–25",
+  premium: "$25+",
+};
+const HOOD_ES: Record<NeighborhoodId, string> = {
+  summerlin: "Summerlin / Oeste",
+  henderson: "Henderson / Sureste",
+  "north-lv": "Norte de Las Vegas",
+  "spring-valley": "Spring Valley",
+  enterprise: "Enterprise / Suroeste",
+  downtown: "Centro / Distrito de Arte",
+};
+
+export function ageLabel(lang: Lang, id: AgeTierId): { label: string; sublabel: string } {
+  const a = AGE_TIERS.find((x) => x.id === id)!;
+  return lang === "es" ? AGE_ES[id] : { label: a.label, sublabel: a.sublabel };
+}
+export function priceLabel(lang: Lang, id: PriceTierId): string {
+  if (lang === "es") return PRICE_ES[id];
+  return PRICE_TIERS.find((x) => x.id === id)!.label;
+}
+export function hoodLabel(lang: Lang, id: NeighborhoodId): string {
+  if (lang === "es") return HOOD_ES[id];
+  return NEIGHBORHOODS.find((x) => x.id === id)!.label;
 }

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "translate": "node tools/translate-backfill.mjs"
   },
   "dependencies": {
     "leaflet": "1.9.4",

@@ -32,8 +32,8 @@ const siteLd = [
 ];
 
 export default async function HomePage() {
-  const events = await getEvents();
   const lang = await getLang();
+  const events = await getEvents(lang);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">

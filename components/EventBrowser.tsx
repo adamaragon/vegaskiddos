@@ -3,14 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { KidEvent } from "@/lib/types";
-import { t as i18nT } from "@/lib/i18n";
+import { t as i18nT, ageLabel, priceLabel, hoodLabel, type Lang, type StringKey } from "@/lib/i18n";
 import { EventCard } from "./EventCard";
 import {
   AGE_TIERS,
   PRICE_TIERS,
   NEIGHBORHOODS,
   neighborhoodsForZip,
-  neighborhood as hoodById,
   type AgeTierId,
   type PriceTierId,
   type NeighborhoodId,
@@ -128,9 +127,12 @@ function Chip({
   );
 }
 
-export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang?: import("@/lib/i18n").Lang }) {
-  const tr = (k: import("@/lib/i18n").StringKey) => i18nT(lang, k);
+export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang?: Lang }) {
+  const tr = (k: StringKey) => i18nT(lang, k);
+  // Localized label for a date-range chip (maps id → "d_*" string key).
+  const dateLabel = (id: DateRangeId) => tr(`d_${id.replace(/-/g, "_")}` as StringKey);
   const [view, setView] = useState<View>("list");
+  const [showFilters, setShowFilters] = useState(false);
   const [ages, setAges] = useState<Set<AgeTierId>>(new Set());
   const [prices, setPrices] = useState<Set<PriceTierId>>(new Set());
   const [hoods, setHoods] = useState<Set<NeighborhoodId>>(new Set());
@@ -156,6 +158,9 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
     if (p.get("q")) setQ(p.get("q")!);
     if (p.get("env")) setEnv(p.get("env") as "indoor" | "outdoor");
     if (p.get("fav") === "1") setOnlyFavs(true);
+    // If the visitor arrived with filters in the URL, reveal the panel so the
+    // active filters are visible (not hidden behind the collapsed toggle).
+    if (["ages", "price", "area", "when", "env"].some((k) => p.get(k))) setShowFilters(true);
     const sync = () => setFavs(new Set(getFavorites()));
     sync();
     window.addEventListener("vk-prefs", sync);
@@ -182,11 +187,11 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
   }
 
   function useMyLocation() {
-    if (!navigator.geolocation) { setGeoMsg("Location isn't available on this device."); return; }
-    setGeoMsg("Finding events near you…");
+    if (!navigator.geolocation) { setGeoMsg(tr("geo_unavailable")); return; }
+    setGeoMsg(tr("geo_finding"));
     navigator.geolocation.getCurrentPosition(
-      (p) => { setCoords({ lat: p.coords.latitude, lng: p.coords.longitude }); setGeoMsg("📍 Sorted by distance from you"); },
-      () => setGeoMsg("Couldn't get your location — allow location access and try again."),
+      (p) => { setCoords({ lat: p.coords.latitude, lng: p.coords.longitude }); setGeoMsg(tr("geo_sorted")); },
+      () => setGeoMsg(tr("geo_failed")),
       { timeout: 8000 }
     );
   }
@@ -204,9 +209,12 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
       const near = neighborhoodsForZip(z);
       if (near.length) {
         setHoods(new Set(near));
-        setZipNote(`Showing ${near.map((n) => hoodById(n).label.split(" / ")[0]).join(", ")} near ${z}`);
+        const areas = near.map((n) => hoodLabel(lang, n).split(" / ")[0]).join(", ");
+        setZipNote(lang === "es" ? `Mostrando ${areas} cerca de ${z}` : `Showing ${areas} near ${z}`);
       } else {
-        setZipNote(`We don't recognize ${z} yet — try picking an area below.`);
+        setZipNote(lang === "es"
+          ? `Aún no reconocemos ${z} — prueba a elegir una zona abajo.`
+          : `We don't recognize ${z} yet — try picking an area below.`);
       }
     } else {
       setZipNote("");
@@ -286,44 +294,66 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
         />
       </div>
 
-      {/* Quick picks */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="font-display text-sm font-600 text-ink/50">Quick picks:</span>
+      {/* Control bar: quick picks on the left, a single Filters toggle on the
+          right. Detailed filter rows live behind the toggle to cut clutter. */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <button onClick={() => { setPrices(new Set(["free"])); setDateRange("weekend"); }}
-          className="hover-pop rounded-full bg-teal px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">✨ Free this weekend</button>
+          className="hover-pop rounded-full bg-teal px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">{tr("qp_free_weekend")}</button>
         <button onClick={() => { setPrices(new Set(["free"])); useMyLocation(); }}
-          className="hover-pop rounded-full bg-coral px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">📍 Free near me</button>
+          className="hover-pop rounded-full bg-coral px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">{tr("qp_free_near")}</button>
         <button onClick={() => setDateRange("today")}
-          className="rounded-full border-2 border-ink/15 bg-white px-3.5 py-1.5 text-sm font-700 text-ink/70 hover:border-teal">Today</button>
+          className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-700 transition ${dateRange === "today" ? "border-teal bg-teal text-white" : "border-ink/15 bg-white text-ink/70 hover:border-teal"}`}>{tr("qp_today")}</button>
         <button onClick={() => setOnlyFavs((v) => !v)}
           className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-800 transition ${onlyFavs ? "border-coral bg-coral text-white" : "border-ink/15 bg-white text-ink/70 hover:border-coral"}`}>
-          ❤️ My List{favs.size ? ` (${favs.size})` : ""}
+          {tr("my_list")}{favs.size ? ` (${favs.size})` : ""}
+        </button>
+
+        <button
+          onClick={() => setShowFilters((v) => !v)}
+          aria-expanded={showFilters}
+          className={`ml-auto inline-flex items-center gap-1.5 rounded-full border-2 px-4 py-1.5 text-sm font-800 transition ${
+            showFilters || activeCount
+              ? "border-grape bg-grape text-white"
+              : "border-ink/15 bg-white text-ink/70 hover:border-grape"
+          }`}
+        >
+          <span>⚙</span>
+          {showFilters ? tr("qp_hide_filters") : tr("qp_filters")}
+          {activeCount > 0 && (
+            <span className={`ml-0.5 rounded-full px-1.5 text-xs ${showFilters || activeCount ? "bg-white/25" : "bg-grape/15 text-grape"}`}>
+              {activeCount}
+            </span>
+          )}
         </button>
       </div>
       {geoMsg && <p className="mb-3 text-sm font-700 text-teal-dark">{geoMsg}</p>}
 
-      {/* Filter panel */}
-      <div className="rounded-blob border border-ink/10 bg-white p-4 shadow-card sm:p-6">
+      {/* Collapsible filter panel */}
+      {showFilters && (
+      <div className="animate-card-in rounded-blob border border-ink/10 bg-white p-4 shadow-card sm:p-6">
         <FilterRow label={tr("f_when")}>
           {DATE_FILTERS.map((d) => (
             <Chip key={d.id} active={dateRange === d.id} onClick={() => setDateRange(d.id)}>
-              {d.label}
+              {dateLabel(d.id)}
             </Chip>
           ))}
         </FilterRow>
 
         <FilterRow label={tr("f_age")}>
-          {AGE_TIERS.map((a) => (
-            <Chip key={a.id} active={ages.has(a.id)} onClick={() => toggle(ages, a.id, setAgesPersist)}>
-              {a.emoji} {a.label} <span className="font-400 opacity-90">{a.sublabel}</span>
-            </Chip>
-          ))}
+          {AGE_TIERS.map((a) => {
+            const L = ageLabel(lang, a.id);
+            return (
+              <Chip key={a.id} active={ages.has(a.id)} onClick={() => toggle(ages, a.id, setAgesPersist)}>
+                {a.emoji} {L.label} <span className="font-400 opacity-90">{L.sublabel}</span>
+              </Chip>
+            );
+          })}
         </FilterRow>
 
         <FilterRow label={tr("f_price")}>
           {PRICE_TIERS.map((p) => (
             <Chip key={p.id} active={prices.has(p.id)} onClick={() => toggle(prices, p.id, setPrices)}>
-              {p.emoji} {p.label}
+              {p.emoji} {priceLabel(lang, p.id)}
             </Chip>
           ))}
         </FilterRow>
@@ -337,7 +367,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
         <FilterRow label={tr("f_area")}>
           {NEIGHBORHOODS.map((n) => (
             <Chip key={n.id} active={hoods.has(n.id)} onClick={() => toggle(hoods, n.id, setHoods)}>
-              {n.label}
+              {hoodLabel(lang, n.id)}
             </Chip>
           ))}
         </FilterRow>
@@ -363,11 +393,12 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
               onClick={clearAll}
               className="text-sm font-700 text-coral underline-offset-2 hover:underline"
             >
-              ✕ {tr("clear_all")} ({activeCount})
+              {tr("clear_all")} ({activeCount})
             </button>
           </div>
         )}
       </div>
+      )}
 
       {/* Results header + view toggle */}
       <div className="mt-6 flex items-center justify-between">
@@ -394,8 +425,8 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
         {filtered.length === 0 ? (
           <div className="rounded-blob border border-dashed border-ink/20 bg-white py-16 text-center text-ink/50">
             <p className="text-2xl">🔍</p>
-            <p className="mt-2 font-700">No events match those filters.</p>
-            <p className="text-sm">Try clearing a filter or two.</p>
+            <p className="mt-2 font-700">{tr("no_match")}</p>
+            <p className="text-sm">{tr("no_match_hint")}</p>
           </div>
         ) : view === "list" ? (
           <>

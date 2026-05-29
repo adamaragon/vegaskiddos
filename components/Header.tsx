@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { t, type Lang } from "@/lib/i18n";
+import { LangToggle } from "./LangToggle";
 
 export function Header({ lang = "en" }: { lang?: Lang }) {
   return (
@@ -38,6 +39,7 @@ export function Header({ lang = "en" }: { lang?: Lang }) {
           >
             ⭐
           </Link>
+          <LangToggle lang={lang} />
           <Link
             href="/submit"
             className="whitespace-nowrap rounded-full bg-coral px-4 py-2 text-white shadow-pop transition hover:bg-coral-dark"

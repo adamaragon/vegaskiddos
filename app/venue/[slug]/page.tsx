@@ -5,17 +5,15 @@ import { getEvents } from "@/lib/data";
 import { venueSlug } from "@/lib/constants";
 import { EventCard } from "@/components/EventCard";
 import { nextOccurrenceISO } from "@/lib/recurrence";
+import { getLang } from "@/lib/lang-server";
+import type { Lang } from "@/lib/i18n";
 
-export const revalidate = 600;
+// Dynamic so the vk_lang cookie can switch venue pages to Spanish; the
+// Airtable fetch stays cached (revalidate: 600).
+export const dynamic = "force-dynamic";
 
-export async function generateStaticParams() {
-  const events = await getEvents();
-  const slugs = new Set(events.map((e) => venueSlug(e.venue)).filter(Boolean));
-  return [...slugs].map((slug) => ({ slug }));
-}
-
-async function venueEvents(slug: string) {
-  const events = await getEvents();
+async function venueEvents(slug: string, lang: Lang = "en") {
+  const events = await getEvents(lang);
   const list = events
     .filter((e) => venueSlug(e.venue) === slug)
     .sort((a, b) => nextOccurrenceISO(a.start, a.recurrence).localeCompare(nextOccurrenceISO(b.start, b.recurrence)));
@@ -35,7 +33,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function VenuePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { name, list } = await venueEvents(slug);
+  const lang = await getLang();
+  const { name, list } = await venueEvents(slug, lang);
   if (!name) notFound();
 
   return (

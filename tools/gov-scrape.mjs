@@ -301,4 +301,20 @@ if (dryRun) {
   console.log(`upserted -> created ${r.created}, updated ${r.updated}`);
   const deduped = await dedupeApproved();
   console.log(`dedupe -> ${deduped} duplicate(s) removed`);
+
+  // Spanish translations for any new/untranslated events (no-op without a key).
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      const { backfillTranslations } = await import("../lib/scrape/translate.mjs");
+      await backfillTranslations({
+        apiKey: process.env.OPENAI_API_KEY,
+        token: process.env.AIRTABLE_TOKEN,
+        base: process.env.AIRTABLE_BASE_ID,
+        table: process.env.AIRTABLE_TABLE_NAME || "Events",
+        log: (m) => console.log(m),
+      });
+    } catch (e) {
+      console.log(`translate -> skipped: ${e.message}`);
+    }
+  }
 }

@@ -11,9 +11,8 @@ import type { Viewport } from "next";
 import Script from "next/script";
 import Link from "next/link";
 
-// Privacy-friendly, cookieless analytics — only loads when a domain is set
-// (NEXT_PUBLIC_PLAUSIBLE_DOMAIN). Zero cost / no tracking until enabled.
-const PLAUSIBLE = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
+// Privacy-friendly, cookieless analytics (Plausible). Site-specific script.
+const PLAUSIBLE_SRC = "https://plausible.io/js/pa-pzyYa6yNV14PH2tAZYFUG.js";
 
 export const viewport: Viewport = {
   themeColor: "#FF6B5E",
@@ -67,9 +66,10 @@ export default async function RootLayout({
   return (
     <html lang={lang} className={`${fredoka.variable} ${nunito.variable}`}>
       <body className="font-body min-h-screen antialiased">
-        {PLAUSIBLE && (
-          <Script defer data-domain={PLAUSIBLE} src="https://plausible.io/js/script.js" strategy="afterInteractive" />
-        )}
+        <Script defer src={PLAUSIBLE_SRC} strategy="afterInteractive" />
+        <Script id="plausible-init" strategy="afterInteractive">
+          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
+        </Script>
         <PWARegister />
         <CrayonDefs />
         <Header lang={lang} />

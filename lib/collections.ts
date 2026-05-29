@@ -58,10 +58,13 @@ export function getCollectionMeta(slug: string) {
   return COLLECTIONS.find((c) => c.slug === slug);
 }
 
-export async function getCollection(slug: string): Promise<{ meta: Collection; events: KidEvent[] } | null> {
+export async function getCollection(
+  slug: string,
+  lang: import("./i18n").Lang = "en"
+): Promise<{ meta: Collection; events: KidEvent[] } | null> {
   const meta = getCollectionMeta(slug);
   if (!meta) return null;
   const now = new Date();
-  const events = (await getEvents()).filter((e) => meta.predicate(e, now));
+  const events = (await getEvents(lang)).filter((e) => meta.predicate(e, now));
   return { meta, events };
 }

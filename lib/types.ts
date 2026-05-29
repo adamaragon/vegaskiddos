@@ -4,6 +4,8 @@ export interface KidEvent {
   id: string;
   title: string;
   description: string;
+  titleEs?: string; // Spanish translation (populated at scrape time)
+  descriptionEs?: string; // Spanish translation
   venue: string;
   address: string;
   neighborhood: NeighborhoodId;

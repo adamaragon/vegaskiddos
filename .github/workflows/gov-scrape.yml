@@ -24,4 +24,6 @@ jobs:
         env:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          # Optional: enables auto-translation of new events to Spanish.
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: node tools/gov-scrape.mjs

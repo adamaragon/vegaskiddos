@@ -8,13 +8,13 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { JsonLd } from "@/components/JsonLd";
 import { nextOccurrenceISO } from "@/lib/recurrence";
 import { AdminEventControls } from "@/components/AdminEventControls";
+import { getLang } from "@/lib/lang-server";
+import { t, ageLabel, priceLabel, hoodLabel } from "@/lib/i18n";
 
-export const revalidate = 600;
-
-export async function generateStaticParams() {
-  const events = await getEvents();
-  return events.map((e) => ({ id: e.id }));
-}
+// Rendered dynamically so the vk_lang cookie can switch the page to Spanish.
+// The Airtable fetch underneath is still cached (revalidate: 600), so pages
+// stay fast and crawlers get fully server-rendered HTML.
+export const dynamic = "force-dynamic";
 
 const SITE = "https://vegaskiddos.com";
 
@@ -52,12 +52,14 @@ export default async function EventPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const event = await getEvent(id);
+  const lang = await getLang();
+  const event = await getEvent(id, lang);
   if (!event) notFound();
 
   const price = priceTier(event.priceTier);
   const hood = neighborhood(event.neighborhood);
-  const allEvents = await getEvents();
+  const hoodName = hoodLabel(lang, event.neighborhood);
+  const allEvents = await getEvents(lang);
   const moreAtVenue = event.venue
     ? allEvents.filter((e) => e.id !== event.id && e.venue === event.venue).slice(0, 3)
     : [];
@@ -117,7 +119,7 @@ export default async function EventPage({
         href="/"
         className="text-sm font-700 text-teal-dark hover:underline"
       >
-        ← All events
+        {t(lang, "ev_back")}
       </Link>
 
       <div className="mt-3">
@@ -127,12 +129,12 @@ export default async function EventPage({
       <div className="mt-4 overflow-hidden rounded-blob border border-ink/10 bg-white shadow-card">
         <div className="bg-gradient-to-br from-teal to-grape p-8 text-white">
           <p className="text-sm font-700 uppercase tracking-wide text-white/80">
-            {event.recurrence ? "Next: " : ""}{formatWhen(whenStart)}
+            {event.recurrence ? `${t(lang, "ev_next")} ` : ""}{formatWhen(whenStart)}
             {event.end && !event.recurrence ? ` – ${formatWhen(event.end).split(", ").pop()}` : ""}
           </p>
           {event.recurrence && (
             <span className="mt-2 inline-block rounded-full bg-white/25 px-3 py-1 text-sm font-800">
-              🔁 Repeats {event.recurrence}
+              {t(lang, "ev_repeats")} {event.recurrence}
             </span>
           )}
           <h1 className="mt-2 font-display text-3xl font-700 sm:text-4xl">
@@ -150,30 +152,31 @@ export default async function EventPage({
         <div className="p-6 sm:p-8">
           <div className="flex flex-wrap gap-2">
             <span className="rounded-full bg-grape/10 px-3 py-1 text-sm font-700 text-grape">
-              {hood.label}
+              {hoodName}
             </span>
             <span className="rounded-full bg-sand px-3 py-1 text-sm font-700 text-ink/70">
-              {price.emoji} {event.priceText || price.label}
+              {price.emoji} {event.priceText || priceLabel(lang, event.priceTier)}
             </span>
             {event.indoor !== undefined && (
               <span className="rounded-full bg-sand px-3 py-1 text-sm font-700 text-ink/70">
-                {event.indoor ? "🏠 Indoor" : "🌳 Outdoor"}
+                {event.indoor ? t(lang, "indoor") : t(lang, "outdoor")}
               </span>
             )}
             <span className="rounded-full bg-sand px-3 py-1 text-sm font-700 text-ink/70">
-              via {event.source}
+              {t(lang, "ev_via")} {event.source}
             </span>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {event.ageTiers.map((aid) => {
               const a = ageTier(aid);
+              const L = ageLabel(lang, aid);
               return (
                 <span
                   key={aid}
                   className="rounded-full border-2 border-teal/40 px-3 py-1 text-sm font-700 text-teal-dark"
                 >
-                  {a.emoji} {a.label} <span className="opacity-60">{a.sublabel}</span>
+                  {a.emoji} {L.label} <span className="opacity-60">{L.sublabel}</span>
                 </span>
               );
             })}
@@ -185,7 +188,7 @@ export default async function EventPage({
 
           {event.address && (
             <p className="mt-6 text-sm text-ink/60">
-              <span className="font-700">Address:</span> {event.address}
+              <span className="font-700">{t(lang, "ev_address")}</span> {event.address}
             </p>
           )}
 
@@ -196,7 +199,7 @@ export default async function EventPage({
               rel="noopener noreferrer"
               className="rounded-full bg-teal px-5 py-3 font-800 text-white shadow-pop transition hover:bg-teal-dark"
             >
-              🗺️ Get directions
+              {t(lang, "ev_directions")}
             </a>
             <a
               href={gcalHref}
@@ -204,7 +207,7 @@ export default async function EventPage({
               rel="noopener noreferrer"
               className="rounded-full bg-grape px-5 py-3 font-800 text-white shadow-pop transition hover:bg-grape-dark"
             >
-              📅 Add to calendar
+              {t(lang, "ev_calendar")}
             </a>
             {event.url && (
               <a
@@ -213,27 +216,26 @@ export default async function EventPage({
                 rel="noopener noreferrer"
                 className="rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop transition hover:bg-coral-dark"
               >
-                🔗 Event details / RSVP
+                {t(lang, "ev_rsvp")}
               </a>
             )}
           </div>
 
           <div className="mt-6 border-t border-ink/10 pt-5">
-            <p className="mb-2 text-sm font-700 text-ink/60">Share this event</p>
+            <p className="mb-2 text-sm font-700 text-ink/60">{t(lang, "ev_share")}</p>
             <ShareButtons url={shareUrl} title={event.title}
               text={`${event.title} — a kid-friendly event in ${hood.label}, Las Vegas`} />
           </div>
 
           <p className="mt-6 text-xs text-ink/40">
-            Vegas Kiddos aggregates public listings. Always confirm date, time, and
-            price with the venue before heading out.
+            {t(lang, "ev_disclaimer")}
           </p>
         </div>
       </div>
 
       {moreAtVenue.length > 0 && (
         <section className="mt-10">
-          <h2 className="font-display text-2xl font-700">More at {event.venue}</h2>
+          <h2 className="font-display text-2xl font-700">{t(lang, "ev_more_at")} {event.venue}</h2>
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {moreAtVenue.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
           </div>
@@ -242,7 +244,7 @@ export default async function EventPage({
 
       {moreNearby.length > 0 && (
         <section className="mt-10">
-          <h2 className="font-display text-2xl font-700">More in {hood.label}</h2>
+          <h2 className="font-display text-2xl font-700">{t(lang, "ev_more_in")} {hoodName}</h2>
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {moreNearby.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
           </div>
