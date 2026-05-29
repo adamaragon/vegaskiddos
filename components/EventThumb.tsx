@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { KidEvent } from "@/lib/types";
 
 // Picks a playful category visual (emoji + brand gradient) from the event text,
@@ -31,12 +32,13 @@ export function EventThumb({ event }: { event: KidEvent }) {
   if (event.image) {
     return (
       <div className="relative h-28 w-full overflow-hidden bg-sand">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={event.image}
           alt=""
-          loading="lazy"
-          className="h-full w-full object-cover transition group-hover:scale-105"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover transition group-hover:scale-105"
+          unoptimized={false}
         />
       </div>
     );

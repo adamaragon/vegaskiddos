@@ -25,7 +25,7 @@ export function formatWhen(iso: string) {
   });
 }
 
-export function EventCard({ event, index = 0 }: { event: KidEvent; index?: number }) {
+export function EventCard({ event, index = 0, distanceMi }: { event: KidEvent; index?: number; distanceMi?: number }) {
   const price = priceTier(event.priceTier);
   const hood = neighborhood(event.neighborhood);
   const when = nextOccurrenceISO(event.start, event.recurrence);
@@ -40,6 +40,11 @@ export function EventCard({ event, index = 0 }: { event: KidEvent; index?: numbe
       <div className="relative">
         <EventThumb event={event} />
         <FavButton id={event.id} className="absolute right-2 top-2" />
+        {typeof distanceMi === "number" && (
+          <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-800 text-ink/70 shadow-pop backdrop-blur">
+            📍 {distanceMi < 10 ? distanceMi.toFixed(1) : Math.round(distanceMi)} mi
+          </span>
+        )}
       </div>
       <div className="flex items-start justify-between gap-2 p-5 pb-3">
         <div>

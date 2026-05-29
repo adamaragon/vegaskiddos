@@ -5,7 +5,9 @@
 //
 // Env: AIRTABLE_TOKEN, AIRTABLE_BASE_ID, [RESEND_API_KEY], [DIGEST_FROM].
 
+import crypto from "crypto";
 const AT = process.env.AIRTABLE_TOKEN, BASE = process.env.AIRTABLE_BASE_ID;
+const unsubToken = (email) => crypto.createHash("sha256").update(email.toLowerCase() + BASE).digest("hex").slice(0, 16);
 if (!AT || !BASE) { console.error("AIRTABLE_TOKEN / AIRTABLE_BASE_ID required"); process.exit(1); }
 const FROM = process.env.DIGEST_FROM || "Vegas Kiddos <hello@vegaskiddos.com>";
 const SITE = "https://vegaskiddos.com";
@@ -62,7 +64,7 @@ const html = `<!doctype html><html><body style="margin:0;background:#FFF8EE;font
     <div style="text-align:center;margin-top:20px">
       <a href="${SITE}" style="background:#FF6B5E;color:#fff;padding:12px 24px;border-radius:999px;font-weight:800;text-decoration:none">See all events →</a>
     </div>
-    <p style="text-align:center;color:#999;font-size:12px;margin-top:24px">Vegas Kiddos · a Threesided Studios project · always confirm details with the venue</p>
+    <p style="text-align:center;color:#999;font-size:12px;margin-top:24px">Vegas Kiddos · a Threesided Studios project · always confirm details with the venue<br>{{UNSUB}}</p>
   </div></body></html>`;
 
 if (!process.env.RESEND_API_KEY) {
@@ -72,10 +74,12 @@ if (!process.env.RESEND_API_KEY) {
 
 let sent = 0;
 for (const to of subs) {
+  const unsub = `${SITE}/unsubscribe?e=${encodeURIComponent(to)}&t=${unsubToken(to)}`;
+  const personalHtml = html.replace("{{UNSUB}}", `<a href="${unsub}" style="color:#999">Unsubscribe</a>`);
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: FROM, to, subject: `🌵 ${events.length} kid events in Las Vegas this week`, html }),
+    body: JSON.stringify({ from: FROM, to, subject: `🌵 ${events.length} kid events in Las Vegas this week`, html: personalHtml, headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }),
   });
   if (r.ok) sent++; else console.error("send fail", to, r.status, (await r.text()).slice(0, 120));
 }

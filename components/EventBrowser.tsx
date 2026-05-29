@@ -36,6 +36,26 @@ const CalendarView = dynamic(() => import("./CalendarView").then((m) => m.Calend
 
 type View = "list" | "calendar" | "map";
 
+// Infer indoor/outdoor from venue + title keywords (most scraped events don't
+// carry the flag). Returns "indoor" | "outdoor" | null.
+const INDOOR_RE = /library|museum|\bcenter\b|indoor|gallery|theat(er|re)|studio|\bgym\b|arena|hall|academy|clinic|store|shop|mall/i;
+const OUTDOOR_RE = /\bpark\b|trail|\bpool\b|splash|garden|farmers? market|festival|outdoor|plaza|field|preserve|\bhike\b|amphitheater|ballfield|playground|courtyard/i;
+function eventEnv(e: KidEvent): "indoor" | "outdoor" | null {
+  if (e.indoor === true) return "indoor";
+  if (e.indoor === false) return "outdoor";
+  const t = `${e.title} ${e.venue}`;
+  if (OUTDOOR_RE.test(t)) return "outdoor";
+  if (INDOOR_RE.test(t)) return "indoor";
+  return null;
+}
+// Distance in miles between two lat/lng (haversine).
+function milesBetween(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const R = 3959, toR = (d: number) => (d * Math.PI) / 180;
+  const dLat = toR(b.lat - a.lat), dLng = toR(b.lng - a.lng);
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(toR(a.lat)) * Math.cos(toR(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+}
+
 type DateRangeId = "any" | "today" | "weekend" | "week" | "month" | "next-month";
 const DATE_FILTERS: { id: DateRangeId; label: string }[] = [
   { id: "any", label: "Any time" },
@@ -119,16 +139,40 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
   const [favs, setFavs] = useState<Set<string>>(new Set());
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [geoMsg, setGeoMsg] = useState("");
+  const [q, setQ] = useState("");
+  const [env, setEnv] = useState<"any" | "indoor" | "outdoor">("any");
 
-  // Personalization: restore saved kid ages once, keep favorites in sync.
+  // On mount: hydrate filters from the URL (shareable links), else saved ages.
   useEffect(() => {
-    const saved = getSavedAges();
-    if (saved.length) setAges(new Set(saved as AgeTierId[]));
+    const p = new URLSearchParams(window.location.search);
+    const has = [...p.keys()].length > 0;
+    if (p.get("ages")) setAges(new Set(p.get("ages")!.split(",") as AgeTierId[]));
+    else if (!has) { const saved = getSavedAges(); if (saved.length) setAges(new Set(saved as AgeTierId[])); }
+    if (p.get("price")) setPrices(new Set(p.get("price")!.split(",") as PriceTierId[]));
+    if (p.get("area")) setHoods(new Set(p.get("area")!.split(",") as NeighborhoodId[]));
+    if (p.get("when")) setDateRange(p.get("when") as DateRangeId);
+    if (p.get("q")) setQ(p.get("q")!);
+    if (p.get("env")) setEnv(p.get("env") as "indoor" | "outdoor");
+    if (p.get("fav") === "1") setOnlyFavs(true);
     const sync = () => setFavs(new Set(getFavorites()));
     sync();
     window.addEventListener("vk-prefs", sync);
     return () => window.removeEventListener("vk-prefs", sync);
   }, []);
+
+  // Keep the URL in sync so any filter view is shareable/bookmarkable.
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (ages.size) p.set("ages", [...ages].join(","));
+    if (prices.size) p.set("price", [...prices].join(","));
+    if (hoods.size) p.set("area", [...hoods].join(","));
+    if (dateRange !== "any") p.set("when", dateRange);
+    if (q.trim()) p.set("q", q.trim());
+    if (env !== "any") p.set("env", env);
+    if (onlyFavs) p.set("fav", "1");
+    const qs = p.toString();
+    window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
+  }, [ages, prices, hoods, dateRange, q, env, onlyFavs]);
 
   function setAgesPersist(next: Set<AgeTierId>) {
     setAges(next);
@@ -171,12 +215,15 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
   const [visible, setVisible] = useState(PAGE);
 
   const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
     const list = events.filter((e) => {
       if (onlyFavs && !favs.has(e.id)) return false;
       if (ages.size && !e.ageTiers.some((a) => ages.has(a))) return false;
       if (prices.size && !prices.has(e.priceTier)) return false;
       if (hoods.size && !hoods.has(e.neighborhood)) return false;
       if (!inDateRange(e.start, dateRange)) return false;
+      if (env !== "any" && eventEnv(e) !== env) return false;
+      if (needle && !`${e.title} ${e.description} ${e.venue}`.toLowerCase().includes(needle)) return false;
       return true;
     });
     if (coords) {
@@ -185,10 +232,10 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
       list.sort((a, b) => d(a) - d(b));
     }
     return list;
-  }, [events, ages, prices, hoods, dateRange, onlyFavs, favs, coords]);
+  }, [events, ages, prices, hoods, dateRange, onlyFavs, favs, coords, q, env]);
 
   // Reset the visible window whenever the filter set changes.
-  useEffect(() => setVisible(PAGE), [ages, prices, hoods, dateRange, onlyFavs, coords]);
+  useEffect(() => setVisible(PAGE), [ages, prices, hoods, dateRange, onlyFavs, coords, q, env]);
 
   // Auto-load more as the sentinel scrolls into view (infinite scroll).
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -206,7 +253,8 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
   }, [view, filtered.length]);
 
   const activeCount =
-    ages.size + prices.size + hoods.size + (dateRange !== "any" ? 1 : 0);
+    ages.size + prices.size + hoods.size + (dateRange !== "any" ? 1 : 0) +
+    (env !== "any" ? 1 : 0) + (q.trim() ? 1 : 0) + (onlyFavs ? 1 : 0);
 
   function clearAll() {
     setAgesPersist(new Set());
@@ -218,10 +266,24 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
     setOnlyFavs(false);
     setCoords(null);
     setGeoMsg("");
+    setQ("");
+    setEnv("any");
   }
 
   return (
     <div>
+      {/* Search */}
+      <div className="mb-3">
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="🔍 Search events, venues, activities…"
+          aria-label="Search events"
+          className="w-full rounded-full border-2 border-ink/15 bg-white px-5 py-3 font-700 text-ink/80 outline-none transition focus:border-teal"
+        />
+      </div>
+
       {/* Quick picks */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="font-display text-sm font-600 text-ink/50">Quick picks:</span>
@@ -261,6 +323,12 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
             <Chip key={p.id} active={prices.has(p.id)} onClick={() => toggle(prices, p.id, setPrices)}>
               {p.emoji} {p.label}
             </Chip>
+          ))}
+        </FilterRow>
+
+        <FilterRow label="Where">
+          {([["any", "Anywhere"], ["indoor", "🏠 Indoor"], ["outdoor", "🌳 Outdoor"]] as const).map(([id, label]) => (
+            <Chip key={id} active={env === id} onClick={() => setEnv(id)}>{label}</Chip>
           ))}
         </FilterRow>
 
@@ -332,7 +400,12 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
             <h2 className="sr-only">Upcoming events</h2>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.slice(0, visible).map((e, i) => (
-                <EventCard key={e.id} event={e} index={i} />
+                <EventCard
+                  key={e.id}
+                  event={e}
+                  index={i}
+                  distanceMi={coords && e.lat && e.lng ? milesBetween(coords, { lat: e.lat, lng: e.lng }) : undefined}
+                />
               ))}
             </div>
             {visible < filtered.length && (
