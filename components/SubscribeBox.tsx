@@ -37,13 +37,13 @@ export function SubscribeBox({ compact = false }: { compact?: boolean }) {
         type="email"
         required
         placeholder="you@email.com"
-        className={`min-w-0 flex-1 rounded-full border-2 border-ink/15 bg-white px-4 outline-none focus:border-teal ${compact ? "py-2 text-sm" : "py-2.5"}`}
+        className={`w-full min-w-[12rem] flex-1 basis-full rounded-full border-2 border-ink/15 bg-white px-4 outline-none focus:border-teal sm:basis-0 ${compact ? "py-2 text-sm" : "py-2.5"}`}
       />
       <select
         name="neighborhood"
         aria-label="Your area (optional)"
         defaultValue=""
-        className={`min-w-0 rounded-full border-2 border-ink/15 bg-white px-3 text-ink/70 outline-none focus:border-teal ${compact ? "py-2 text-sm" : "py-2.5"}`}
+        className={`flex-1 rounded-full border-2 border-ink/15 bg-white px-3 text-ink/70 outline-none focus:border-teal sm:flex-none ${compact ? "py-2 text-sm" : "py-2.5"}`}
       >
         <option value="">All areas</option>
         {NEIGHBORHOODS.map((n) => (
