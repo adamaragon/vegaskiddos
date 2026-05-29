@@ -234,7 +234,24 @@ async function runRoundup() {
 if (DRY && (!PAGE_ID || !PAGE_TOKEN)) {
   console.log("FB_PAGE_ID / FB_PAGE_TOKEN not set — compose-only preview (no posting).\n");
 }
+// ── verify: report token type + expiry without posting ─────────────────────
+async function runVerify() {
+  const get = async (path) => {
+    try { return await (await fetch(`${GRAPH}/${path}${path.includes("?") ? "&" : "?"}access_token=${encodeURIComponent(PAGE_TOKEN)}`)).json(); }
+    catch (e) { return { error: String(e) }; }
+  };
+  const me = await get("me?fields=id,name,category");
+  const dbg = await get(`debug_token?input_token=${encodeURIComponent(PAGE_TOKEN)}`);
+  const info = dbg?.data || {};
+  const exp = info.expires_at;
+  console.log("identity (/me):", JSON.stringify(me));
+  console.log("token type:", info.type || "(unknown)");
+  console.log("expires_at:", exp === 0 ? "0 → never expires (long-lived ✅)" : exp ? new Date(exp * 1000).toISOString() : "(debug_token unavailable with this token)");
+  console.log(me?.category ? `✅ Valid PAGE token for "${me.name}" (id ${me.id})` : "⚠️ This is NOT a Page token (no category on /me).");
+}
+
 if (mode === "roundup") await runRoundup();
 else if (mode === "daily") await runDaily();
 else if (mode === "schedule") await runSchedule();
-else { console.error(`Unknown mode "${mode}". Use: daily | roundup | schedule`); process.exit(1); }
+else if (mode === "verify") await runVerify();
+else { console.error(`Unknown mode "${mode}". Use: daily | roundup | schedule | verify`); process.exit(1); }

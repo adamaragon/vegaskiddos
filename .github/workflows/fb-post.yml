@@ -17,10 +17,10 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "daily = post now · roundup = weekend list · schedule = queue a batch"
+        description: "daily = post now · roundup = weekend list · schedule = queue a batch · verify = check token"
         type: choice
         default: schedule
-        options: [schedule, daily, roundup]
+        options: [schedule, daily, roundup, verify]
       count:
         description: "How many posts to queue (schedule mode only)"
         default: "14"
