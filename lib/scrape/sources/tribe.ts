@@ -5,7 +5,7 @@
 import type { ScrapedEvent, SourceResult } from "../types";
 import {
   classifyAges,
-  classifyPrice,
+  resolvePrice,
   isKidRelevant,
   nearestNeighborhood,
   neighborhoodFromZip,
@@ -78,11 +78,13 @@ export function makeTribeAdapter(opts: {
           const v = e.venue || {};
           const lat = typeof v.geo_lat === "number" ? v.geo_lat : null;
           const lng = typeof v.geo_lng === "number" ? v.geo_lng : null;
+          const venueName = stripHtml(v.venue) || "";
+          const price = resolvePrice(e.cost, `${title} ${venueName} ${desc}`);
           events.push({
             externalId: e.global_id || e.url || `${opts.source}:${title}:${e.start_date}`,
             title,
             description: desc.slice(0, 600),
-            venue: stripHtml(v.venue) || "",
+            venue: venueName,
             address: [v.address, v.city, v.zip].filter(Boolean).join(", "),
             neighborhood: nearestNeighborhood(lat, lng) ?? neighborhoodFromZip(v.zip),
             lat,
@@ -90,8 +92,8 @@ export function makeTribeAdapter(opts: {
             start: toIso(e.start_date)!,
             end: toIso(e.end_date),
             ageTiers: classifyAges(blob),
-            priceTier: classifyPrice(e.cost, blob),
-            priceText: e.cost ? stripHtml(e.cost) : undefined,
+            priceTier: price.tier,
+            priceText: (e.cost ? stripHtml(e.cost) : undefined) || price.text,
             url: e.url,
             image: e.image && typeof e.image === "object" ? e.image.url : undefined,
             source: opts.source,

@@ -86,6 +86,30 @@ export function classifyPrice(
   return "premium";
 }
 
+// Venues that charge admission — used when the feed gives no explicit price so
+// we don't mislabel a paid attraction as "Free".
+const PAID_VENUES: { re: RegExp; tier: PriceTierId; text: string }[] = [
+  { re: /springs preserve/i, tier: "under10", text: "~$9.95 admission" },
+  { re: /discovery children'?s? museum|discoverykids/i, tier: "mid", text: "~$18.50 admission" },
+  { re: /natural history museum/i, tier: "mid", text: "~$12 admission" },
+  { re: /cowabunga|wet ?'?n ?'?wild|water ?park/i, tier: "premium", text: "$25+ admission" },
+  { re: /shark reef|aquarium of/i, tier: "mid", text: "~$20 admission" },
+  { re: /neon museum|mob museum/i, tier: "mid", text: "paid admission" },
+];
+
+// Resolve price: an explicit non-free price in the text always wins; otherwise
+// fall back to a known paid-venue rate; otherwise whatever was parsed (free/null).
+export function resolvePrice(
+  cost: string | null | undefined,
+  text: string
+): { tier: PriceTierId | null; text?: string } {
+  const parsed = classifyPrice(cost, text);
+  if (parsed && parsed !== "free") return { tier: parsed };
+  const ov = PAID_VENUES.find((v) => v.re.test(text));
+  if (ov) return { tier: ov.tier, text: ov.text };
+  return { tier: parsed };
+}
+
 export function classifyAges(text: string): AgeTierId[] {
   const t = text.toLowerCase();
   const ages = new Set<AgeTierId>();
