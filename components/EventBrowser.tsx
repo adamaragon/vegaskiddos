@@ -35,6 +35,54 @@ const CalendarView = dynamic(() => import("./CalendarView").then((m) => m.Calend
 
 type View = "list" | "calendar" | "map";
 
+type DateRangeId = "any" | "today" | "weekend" | "week" | "month" | "next-month";
+const DATE_FILTERS: { id: DateRangeId; label: string }[] = [
+  { id: "any", label: "Any time" },
+  { id: "today", label: "Today" },
+  { id: "weekend", label: "This weekend" },
+  { id: "week", label: "This week" },
+  { id: "month", label: "This month" },
+  { id: "next-month", label: "Next month" },
+];
+
+// Returns true if an event's ISO start falls within the chosen range.
+function inDateRange(iso: string, range: DateRangeId): boolean {
+  if (range === "any") return true;
+  const t = new Date(iso).getTime();
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const DAY = 86400000;
+  switch (range) {
+    case "today":
+      return t >= startToday && t < startToday + DAY;
+    case "weekend": {
+      // Upcoming Saturday 00:00 through Monday 00:00.
+      const dow = now.getDay(); // 0 Sun … 6 Sat
+      const toSat = (6 - dow + 7) % 7;
+      const sat = startToday + toSat * DAY;
+      return t >= Math.max(sat, startToday) && t < sat + 2 * DAY;
+    }
+    case "week": {
+      // Today through end of Sunday (end of the current week).
+      const dow = now.getDay();
+      const toSun = (7 - dow) % 7; // days until Sunday
+      const end = startToday + (toSun + 1) * DAY;
+      return t >= startToday && t < end;
+    }
+    case "month": {
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
+      return t >= startToday && t < end;
+    }
+    case "next-month": {
+      const start = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
+      const end = new Date(now.getFullYear(), now.getMonth() + 2, 1).getTime();
+      return t >= start && t < end;
+    }
+    default:
+      return true;
+  }
+}
+
 function Chip({
   active,
   onClick,
@@ -63,6 +111,7 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
   const [ages, setAges] = useState<Set<AgeTierId>>(new Set());
   const [prices, setPrices] = useState<Set<PriceTierId>>(new Set());
   const [hoods, setHoods] = useState<Set<NeighborhoodId>>(new Set());
+  const [dateRange, setDateRange] = useState<DateRangeId>("any");
   const [zip, setZip] = useState("");
   const [zipNote, setZipNote] = useState("");
 
@@ -96,12 +145,13 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
       if (ages.size && !e.ageTiers.some((a) => ages.has(a))) return false;
       if (prices.size && !prices.has(e.priceTier)) return false;
       if (hoods.size && !hoods.has(e.neighborhood)) return false;
+      if (!inDateRange(e.start, dateRange)) return false;
       return true;
     });
-  }, [events, ages, prices, hoods]);
+  }, [events, ages, prices, hoods, dateRange]);
 
   // Reset the visible window whenever the filter set changes.
-  useEffect(() => setVisible(PAGE), [ages, prices, hoods]);
+  useEffect(() => setVisible(PAGE), [ages, prices, hoods, dateRange]);
 
   // Auto-load more as the sentinel scrolls into view (infinite scroll).
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -118,32 +168,41 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
     return () => io.disconnect();
   }, [view, filtered.length]);
 
-  const activeCount = ages.size + prices.size + hoods.size;
+  const activeCount =
+    ages.size + prices.size + hoods.size + (dateRange !== "any" ? 1 : 0);
+
+  function clearAll() {
+    setAges(new Set());
+    setPrices(new Set());
+    setHoods(new Set());
+    setDateRange("any");
+    setZip("");
+    setZipNote("");
+  }
 
   return (
     <div>
       {/* Filter panel */}
-      <div className="rounded-blob border border-ink/10 bg-white p-5 shadow-card">
+      <div className="rounded-blob border border-ink/10 bg-white p-4 shadow-card sm:p-6">
+        <FilterRow label="When">
+          {DATE_FILTERS.map((d) => (
+            <Chip key={d.id} active={dateRange === d.id} onClick={() => setDateRange(d.id)}>
+              {d.label}
+            </Chip>
+          ))}
+        </FilterRow>
+
         <FilterRow label="Age">
           {AGE_TIERS.map((a) => (
-            <Chip
-              key={a.id}
-              active={ages.has(a.id)}
-              onClick={() => toggle(ages, a.id, setAges)}
-            >
-              {a.emoji} {a.label}{" "}
-              <span className="font-400 opacity-90">{a.sublabel}</span>
+            <Chip key={a.id} active={ages.has(a.id)} onClick={() => toggle(ages, a.id, setAges)}>
+              {a.emoji} {a.label} <span className="font-400 opacity-90">{a.sublabel}</span>
             </Chip>
           ))}
         </FilterRow>
 
         <FilterRow label="Price">
           {PRICE_TIERS.map((p) => (
-            <Chip
-              key={p.id}
-              active={prices.has(p.id)}
-              onClick={() => toggle(prices, p.id, setPrices)}
-            >
+            <Chip key={p.id} active={prices.has(p.id)} onClick={() => toggle(prices, p.id, setPrices)}>
               {p.emoji} {p.label}
             </Chip>
           ))}
@@ -151,42 +210,36 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
 
         <FilterRow label="Area">
           {NEIGHBORHOODS.map((n) => (
-            <Chip
-              key={n.id}
-              active={hoods.has(n.id)}
-              onClick={() => toggle(hoods, n.id, setHoods)}
-            >
+            <Chip key={n.id} active={hoods.has(n.id)} onClick={() => toggle(hoods, n.id, setHoods)}>
               {n.label}
             </Chip>
           ))}
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm text-ink/40">or</span>
+        </FilterRow>
+
+        {/* ZIP on its own clean row */}
+        <FilterRow label="Near you">
+          <div className="flex flex-wrap items-center gap-2">
             <input
               inputMode="numeric"
               value={zip}
               onChange={(e) => applyZip(e.target.value)}
-              placeholder="📍 ZIP code"
+              placeholder="Enter ZIP code"
               aria-label="Find events near a ZIP code"
-              className="w-32 rounded-full border-2 border-ink/15 bg-white px-3.5 py-1.5 text-sm font-700 text-ink/80 outline-none transition focus:border-teal"
+              className="w-40 rounded-full border-2 border-ink/15 bg-white px-4 py-1.5 text-sm font-700 text-ink/80 outline-none transition focus:border-teal"
             />
+            {zipNote && <span className="text-sm font-700 text-teal-dark">{zipNote}</span>}
           </div>
         </FilterRow>
 
-        {zipNote && <p className="mt-1 text-sm font-700 text-teal-dark">{zipNote}</p>}
-
         {activeCount > 0 && (
-          <button
-            onClick={() => {
-              setAges(new Set());
-              setPrices(new Set());
-              setHoods(new Set());
-              setZip("");
-              setZipNote("");
-            }}
-            className="mt-1 block text-sm font-700 text-coral underline-offset-2 hover:underline"
-          >
-            Clear all filters ({activeCount})
-          </button>
+          <div className="mt-3 border-t border-ink/10 pt-3">
+            <button
+              onClick={clearAll}
+              className="text-sm font-700 text-coral underline-offset-2 hover:underline"
+            >
+              ✕ Clear all filters ({activeCount})
+            </button>
+          </div>
         )}
       </div>
 
@@ -253,11 +306,11 @@ function FilterRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mb-3 flex flex-col gap-2 last:mb-0 sm:flex-row sm:items-center">
-      <span className="w-14 shrink-0 font-display text-sm font-600 text-ink/70">
+    <div className="mb-3 flex flex-col gap-1.5 last:mb-0 sm:flex-row sm:items-start sm:gap-3">
+      <span className="shrink-0 pt-1.5 font-display text-sm font-600 text-ink/50 sm:w-20">
         {label}
       </span>
-      <div className="flex flex-wrap gap-2">{children}</div>
+      <div className="flex flex-1 flex-wrap gap-2">{children}</div>
     </div>
   );
 }
