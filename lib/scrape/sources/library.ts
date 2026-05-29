@@ -69,12 +69,14 @@ function unescapeIcal(v: string): string {
     .trim();
 }
 
-// "20260603T100000Z" -> ISO with Pacific offset (treat the wall-clock time as
-// local LV time; the trailing Z in this feed is the venue's local time).
+// "20260602T173000Z" -> proper UTC ISO. The trailing Z is genuine UTC, so we
+// keep it as UTC and let display (America/Los_Angeles) convert (17:30Z = 10:30 AM
+// PDT). Floating times (no Z) are assumed Pacific.
 function icalToIso(dt: string): string | undefined {
-  const m = dt.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/);
+  const m = dt.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/);
   if (!m) return undefined;
-  const [, y, mo, d, h, mi, s] = m;
+  const [, y, mo, d, h, mi, s, z] = m;
+  if (z) return `${y}-${mo}-${d}T${h}:${mi}:${s}Z`;
   const month = Number(mo);
   const offset = month >= 3 && month <= 10 ? "-07:00" : "-08:00"; // rough DST
   return `${y}-${mo}-${d}T${h}:${mi}:${s}${offset}`;

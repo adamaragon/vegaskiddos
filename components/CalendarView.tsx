@@ -106,15 +106,15 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
     <div>
       <div className="rounded-blob border border-ink/10 bg-white p-3 shadow-card sm:p-5">
         {/* Month nav */}
-        <div className="mb-3 flex items-center justify-between">
-          <button onClick={() => shiftMonth(-1)} aria-label="Previous month"
-            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink/15 font-800 text-ink/60 transition hover:border-teal hover:text-teal">
-            ‹
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <button onClick={() => shiftMonth(-1)}
+            className="flex items-center gap-1 rounded-full border-2 border-ink/15 px-3 py-1.5 text-sm font-800 text-ink/60 transition hover:border-teal hover:text-teal">
+            ‹ {new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "short" })}
           </button>
-          <h2 className="font-display text-xl font-700">{monthLabel}</h2>
-          <button onClick={() => shiftMonth(1)} aria-label="Next month"
-            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink/15 font-800 text-ink/60 transition hover:border-teal hover:text-teal">
-            ›
+          <h2 className="font-display text-lg font-700 sm:text-xl">{monthLabel}</h2>
+          <button onClick={() => shiftMonth(1)}
+            className="flex items-center gap-1 rounded-full border-2 border-ink/15 px-3 py-1.5 text-sm font-800 text-ink/60 transition hover:border-teal hover:text-teal">
+            {new Date(y, m + 1, 1).toLocaleDateString("en-US", { month: "short" })} ›
           </button>
         </div>
 
@@ -140,7 +140,9 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
               <button
                 key={k}
                 onClick={() => setSelected(k)}
-                className={`flex aspect-square flex-col items-center rounded-xl border-2 p-1 text-left transition sm:aspect-auto sm:min-h-[5.5rem] sm:items-stretch ${
+                className={`flex aspect-square flex-col items-center rounded-xl border-2 p-1 text-left align-top transition sm:aspect-auto sm:items-stretch ${
+                  dayEvents.length ? "sm:min-h-[9rem]" : "sm:min-h-[4.5rem]"
+                } ${
                   isSelected
                     ? "border-teal bg-teal/10"
                     : dayEvents.length
@@ -160,16 +162,16 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
                         <span key={j} className={`h-1.5 w-1.5 rounded-full ${PRICE_DOT[e.priceTier] || "bg-ink/40"}`} />
                       ))}
                     </span>
-                    {/* Larger: event title labels */}
+                    {/* Larger: up to ~6 event title labels */}
                     <span className="mt-1 hidden flex-col gap-0.5 sm:flex">
-                      {dayEvents.slice(0, 2).map((e, j) => (
+                      {dayEvents.slice(0, 6).map((e, j) => (
                         <span key={j} title={e.title}
                           className={`truncate rounded px-1 py-0.5 text-[10px] font-700 leading-tight ${PRICE_CHIP[e.priceTier] || "bg-ink/10 text-ink/70"}`}>
-                          {e.title}
+                          {e.recurrence ? "🔁 " : ""}{e.title}
                         </span>
                       ))}
-                      {dayEvents.length > 2 && (
-                        <span className="px-1 text-[10px] font-800 text-ink/45">+{dayEvents.length - 2} more</span>
+                      {dayEvents.length > 6 && (
+                        <span className="px-1 text-[10px] font-800 text-ink/45">+{dayEvents.length - 6} more</span>
                       )}
                     </span>
                   </>

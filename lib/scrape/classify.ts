@@ -111,21 +111,31 @@ const KID_INCLUDE =
 const ADULT_EXCLUDE =
   /\b(21\+|18\+|nightclub|night club|bar crawl|pub crawl|wine|winery|beer|brewery|cocktail|happy hour|ladies night|burlesque|casino|gambling|poker|blackjack|dispensary|cannabis|420|adult only|adults only|bogo|brunch|dating|singles|speed dating|hookah|vape|strip club|topless)\b/i;
 
+// Venues that are bars / sports bars / taverns etc. Targeted so "snack bar" or
+// "monkey bars" don't trip it — requires a bar-as-venue signal.
+const BAR_VENUE =
+  /\bsports ?bar\b|\btavern\b|\bsaloon\b|\bbrew ?pub\b|\bale house\b|\bgastropub\b|\btap ?room\b|\bdistillery\b|\b(?:pub|lounge|cantina|alehouse)\b|bar (?:&|and) grill|grill(?:e)? (?:&|and) bar|& bar\b|'s bar\b/i;
+
 // Strict relevance for broad "things to do" sources (e.g. Vegas Family Guide).
 export function isKidRelevant(
   text: string,
   categories: string[] = []
 ): boolean {
   const catBlob = categories.join(" ").toLowerCase();
-  if (ADULT_EXCLUDE.test(text)) return false;
+  if (ADULT_EXCLUDE.test(text) || BAR_VENUE.test(text)) return false;
   if (/kids|moms|family|all ages|parks/.test(catBlob)) return true;
   return KID_INCLUDE.test(text);
 }
 
 // Relaxed relevance for already family-vetted sources (e.g. Nevada Moms):
-// include everything that isn't clearly adult-only.
+// include everything that isn't clearly adult-only or at a bar.
 export function passesAdultFilter(text: string): boolean {
-  return !ADULT_EXCLUDE.test(text);
+  return !ADULT_EXCLUDE.test(text) && !BAR_VENUE.test(text);
+}
+
+// Exposed so a maintenance pass can reject already-stored bar/adult events.
+export function isBarOrAdult(text: string): boolean {
+  return ADULT_EXCLUDE.test(text) || BAR_VENUE.test(text);
 }
 
 export function stripHtml(html?: string | null): string {
