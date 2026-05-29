@@ -7,6 +7,7 @@ import { formatWhen } from "@/components/EventCard";
 import { ShareButtons } from "@/components/ShareButtons";
 import { JsonLd } from "@/components/JsonLd";
 import { nextOccurrenceISO } from "@/lib/recurrence";
+import { AdminEventControls } from "@/components/AdminEventControls";
 
 export const revalidate = 600;
 
@@ -111,6 +112,10 @@ export default async function EventPage({
       >
         ← All events
       </Link>
+
+      <div className="mt-3">
+        <AdminEventControls id={event.id} />
+      </div>
 
       <div className="mt-4 overflow-hidden rounded-blob border border-ink/10 bg-white shadow-card">
         <div className="bg-gradient-to-br from-teal to-grape p-8 text-white">

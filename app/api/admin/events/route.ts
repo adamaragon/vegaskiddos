@@ -23,6 +23,8 @@ export async function GET(req: Request) {
   const formula =
     queue === "approved"
       ? "{Approved}=1"
+      : queue === "rejected"
+      ? "{Rejected}=1"
       : "AND(NOT({Approved}),NOT({Rejected}))";
 
   try {

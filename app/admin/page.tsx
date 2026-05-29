@@ -10,7 +10,7 @@ interface AdminEvent {
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [queue, setQueue] = useState<"pending" | "approved">("pending");
+  const [queue, setQueue] = useState<"pending" | "approved" | "rejected">("pending");
   const [events, setEvents] = useState<AdminEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -20,7 +20,7 @@ export default function AdminPage() {
   const [scraping, setScraping] = useState(false);
   const [scrapeMsg, setScrapeMsg] = useState("");
 
-  const load = useCallback(async (q: "pending" | "approved") => {
+  const load = useCallback(async (q: "pending" | "approved" | "rejected") => {
     setLoading(true);
     const res = await fetch(`/api/admin/events?queue=${q}`);
     if (res.status === 401) { setAuthed(false); setLoading(false); return; }
@@ -119,16 +119,16 @@ export default function AdminPage() {
       )}
 
       <div className="mt-4 flex rounded-full border-2 border-ink/15 bg-white p-1">
-        {(["pending", "approved"] as const).map((q) => (
+        {(["pending", "approved", "rejected"] as const).map((q) => (
           <button key={q} onClick={() => setQueue(q)}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-800 capitalize transition ${queue === q ? "bg-teal text-white" : "text-ink/60"}`}>
-            {q === "pending" ? "📥 Review queue" : "✅ Published"}
+            className={`flex-1 rounded-full px-3 py-2 text-sm font-800 transition ${queue === q ? "bg-teal text-white" : "text-ink/60"}`}>
+            {q === "pending" ? "📥 Review" : q === "approved" ? "✅ Published" : "🗑️ Removed"}
           </button>
         ))}
       </div>
 
       <p className="mt-3 text-sm font-700 text-ink/50">
-        {loading ? "Loading…" : `${events.length} ${queue === "pending" ? "awaiting review" : "published"}`}
+        {loading ? "Loading…" : `${events.length} ${queue === "pending" ? "awaiting review" : queue === "approved" ? "published" : "removed"}`}
       </p>
 
       <div className="mt-3 space-y-3">
@@ -162,10 +162,21 @@ export default function AdminPage() {
                     ✕ Reject
                   </button>
                 </>
+              ) : queue === "approved" ? (
+                <>
+                  <button disabled={busy === e.id} onClick={() => act(e.id, "reject")}
+                    className="rounded-full bg-coral px-4 py-2 text-sm font-800 text-white transition hover:bg-coral-dark disabled:opacity-50">
+                    🗑️ Remove
+                  </button>
+                  <button disabled={busy === e.id} onClick={() => act(e.id, "unapprove")}
+                    className="rounded-full border-2 border-ink/20 px-4 py-2 text-sm font-800 text-ink/60 transition hover:border-grape hover:text-grape disabled:opacity-50">
+                    Unpublish (to review)
+                  </button>
+                </>
               ) : (
-                <button disabled={busy === e.id} onClick={() => act(e.id, "unapprove")}
-                  className="rounded-full border-2 border-ink/20 px-4 py-2 text-sm font-800 text-ink/60 transition hover:border-coral hover:text-coral disabled:opacity-50">
-                  Unpublish
+                <button disabled={busy === e.id} onClick={() => act(e.id, "approve")}
+                  className="rounded-full bg-teal px-4 py-2 text-sm font-800 text-white transition hover:bg-teal-dark disabled:opacity-50">
+                  ♻️ Restore (republish)
                 </button>
               )}
             </div>
@@ -174,7 +185,7 @@ export default function AdminPage() {
         {!loading && events.length === 0 && (
           <div className="rounded-blob border border-dashed border-ink/20 bg-white py-16 text-center text-ink/50">
             <p className="text-2xl">🎉</p>
-            <p className="mt-2 font-700">{queue === "pending" ? "Queue's all clear!" : "Nothing published yet."}</p>
+            <p className="mt-2 font-700">{queue === "pending" ? "Queue's all clear!" : queue === "approved" ? "Nothing published yet." : "Nothing removed."}</p>
           </div>
         )}
       </div>
