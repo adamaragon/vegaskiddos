@@ -103,11 +103,14 @@ export function resolvePrice(
   cost: string | null | undefined,
   text: string
 ): { tier: PriceTierId | null; text?: string } {
+  // Any explicit price in the text wins — including "free" (don't override a
+  // genuinely-free event just because it mentions a paid venue).
   const parsed = classifyPrice(cost, text);
-  if (parsed && parsed !== "free") return { tier: parsed };
+  if (parsed) return { tier: parsed };
+  // Only when price is unknown, fall back to a known paid-venue rate.
   const ov = PAID_VENUES.find((v) => v.re.test(text));
   if (ov) return { tier: ov.tier, text: ov.text };
-  return { tier: parsed };
+  return { tier: null };
 }
 
 export function classifyAges(text: string): AgeTierId[] {

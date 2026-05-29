@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { KidEvent } from "@/lib/types";
 import { LV_CENTER, priceTier } from "@/lib/constants";
@@ -17,13 +17,16 @@ export function MapView({ events }: { events: KidEvent[] }) {
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const layerRef = useRef<import("leaflet").LayerGroup | null>(null);
   const router = useRouter();
+  // Flips true once the map + layer are ready, so the markers effect re-runs
+  // after the async init finishes (it used to lose the race and never render).
+  const [ready, setReady] = useState(false);
 
   // Init map once.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const L = (await import("leaflet")).default;
-      await import("leaflet.markercluster"); // extends L with markerClusterGroup
+      try { await import("leaflet.markercluster"); } catch { /* fall back to plain layer */ }
       if (cancelled || !containerRef.current || mapRef.current) return;
 
       const map = L.map(containerRef.current, {
@@ -36,10 +39,13 @@ export function MapView({ events }: { events: KidEvent[] }) {
         maxZoom: 19,
       }).addTo(map);
       mapRef.current = map;
-      // Cluster nearby pins so the valley-wide map stays readable.
-      layerRef.current = (L as unknown as { markerClusterGroup: (o?: object) => import("leaflet").LayerGroup })
-        .markerClusterGroup({ maxClusterRadius: 50, showCoverageOnHover: false });
+      // Cluster nearby pins when available; otherwise a plain layer group.
+      const cluster = (L as unknown as { markerClusterGroup?: (o?: object) => import("leaflet").LayerGroup }).markerClusterGroup;
+      layerRef.current = cluster
+        ? cluster({ maxClusterRadius: 50, showCoverageOnHover: false })
+        : L.layerGroup();
       map.addLayer(layerRef.current);
+      setReady(true);
     })();
     return () => {
       cancelled = true;
@@ -96,7 +102,7 @@ export function MapView({ events }: { events: KidEvent[] }) {
     return () => {
       cancelled = true;
     };
-  }, [events, router]);
+  }, [events, router, ready]);
 
   return (
     <div
