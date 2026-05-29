@@ -62,12 +62,30 @@ const priceOf = (f) => f.PriceText || (f.PriceTier === "free" ? "Free" : "");
 const HASHTAGS = "#LasVegas #VegasKids #ThingsToDoInVegas #FamilyFun #VegasFamilies #KidFriendly #EventosLasVegas";
 
 // ── Graph API publish ───────────────────────────────────────────────────────
+// On failure, report what the token actually is + its scopes (never the token).
+async function diagnoseToken() {
+  const get = async (path) => {
+    try {
+      const u = `${GRAPH}/${path}${path.includes("?") ? "&" : "?"}access_token=${encodeURIComponent(PAGE_TOKEN)}`;
+      return await (await fetch(u)).json();
+    } catch (e) { return { error: String(e) }; }
+  };
+  const me = await get("me?fields=id,name,category");
+  const perms = await get("me/permissions");
+  const grantedPosts = Array.isArray(perms?.data) && perms.data.some((p) => p.permission === "pages_manage_posts" && p.status === "granted");
+  console.error("── token diagnostics ──");
+  console.error("identity (/me):", JSON.stringify(me));         // a Page has a `category`; a User does not
+  console.error("scopes (/me/permissions):", JSON.stringify(perms?.data || perms));
+  console.error(`FB_PAGE_ID being posted to: ${PAGE_ID}`);
+  console.error(`token looks like a ${me?.category ? "PAGE token" : "USER token (← needs to be the PAGE token)"}; pages_manage_posts granted: ${grantedPosts}`);
+}
+
 async function publish(message, link) {
   const params = new URLSearchParams({ message, access_token: PAGE_TOKEN });
   if (link) params.set("link", link);
   const r = await fetch(`${GRAPH}/${PAGE_ID}/feed`, { method: "POST", body: params });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(`Graph API ${r.status}: ${JSON.stringify(data).slice(0, 300)}`);
+  if (!r.ok) { await diagnoseToken(); throw new Error(`Graph API ${r.status}: ${JSON.stringify(data).slice(0, 300)}`); }
   return data.id; // "{pageid}_{postid}"
 }
 
