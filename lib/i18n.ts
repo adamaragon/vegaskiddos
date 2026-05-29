@@ -30,6 +30,26 @@ export const STRINGS = {
   foot_more: { en: "More", es: "Más" },
   foot_madeby: { en: "Made with", es: "Hecho con" },
   foot_confirm: { en: "Always confirm details with the venue.", es: "Confirma siempre los detalles con el lugar." },
+  // browse / filters
+  search_ph: { en: "🔍 Search events, venues, activities…", es: "🔍 Busca eventos, lugares, actividades…" },
+  f_when: { en: "When", es: "Cuándo" },
+  f_age: { en: "Age", es: "Edad" },
+  f_price: { en: "Price", es: "Precio" },
+  f_where: { en: "Where", es: "Dónde" },
+  f_area: { en: "Area", es: "Zona" },
+  f_near: { en: "Near you", es: "Cerca de ti" },
+  v_list: { en: "📋 List", es: "📋 Lista" },
+  v_calendar: { en: "📅 Calendar", es: "📅 Calendario" },
+  v_map: { en: "🗺️ Map", es: "🗺️ Mapa" },
+  events_n: { en: "events", es: "eventos" },
+  event_1: { en: "event", es: "evento" },
+  show_more: { en: "Show more events", es: "Ver más eventos" },
+  loading_more: { en: "Loading more fun…", es: "Cargando más diversión…" },
+  clear_all: { en: "✕ Clear all filters", es: "✕ Borrar filtros" },
+  anywhere: { en: "Anywhere", es: "Cualquier lugar" },
+  indoor: { en: "🏠 Indoor", es: "🏠 Interior" },
+  outdoor: { en: "🌳 Outdoor", es: "🌳 Aire libre" },
+  zip_ph: { en: "Enter ZIP code", es: "Código postal" },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

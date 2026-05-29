@@ -114,6 +114,17 @@ body {
   .hover-pop:hover { transform: none; }
 }
 
+/* Keyboard accessibility: clear focus ring on interactive elements. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid theme("colors.grape.DEFAULT");
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
 .leaflet-container {
   font-family: var(--font-nunito), system-ui, sans-serif;
   border-radius: 1.75rem;

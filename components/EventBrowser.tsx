@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { KidEvent } from "@/lib/types";
+import { t as i18nT } from "@/lib/i18n";
 import { EventCard } from "./EventCard";
 import {
   AGE_TIERS,
@@ -127,7 +128,8 @@ function Chip({
   );
 }
 
-export function EventBrowser({ events }: { events: KidEvent[] }) {
+export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang?: import("@/lib/i18n").Lang }) {
+  const tr = (k: import("@/lib/i18n").StringKey) => i18nT(lang, k);
   const [view, setView] = useState<View>("list");
   const [ages, setAges] = useState<Set<AgeTierId>>(new Set());
   const [prices, setPrices] = useState<Set<PriceTierId>>(new Set());
@@ -278,7 +280,7 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="🔍 Search events, venues, activities…"
+          placeholder={tr("search_ph")}
           aria-label="Search events"
           className="w-full rounded-full border-2 border-ink/15 bg-white px-5 py-3 font-700 text-ink/80 outline-none transition focus:border-teal"
         />
@@ -302,7 +304,7 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
 
       {/* Filter panel */}
       <div className="rounded-blob border border-ink/10 bg-white p-4 shadow-card sm:p-6">
-        <FilterRow label="When">
+        <FilterRow label={tr("f_when")}>
           {DATE_FILTERS.map((d) => (
             <Chip key={d.id} active={dateRange === d.id} onClick={() => setDateRange(d.id)}>
               {d.label}
@@ -310,7 +312,7 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
           ))}
         </FilterRow>
 
-        <FilterRow label="Age">
+        <FilterRow label={tr("f_age")}>
           {AGE_TIERS.map((a) => (
             <Chip key={a.id} active={ages.has(a.id)} onClick={() => toggle(ages, a.id, setAgesPersist)}>
               {a.emoji} {a.label} <span className="font-400 opacity-90">{a.sublabel}</span>
@@ -318,7 +320,7 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
           ))}
         </FilterRow>
 
-        <FilterRow label="Price">
+        <FilterRow label={tr("f_price")}>
           {PRICE_TIERS.map((p) => (
             <Chip key={p.id} active={prices.has(p.id)} onClick={() => toggle(prices, p.id, setPrices)}>
               {p.emoji} {p.label}
@@ -326,13 +328,13 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
           ))}
         </FilterRow>
 
-        <FilterRow label="Where">
-          {([["any", "Anywhere"], ["indoor", "🏠 Indoor"], ["outdoor", "🌳 Outdoor"]] as const).map(([id, label]) => (
+        <FilterRow label={tr("f_where")}>
+          {([["any", tr("anywhere")], ["indoor", tr("indoor")], ["outdoor", tr("outdoor")]] as const).map(([id, label]) => (
             <Chip key={id} active={env === id} onClick={() => setEnv(id)}>{label}</Chip>
           ))}
         </FilterRow>
 
-        <FilterRow label="Area">
+        <FilterRow label={tr("f_area")}>
           {NEIGHBORHOODS.map((n) => (
             <Chip key={n.id} active={hoods.has(n.id)} onClick={() => toggle(hoods, n.id, setHoods)}>
               {n.label}
@@ -341,13 +343,13 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
         </FilterRow>
 
         {/* ZIP on its own clean row */}
-        <FilterRow label="Near you">
+        <FilterRow label={tr("f_near")}>
           <div className="flex flex-wrap items-center gap-2">
             <input
               inputMode="numeric"
               value={zip}
               onChange={(e) => applyZip(e.target.value)}
-              placeholder="Enter ZIP code"
+              placeholder={tr("zip_ph")}
               aria-label="Find events near a ZIP code"
               className="w-40 rounded-full border-2 border-ink/15 bg-white px-4 py-1.5 text-sm font-700 text-ink/80 outline-none transition focus:border-teal"
             />
@@ -361,7 +363,7 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
               onClick={clearAll}
               className="text-sm font-700 text-coral underline-offset-2 hover:underline"
             >
-              ✕ Clear all filters ({activeCount})
+              ✕ {tr("clear_all")} ({activeCount})
             </button>
           </div>
         )}
@@ -370,7 +372,7 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
       {/* Results header + view toggle */}
       <div className="mt-6 flex items-center justify-between">
         <p className="font-700 text-ink/70">
-          {filtered.length} {filtered.length === 1 ? "event" : "events"}
+          {filtered.length} {filtered.length === 1 ? tr("event_1") : tr("events_n")}
         </p>
         <div className="flex rounded-full border-2 border-ink/15 bg-white p-1">
           {(["list", "calendar", "map"] as View[]).map((v) => (
@@ -381,7 +383,7 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
                 view === v ? "bg-teal text-white" : "text-ink/60"
               }`}
             >
-              {v === "list" ? "📋 List" : v === "calendar" ? "📅 Calendar" : "🗺️ Map"}
+              {v === "list" ? tr("v_list") : v === "calendar" ? tr("v_calendar") : tr("v_map")}
             </button>
           ))}
         </div>
@@ -413,7 +415,7 @@ export function EventBrowser({ events }: { events: KidEvent[] }) {
                 <span className="h-3 w-3 animate-bounce rounded-full bg-coral" />
                 <span className="h-3 w-3 animate-bounce rounded-full bg-sunny" style={{ animationDelay: "0.15s" }} />
                 <span className="h-3 w-3 animate-bounce rounded-full bg-teal" style={{ animationDelay: "0.3s" }} />
-                <span className="ml-2 text-sm font-700">Loading more fun…</span>
+                <span className="ml-2 text-sm font-700">{tr("loading_more")}</span>
               </div>
             )}
           </>

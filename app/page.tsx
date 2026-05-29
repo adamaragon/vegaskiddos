@@ -77,7 +77,7 @@ export default async function HomePage() {
 
       {/* Browser */}
       <section className="mt-8">
-        <EventBrowser events={events} />
+        <EventBrowser events={events} lang={lang} />
       </section>
 
       {/* Friendly footer nudge */}
