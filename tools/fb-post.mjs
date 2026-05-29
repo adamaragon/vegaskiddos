@@ -168,15 +168,18 @@ async function runSchedule() {
   // Assign an event to each slot: recurring events are always valid; one-time
   // events only if they're still upcoming when the post goes live.
   const used = new Set();
+  const usedTitles = new Set(); // keep the batch varied — no repeated titles
   const plan = [];
   for (const slot of slots) {
     const ev = candidates.find((r) => {
       if (used.has(r.id)) return false;
       const f = r.fields;
+      if (usedTitles.has(String(f.Title || "").trim().toLowerCase())) return false;
       return f.Recurrence || (f.Start && new Date(f.Start).getTime() > slot.getTime());
     });
     if (!ev) break;
     used.add(ev.id);
+    usedTitles.add(String(ev.fields.Title || "").trim().toLowerCase());
     plan.push({ rec: ev, slot });
   }
   if (!plan.length) { console.log("schedule: no events match the upcoming slots."); return; }
