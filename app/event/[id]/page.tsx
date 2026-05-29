@@ -6,6 +6,7 @@ import { ageTier, priceTier, neighborhood } from "@/lib/constants";
 import { formatWhen } from "@/components/EventCard";
 import { ShareButtons } from "@/components/ShareButtons";
 import { JsonLd } from "@/components/JsonLd";
+import { nextOccurrenceISO } from "@/lib/recurrence";
 
 export const revalidate = 600;
 
@@ -59,13 +60,15 @@ export default async function EventPage({
     event.address || event.venue
   )}`;
 
+  const whenStart = nextOccurrenceISO(event.start, event.recurrence);
+
   // "Add to Google Calendar" — a feature no LV competitor offers per event.
   const gcalFmt = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  const gcalEnd = event.end || new Date(new Date(event.start).getTime() + 3600000).toISOString();
+  const gcalEnd = event.end && !event.recurrence ? event.end : new Date(new Date(whenStart).getTime() + 3600000).toISOString();
   const gcalHref =
     `https://calendar.google.com/calendar/render?action=TEMPLATE` +
     `&text=${encodeURIComponent(event.title)}` +
-    `&dates=${gcalFmt(event.start)}/${gcalFmt(gcalEnd)}` +
+    `&dates=${gcalFmt(whenStart)}/${gcalFmt(gcalEnd)}` +
     `&details=${encodeURIComponent((event.description || "") + (event.url ? `\n\n${event.url}` : ""))}` +
     `&location=${encodeURIComponent(event.address || event.venue)}`;
 
@@ -112,10 +115,15 @@ export default async function EventPage({
       <div className="mt-4 overflow-hidden rounded-blob border border-ink/10 bg-white shadow-card">
         <div className="bg-gradient-to-br from-teal to-grape p-8 text-white">
           <p className="text-sm font-700 uppercase tracking-wide text-white/80">
-            {formatWhen(event.start)}
-            {event.end ? ` – ${formatWhen(event.end).split(", ").pop()}` : ""}
+            {event.recurrence ? "Next: " : ""}{formatWhen(whenStart)}
+            {event.end && !event.recurrence ? ` – ${formatWhen(event.end).split(", ").pop()}` : ""}
           </p>
-          <h1 className="mt-1 font-display text-3xl font-700 sm:text-4xl">
+          {event.recurrence && (
+            <span className="mt-2 inline-block rounded-full bg-white/25 px-3 py-1 text-sm font-800">
+              🔁 Repeats {event.recurrence}
+            </span>
+          )}
+          <h1 className="mt-2 font-display text-3xl font-700 sm:text-4xl">
             {event.title}
           </h1>
           <p className="mt-2 text-white/90">📍 {event.venue}</p>

@@ -20,11 +20,21 @@ export default function SubmitPage() {
     setStatus("sending");
     const form = e.currentTarget;
     const data = Object.fromEntries(new FormData(form).entries());
+    // Turn the "repeats" choice into a recurrence label.
+    const WD = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
+    let recurrence = "";
+    if (data.repeats === "weekly" && data.start) {
+      recurrence = `Weekly on ${WD[new Date(String(data.start)).getDay()]}`;
+    } else if (data.repeats === "daily") {
+      recurrence = "Daily";
+    } else if (data.repeats === "monthly") {
+      recurrence = "Monthly";
+    }
     try {
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, ageTiers: ages }),
+        body: JSON.stringify({ ...data, ageTiers: ages, recurrence }),
       });
       if (!res.ok) throw new Error();
       setStatus("done");
@@ -93,19 +103,28 @@ export default function SubmitPage() {
           <Labeled label="Date & time *">
             <input name="start" type="datetime-local" required className={field} />
           </Labeled>
-          <Labeled label="Neighborhood *">
-            <select name="neighborhood" required className={field} defaultValue="">
-              <option value="" disabled>
-                Choose an area…
-              </option>
-              {NEIGHBORHOODS.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.label}
-                </option>
-              ))}
+          <Labeled label="Does it repeat?">
+            <select name="repeats" className={field} defaultValue="once">
+              <option value="once">One-time event</option>
+              <option value="weekly">Every week (same day)</option>
+              <option value="daily">Every day</option>
+              <option value="monthly">Every month</option>
             </select>
           </Labeled>
         </div>
+
+        <Labeled label="Neighborhood *">
+          <select name="neighborhood" required className={field} defaultValue="">
+            <option value="" disabled>
+              Choose an area…
+            </option>
+            {NEIGHBORHOODS.map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.label}
+              </option>
+            ))}
+          </select>
+        </Labeled>
 
         <Labeled label="Who is it for? *">
           <div className="flex flex-wrap gap-2">

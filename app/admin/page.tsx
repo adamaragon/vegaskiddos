@@ -50,7 +50,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/scrape", { method: "POST" });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || "failed");
-      setScrapeMsg(`Found ${d.totalFound} events · ${d.inserted} new added to the queue.`);
+      setScrapeMsg(`Scanned ${d.totalFound} events (${d.recurringSeries ?? 0} recurring) · ${d.inserted} new in queue · ${d.updated ?? 0} refreshed.`);
       if (queue === "pending") load("pending");
     } catch (e) {
       setScrapeMsg(`Scrape failed: ${(e as Error).message}`);

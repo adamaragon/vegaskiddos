@@ -18,6 +18,7 @@ export interface ScrapedEvent {
   url?: string;
   image?: string;
   source: string;
+  recurrence?: string; // human label, e.g. "Weekly on Tuesdays"; empty = one-time
 }
 
 export interface SourceResult {

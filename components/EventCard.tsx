@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { KidEvent } from "@/lib/types";
 import { ageTier, priceTier, neighborhood } from "@/lib/constants";
+import { nextOccurrenceISO } from "@/lib/recurrence";
 
 const PRICE_BG: Record<string, string> = {
   teal: "bg-teal text-white",
@@ -25,6 +26,7 @@ export function formatWhen(iso: string) {
 export function EventCard({ event, index = 0 }: { event: KidEvent; index?: number }) {
   const price = priceTier(event.priceTier);
   const hood = neighborhood(event.neighborhood);
+  const when = nextOccurrenceISO(event.start, event.recurrence);
   // Stagger the dramatic entrance within each loaded batch.
   const delay = (index % 30) * 45;
   return (
@@ -35,8 +37,13 @@ export function EventCard({ event, index = 0 }: { event: KidEvent; index?: numbe
     >
       <div className="flex items-start justify-between gap-2 p-5 pb-3">
         <div>
-          <p className="text-xs font-700 uppercase tracking-wide text-teal-dark">
-            {formatWhen(event.start)}
+          <p className="flex flex-wrap items-center gap-1.5 text-xs font-700 uppercase tracking-wide text-teal-dark">
+            {formatWhen(when)}
+            {event.recurrence && (
+              <span className="rounded-full bg-grape/15 px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-grape">
+                🔁 {event.recurrence}
+              </span>
+            )}
           </p>
           <h3 className="mt-1 font-display text-xl font-600 leading-tight text-ink group-hover:text-coral">
             {event.title}

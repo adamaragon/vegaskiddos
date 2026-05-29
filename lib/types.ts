@@ -18,4 +18,5 @@ export interface KidEvent {
   image?: string;
   source: string; // where it came from (Library, Eventbrite, Community, ...)
   indoor?: boolean;
+  recurrence?: string; // e.g. "Weekly on Tuesdays"; empty/undefined = one-time
 }

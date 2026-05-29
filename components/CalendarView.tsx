@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { KidEvent } from "@/lib/types";
 import { priceTier } from "@/lib/constants";
+import { recursOnDay } from "@/lib/recurrence";
 import { EventCard } from "./EventCard";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -35,15 +36,31 @@ function keyOf(y: number, m: number, d: number) {
 }
 
 export function CalendarView({ events }: { events: KidEvent[] }) {
-  // Group events by day.
-  const byDay = useMemo(() => {
+  // One-time events grouped by day; recurring events handled separately so they
+  // appear on every matching day in the month.
+  const { byDay, recurring } = useMemo(() => {
     const map = new Map<string, KidEvent[]>();
+    const rec: KidEvent[] = [];
     for (const e of events) {
+      if (e.recurrence) {
+        rec.push(e);
+        continue;
+      }
       const k = dayKey(e.start);
       (map.get(k) ?? map.set(k, []).get(k)!).push(e);
     }
-    return map;
+    return { byDay: map, recurring: rec };
   }, [events]);
+
+  // All events (one-time + recurring) that land on a given calendar day.
+  const eventsForDay = useCallback(
+    (y: number, m: number, d: number): KidEvent[] => {
+      const oneTime = byDay.get(keyOf(y, m, d)) ?? [];
+      const rec = recurring.filter((e) => recursOnDay(e.start, e.recurrence, y, m, d));
+      return [...oneTime, ...rec];
+    },
+    [byDay, recurring]
+  );
 
   // Start on the month of the first upcoming event (fallback: today).
   const firstMonth = useMemo(() => {
@@ -80,7 +97,10 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
     setView({ y: d.getFullYear(), m: d.getMonth() });
   }
 
-  const selectedEvents = (byDay.get(selected) ?? []).slice().sort((a, b) => a.start.localeCompare(b.start));
+  const [sy, sm, sd] = selected.split("-").map(Number);
+  const selectedEvents = eventsForDay(sy, sm - 1, sd)
+    .slice()
+    .sort((a, b) => a.start.slice(11).localeCompare(b.start.slice(11)));
 
   return (
     <div>
@@ -113,7 +133,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
           {cells.map((day, i) => {
             if (day === null) return <div key={`b${i}`} />;
             const k = keyOf(y, m, day);
-            const dayEvents = byDay.get(k) ?? [];
+            const dayEvents = eventsForDay(y, m, day);
             const isToday = k === todayKey;
             const isSelected = k === selected;
             return (

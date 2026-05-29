@@ -1,6 +1,14 @@
 import type { KidEvent } from "./types";
 import { MOCK_EVENTS } from "./mock-events";
 import type { AgeTierId, PriceTierId, NeighborhoodId } from "./constants";
+import { nextOccurrenceISO } from "./recurrence";
+
+// Sort by the next real occurrence (recurring series use their computed next date).
+function byNextOccurrence(a: KidEvent, b: KidEvent) {
+  return nextOccurrenceISO(a.start, a.recurrence).localeCompare(
+    nextOccurrenceISO(b.start, b.recurrence)
+  );
+}
 
 // Data layer. Reads from Airtable when env vars are present, otherwise falls
 // back to the seed data so the app runs with zero configuration.
@@ -41,16 +49,19 @@ function mapRecord(rec: AirtableRecord): KidEvent | null {
     image: f.Image ? String(f.Image) : undefined,
     source: String(f.Source || "Community"),
     indoor: Boolean(f.Indoor),
+    recurrence: f.Recurrence ? String(f.Recurrence) : undefined,
   };
 }
 
 export async function getEvents(): Promise<KidEvent[]> {
   if (!isAirtableConfigured()) {
-    return [...MOCK_EVENTS].sort((a, b) => a.start.localeCompare(b.start));
+    return [...MOCK_EVENTS].sort(byNextOccurrence);
   }
   try {
-    // Only approved, upcoming events (today onward). Paginate through all pages.
-    const formula = "AND({Approved}=1, IS_AFTER({Start}, DATEADD(NOW(),-1,'days')))";
+    // Approved events that are either upcoming OR recurring (recurring series
+    // never expire — their next occurrence is computed for display).
+    const formula =
+      "AND({Approved}=1, OR(NOT({Recurrence}=BLANK()), IS_AFTER({Start}, DATEADD(NOW(),-1,'days'))))";
     const records: AirtableRecord[] = [];
     let offset: string | undefined;
     do {
@@ -72,11 +83,11 @@ export async function getEvents(): Promise<KidEvent[]> {
     const events = records
       .map(mapRecord)
       .filter((e): e is KidEvent => e !== null)
-      .sort((a, b) => a.start.localeCompare(b.start));
+      .sort(byNextOccurrence);
     return events.length ? events : MOCK_EVENTS;
   } catch (err) {
     console.error("Airtable fetch failed, using seed data:", err);
-    return [...MOCK_EVENTS].sort((a, b) => a.start.localeCompare(b.start));
+    return [...MOCK_EVENTS].sort(byNextOccurrence);
   }
 }
 

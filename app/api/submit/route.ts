@@ -35,6 +35,7 @@ export async function POST(req: Request) {
     Url: String(body.url || ""),
     Source: "Community",
     SubmitterEmail: String(body.submitterEmail || ""),
+    Recurrence: String(body.recurrence || ""),
     Approved: false,
   };
 

@@ -2,12 +2,13 @@ import type { ScrapedEvent, SourceResult } from "./types";
 import { makeTribeAdapter } from "./sources/tribe";
 import { fetchNevadaMoms } from "./sources/nevadaMoms";
 import { fetchLibrary } from "./sources/library";
-import { existingExternalIds, insertEvents } from "./airtable";
+import { upsertEvents } from "./airtable";
+import { collapseRecurring } from "./recurring";
 
 const vegasFamilyGuide = makeTribeAdapter({
   source: "Vegas Family Guide",
   apiBase: "https://vegasfamilyevents.com/wp-json/tribe/events/v1/events",
-  pages: 4,
+  pages: 5,
   perPage: 50,
 });
 const uncommons = makeTribeAdapter({
@@ -16,13 +17,21 @@ const uncommons = makeTribeAdapter({
   pages: 3,
   perPage: 50,
 });
+const familyFunVegas = makeTribeAdapter({
+  source: "Family Fun Vegas",
+  apiBase: "https://familyfun.vegas/wp-json/tribe/events/v1/events",
+  pages: 5,
+  perPage: 50,
+});
 
 export interface RunSummary {
   ranAt: string;
   sources: { source: string; found: number; errors: string[] }[];
   totalFound: number;
-  newAfterDedup: number;
-  inserted: number;
+  afterCollapse: number;
+  recurringSeries: number;
+  inserted: number; // newly created
+  updated: number; // existing refreshed
   dryRun: boolean;
   sampleTitles: string[];
 }
@@ -31,8 +40,9 @@ export interface RunSummary {
 const SOURCES: (() => Promise<SourceResult>)[] = [
   vegasFamilyGuide,
   uncommons,
+  familyFunVegas,
   () => fetchNevadaMoms(),
-  () => fetchLibrary({ days: 30 }),
+  () => fetchLibrary({ days: 45 }),
 ];
 
 export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary> {
@@ -51,11 +61,15 @@ export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary
     }
   }
 
-  // Dedup against what's already in Airtable.
-  const known = dryRun ? new Set<string>() : await existingExternalIds();
-  const fresh = all.filter((e) => !known.has(e.externalId));
+  // Collapse repeated instances into single recurring "series" records.
+  const collapsed = collapseRecurring(all);
+  const recurringSeries = collapsed.filter((e) => e.recurrence).length;
 
-  const inserted = dryRun || !fresh.length ? 0 : await insertEvents(fresh);
+  // Upsert by ExternalId — creates new (pending), refreshes existing without
+  // touching approval. Recurring series get their next date refreshed here.
+  const counts = dryRun || !collapsed.length
+    ? { created: 0, updated: 0 }
+    : await upsertEvents(collapsed);
 
   return {
     ranAt: new Date().toISOString(),
@@ -65,9 +79,11 @@ export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary
       errors: r.errors,
     })),
     totalFound: all.length,
-    newAfterDedup: fresh.length,
-    inserted,
+    afterCollapse: collapsed.length,
+    recurringSeries,
+    inserted: counts.created,
+    updated: counts.updated,
     dryRun,
-    sampleTitles: fresh.slice(0, 8).map((e) => e.title),
+    sampleTitles: collapsed.filter((e) => e.recurrence).slice(0, 8).map((e) => `${e.title} (${e.recurrence})`),
   };
 }
