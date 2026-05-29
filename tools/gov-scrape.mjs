@@ -246,6 +246,37 @@ async function upsert(events) {
   return { created, updated };
 }
 
+// Self-healing dedup of APPROVED events (same as the main scraper's pass) so
+// the daily gov run also collapses any cross-source/leftover duplicates.
+async function dedupeApproved() {
+  const token = process.env.AIRTABLE_TOKEN, base = process.env.AIRTABLE_BASE_ID;
+  if (!token || !base) return 0;
+  const norm = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const recs = []; let offset;
+  do {
+    const u = new URL(`https://api.airtable.com/v0/${base}/Events`);
+    u.searchParams.set("pageSize", "100");
+    u.searchParams.set("filterByFormula", "{Approved}=1");
+    ["Title", "Venue", "Image", "Description", "ExternalId"].forEach((f) => u.searchParams.append("fields[]", f));
+    if (offset) u.searchParams.set("offset", offset);
+    const r = await fetch(u, { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok) return 0;
+    const d = await r.json(); recs.push(...d.records); offset = d.offset;
+  } while (offset);
+  const score = (r) => (String(r.fields.ExternalId || "").startsWith("series:") ? 100 : 0) + (r.fields.Image ? 10 : 0) + Math.min(5, String(r.fields.Description || "").length / 100);
+  const groups = new Map();
+  for (const r of recs) { const k = `${norm(r.fields.Title)}|${norm(r.fields.Venue)}`; (groups.get(k) || groups.set(k, []).get(k)).push(r); }
+  const reject = [];
+  for (const g of groups.values()) { if (g.length < 2) continue; g.sort((a, b) => score(b) - score(a)); reject.push(...g.slice(1).map((r) => r.id)); }
+  for (let i = 0; i < reject.length; i += 10) {
+    await fetch(`https://api.airtable.com/v0/${base}/Events`, {
+      method: "PATCH", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ records: reject.slice(i, i + 10).map((id) => ({ id, fields: { Approved: false, Rejected: true } })) }),
+    });
+  }
+  return reject.length;
+}
+
 /* ---------------- main ---------------- */
 const dryRun = process.argv.includes("--dry");
 const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
@@ -268,4 +299,6 @@ if (dryRun) {
 } else if (all.length) {
   const r = await upsert(all);
   console.log(`upserted -> created ${r.created}, updated ${r.updated}`);
+  const deduped = await dedupeApproved();
+  console.log(`dedupe -> ${deduped} duplicate(s) removed`);
 }
