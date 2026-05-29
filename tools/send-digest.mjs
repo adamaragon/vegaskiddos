@@ -49,11 +49,29 @@ const T = {
   },
 };
 
+// Localize scraped recurrence text + price text. Known tokens are swapped;
+// anything unrecognized falls through unchanged (no worse than English).
+const ES_CADENCE = [
+  [/\bMultiple days a week\b/gi, "Varios días por semana"],
+  [/\bEvery other week\b/gi, "Cada dos semanas"],
+  [/\bWeekly\b/gi, "Semanal"], [/\bBiweekly\b/gi, "Quincenal"],
+  [/\bDaily\b/gi, "Diario"], [/\bMonthly\b/gi, "Mensual"], [/\bWeekends?\b/gi, "Fines de semana"],
+];
+const ES_DAY = { Sun: "Dom", Mon: "Lun", Tue: "Mar", Wed: "Mié", Thu: "Jue", Fri: "Vie", Sat: "Sáb" };
+const esRec = (rec) => {
+  let s = String(rec);
+  for (const [re, to] of ES_CADENCE) s = s.replace(re, to);
+  return s.replace(/\b(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\b/g, (m) => ES_DAY[m]);
+};
+const esPrice = (p) =>
+  String(p).replace(/\bfree\b/gi, "Gratis").replace(/\badmission\b/gi, "entrada").replace(/\bsuggested\b/gi, "sugerido");
+
 const fmt = (iso, rec, locale = "en-US") => {
   const d = new Date(iso);
+  const recTxt = locale.startsWith("es") ? esRec(rec) : rec;
   // For recurring, show the pattern; else the date.
   const date = d.toLocaleString(locale, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
-  return rec ? `${rec} · ${d.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" })}` : date;
+  return rec ? `${recTxt} · ${d.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" })}` : date;
 };
 
 const now = new Date();
@@ -72,12 +90,15 @@ const subs = (await airtableAll("Subscribers", `&filterByFormula=${encodeURIComp
   .filter((s) => s.email);
 
 console.log(`digest: ${events.length} events, ${subs.length} subscribers`);
-if (!events.length || !subs.length) { console.log("nothing to send"); process.exit(0); }
+if (!events.length) { console.log("no events — nothing to send"); process.exit(0); }
+// In send mode we need subscribers; in preview mode we render samples regardless.
+if (!subs.length && process.env.RESEND_API_KEY) { console.log("no subscribers — nothing to send"); process.exit(0); }
 
 const rowsFor = (list, lang = "en") => list.map((f) => {
   const c = T[lang];
   const title = lang === "es" ? (f.TitleEs || f.Title) : f.Title;
-  const price = f.PriceText || (f.PriceTier === "free" ? c.free : "");
+  let price = f.PriceText || (f.PriceTier === "free" ? c.free : "");
+  if (lang === "es" && price) price = esPrice(price);
   return `
   <tr><td style="padding:14px 0;border-bottom:1px solid #eee">
     <div style="font-size:12px;font-weight:700;color:#0FA89A;text-transform:uppercase">${fmt(f.Start, f.Recurrence, c.locale)}</div>
@@ -105,7 +126,16 @@ const htmlFor = (list, hoodLabel, unsub, lang = "en") => {
 };
 
 if (!process.env.RESEND_API_KEY) {
-  console.log("RESEND_API_KEY not set — preview only (no send). Sample:\n", htmlFor(events.slice(0, 5), "", "#").slice(0, 300));
+  // Preview only — write a full EN + ES sample email to disk (no send).
+  const fs = await import("node:fs");
+  const dir = process.env.PREVIEW_DIR || ".";
+  const sample = events.slice(0, 8);
+  for (const lang of ["en", "es"]) {
+    const path = `${dir}/digest-preview-${lang}.html`;
+    fs.writeFileSync(path, htmlFor(sample, "", "#", lang));
+    console.log(`📧 ${lang}  subject: "${T[lang].subject(sample.length)}"  →  ${path}`);
+  }
+  console.log("RESEND_API_KEY not set — preview only (no send).");
   process.exit(0);
 }
 
