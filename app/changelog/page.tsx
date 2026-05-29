@@ -1,6 +1,8 @@
 import { CHANGELOG, type ChangeTag } from "@/lib/changelog";
 import { Reveal } from "@/components/Reveal";
 import { Sun, Star, Squiggle } from "@/components/Doodles";
+import { getLang } from "@/lib/lang-server";
+import { t } from "@/lib/i18n";
 
 export const metadata = { title: "What's New — Vegas Kiddos" };
 
@@ -12,22 +14,22 @@ const TAG_STYLE: Record<ChangeTag, string> = {
   Fix: "bg-ink/80 text-white",
 };
 
-function fmt(d: string) {
-  return new Date(d + "T12:00:00").toLocaleDateString("en-US", {
+function fmt(d: string, locale: string) {
+  return new Date(d + "T12:00:00").toLocaleDateString(locale, {
     month: "long", day: "numeric", year: "numeric",
   });
 }
 
-export default function ChangelogPage() {
+export default async function ChangelogPage() {
+  const lang = await getLang();
+  const locale = lang === "es" ? "es-US" : "en-US";
   return (
     <div className="relative mx-auto max-w-2xl px-4 py-10">
       <Sun className="pointer-events-none absolute -right-6 top-6 h-20 w-20 animate-spin-slow opacity-70" />
       <header className="relative">
-        <h1 className="font-display text-4xl font-700 sm:text-5xl">What&apos;s New</h1>
+        <h1 className="font-display text-4xl font-700 sm:text-5xl">{t(lang, "cl_h")}</h1>
         <Squiggle className="mt-1 h-5 w-56 text-teal" />
-        <p className="mt-3 text-lg text-ink/70">
-          We&apos;re building Vegas Kiddos in the open. Here&apos;s everything we&apos;ve shipped.
-        </p>
+        <p className="mt-3 text-lg text-ink/70">{t(lang, "cl_intro")}</p>
       </header>
 
       <div className="relative mt-10">
@@ -39,7 +41,7 @@ export default function ChangelogPage() {
               <article className="relative pl-8 sm:pl-10">
                 <span className="absolute left-0 top-1.5 h-4 w-4 rounded-full border-4 border-sand bg-coral sm:h-5 sm:w-5" aria-hidden />
                 <div className="flex flex-wrap items-center gap-3">
-                  <time className="text-sm font-700 text-ink/50">{fmt(e.date)}</time>
+                  <time className="text-sm font-700 text-ink/50">{fmt(e.date, locale)}</time>
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-800 ${TAG_STYLE[e.tag]}`}>
                     {e.tag}
                   </span>

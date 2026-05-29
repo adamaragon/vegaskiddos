@@ -3,12 +3,20 @@
 import { useEffect, useState } from "react";
 import { Star, Arrow } from "@/components/Doodles";
 import type { FeatureDTO } from "@/app/api/features/route";
+import { useLang } from "@/lib/lang-client";
+import { t, type StringKey } from "@/lib/i18n";
 
 const STATUS_STYLE: Record<string, string> = {
   idea: "bg-sand text-ink/60",
   planned: "bg-sunny/30 text-sunny-dark",
   building: "bg-teal/20 text-teal-dark",
   shipped: "bg-teal text-white",
+};
+const STATUS_KEY: Record<string, StringKey> = {
+  idea: "ft_status_idea",
+  planned: "ft_status_planned",
+  building: "ft_status_building",
+  shipped: "ft_status_shipped",
 };
 
 function loadVoted(): Record<string, number> {
@@ -17,6 +25,8 @@ function loadVoted(): Record<string, number> {
 }
 
 export default function FeaturesPage() {
+  const lang = useLang();
+  const tr = (k: StringKey) => t(lang, k);
   const [features, setFeatures] = useState<FeatureDTO[]>([]);
   const [voted, setVoted] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -70,35 +80,32 @@ export default function FeaturesPage() {
   return (
     <div className="relative mx-auto max-w-2xl px-4 py-10">
       <Star className="pointer-events-none absolute -right-4 top-8 h-16 w-16 animate-bob opacity-70" />
-      <h1 className="font-display text-4xl font-700 sm:text-5xl">Help shape Vegas Kiddos</h1>
-      <p className="mt-3 text-lg text-ink/70">
-        Vote on what we build next — or pitch your own idea. The most-loved ideas
-        jump to the top of our list.
-      </p>
+      <h1 className="font-display text-4xl font-700 sm:text-5xl">{tr("ft_h")}</h1>
+      <p className="mt-3 text-lg text-ink/70">{tr("ft_intro")}</p>
 
       <button onClick={() => setShowForm((s) => !s)}
         className="hover-pop mt-5 inline-flex items-center gap-2 rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop">
-        💡 Suggest an idea
+        {tr("ft_suggest")}
       </button>
 
       {showForm && (
         <form onSubmit={submitIdea} className="mt-4 space-y-3 rounded-blob border border-ink/10 bg-white p-5 shadow-card">
-          <input name="title" required placeholder="Your idea in a sentence"
+          <input name="title" required placeholder={tr("ft_idea_title_ph")}
             className="w-full rounded-2xl border-2 border-ink/15 px-4 py-3 outline-none focus:border-teal" />
-          <textarea name="description" rows={2} placeholder="Any details? (optional)"
+          <textarea name="description" rows={2} placeholder={tr("ft_idea_desc_ph")}
             className="w-full rounded-2xl border-2 border-ink/15 px-4 py-3 outline-none focus:border-teal" />
           <button type="submit" disabled={submitting}
             className="rounded-full bg-teal px-5 py-2.5 font-800 text-white disabled:opacity-50">
-            {submitting ? "Adding…" : "Add my idea"}
+            {submitting ? tr("ft_adding") : tr("ft_add")}
           </button>
         </form>
       )}
 
       <div className="mt-8 space-y-3">
         {loading ? (
-          <p className="text-ink/40">Loading ideas…</p>
+          <p className="text-ink/40">{tr("ft_loading")}</p>
         ) : features.length === 0 ? (
-          <p className="text-ink/40">No ideas yet — be the first!</p>
+          <p className="text-ink/40">{tr("ft_empty")}</p>
         ) : (
           features.map((f) => {
             const myVote = voted[f.id] || 0;
@@ -121,7 +128,7 @@ export default function FeaturesPage() {
                     <h3 className="font-display text-lg font-600">{f.title}</h3>
                     {f.featured && <span className="text-sunny">⭐</span>}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-800 capitalize ${STATUS_STYLE[f.status] || STATUS_STYLE.idea}`}>
-                      {f.status}
+                      {tr(STATUS_KEY[f.status] || "ft_status_idea")}
                     </span>
                   </div>
                   {f.description && <p className="mt-0.5 text-sm text-ink/70">{f.description}</p>}
@@ -134,7 +141,7 @@ export default function FeaturesPage() {
 
       <div className="mt-10 flex items-center justify-center gap-2 text-ink/40">
         <Arrow className="h-8 w-12" />
-        <span className="text-sm">Your vote really does steer the roadmap.</span>
+        <span className="text-sm">{tr("ft_footer")}</span>
       </div>
     </div>
   );

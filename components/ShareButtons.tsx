@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { track } from "@/lib/track";
 
 // Share UI: uses the native Web Share sheet on mobile, with a copy-link +
 // social fallback everywhere else.
@@ -20,6 +21,7 @@ export function ShareButtons({
   const shareText = text || title;
 
   async function nativeShare() {
+    track("Share", { method: "native" });
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ title, text: shareText, url });
@@ -69,6 +71,7 @@ export function ShareButtons({
       </button>
       {links.map((l) => (
         <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
+          onClick={() => track("Share", { method: l.label })}
           aria-label={`Share on ${l.label}`}
           className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink/15 bg-white text-base transition hover:scale-110 hover:border-teal">
           {l.emoji}

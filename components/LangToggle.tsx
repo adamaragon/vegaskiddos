@@ -1,12 +1,14 @@
 "use client";
 
 import type { Lang } from "@/lib/i18n";
+import { track } from "@/lib/track";
 
 // EN/ES toggle. Sets the vk_lang cookie and reloads so server components
 // re-render in the chosen language.
 export function LangToggle({ lang }: { lang: Lang }) {
   function set(next: Lang) {
     if (next === lang) return;
+    track("Lang Toggle", { to: next });
     document.cookie = `vk_lang=${next};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`;
     window.location.reload();
   }

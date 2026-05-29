@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { NEIGHBORHOODS } from "@/lib/constants";
 import { t, hoodLabel, type Lang } from "@/lib/i18n";
+import { track } from "@/lib/track";
 
 // Email capture for the weekly digest. Posts to /api/subscribe.
 export function SubscribeBox({ compact = false, stacked = false, lang = "en" }: { compact?: boolean; stacked?: boolean; lang?: Lang }) {
@@ -22,6 +23,7 @@ export function SubscribeBox({ compact = false, stacked = false, lang = "en" }: 
       });
       const d = await res.json();
       if (!res.ok) { setStatus("error"); setMsg(d.error || tr("nl_err_again")); return; }
+      track("Subscribe", { lang });
       setStatus("done");
     } catch {
       setStatus("error"); setMsg(tr("nl_err_generic"));

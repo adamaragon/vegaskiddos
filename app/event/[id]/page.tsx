@@ -5,6 +5,7 @@ import { getEvent, getEvents } from "@/lib/data";
 import { ageTier, priceTier, neighborhood, venueSlug } from "@/lib/constants";
 import { formatWhen, EventCard } from "@/components/EventCard";
 import { ShareButtons } from "@/components/ShareButtons";
+import { TrackedLink } from "@/components/TrackedLink";
 import { JsonLd } from "@/components/JsonLd";
 import { nextOccurrenceISO } from "@/lib/recurrence";
 import { AdminEventControls } from "@/components/AdminEventControls";
@@ -193,31 +194,34 @@ export default async function EventPage({
           )}
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
+            <TrackedLink
+              event="Get Directions"
               href={mapsHref}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-full bg-teal px-5 py-3 font-800 text-white shadow-pop transition hover:bg-teal-dark"
             >
               {t(lang, "ev_directions")}
-            </a>
-            <a
+            </TrackedLink>
+            <TrackedLink
+              event="Add to Calendar"
               href={gcalHref}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-full bg-grape px-5 py-3 font-800 text-white shadow-pop transition hover:bg-grape-dark"
             >
               {t(lang, "ev_calendar")}
-            </a>
+            </TrackedLink>
             {event.url && (
-              <a
+              <TrackedLink
+                event="RSVP / Info"
                 href={event.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop transition hover:bg-coral-dark"
               >
                 {t(lang, "ev_rsvp")}
-              </a>
+              </TrackedLink>
             )}
           </div>
 

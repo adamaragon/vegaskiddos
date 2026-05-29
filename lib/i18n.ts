@@ -115,6 +115,78 @@ export const STRINGS = {
   nl_done: { en: "🎉 You're in! Watch your inbox each week.", es: "🎉 ¡Listo! Revisa tu correo cada semana." },
   nl_err_again: { en: "Try again.", es: "Inténtalo de nuevo." },
   nl_err_generic: { en: "Something went wrong.", es: "Algo salió mal." },
+
+  // ── About page ──
+  ab_title: { en: "About", es: "Acerca de" },
+  ab_lead: {
+    en: "Vegas Kiddos is a free resource that helps Las Vegas parents find safe, age-appropriate events for their children — every day of the week.",
+    es: "Vegas Kiddos es un recurso gratuito que ayuda a los padres de Las Vegas a encontrar eventos seguros y apropiados para la edad de sus hijos — todos los días de la semana.",
+  },
+  ab_p2: {
+    en: "We pull events from local libraries, parks & rec departments, children's museums, and trusted community submissions, then sort them by age, price, and neighborhood so you can find the right thing for your little one in seconds.",
+    es: "Reunimos eventos de bibliotecas locales, departamentos de parques y recreación, museos infantiles y aportes confiables de la comunidad, y los organizamos por edad, precio y vecindario para que encuentres lo ideal para tu pequeño en segundos.",
+  },
+  ab_sources_h: { en: "Where our events come from", es: "De dónde vienen nuestros eventos" },
+  ab_src_1: { en: "Las Vegas–Clark County Library District", es: "Distrito de Bibliotecas de Las Vegas–Clark County" },
+  ab_src_2: { en: "Henderson Libraries & North Las Vegas Library", es: "Bibliotecas de Henderson y North Las Vegas" },
+  ab_src_3: { en: "City & County Parks & Recreation calendars", es: "Calendarios de Parques y Recreación de la ciudad y el condado" },
+  ab_src_4: { en: "DISCOVERY Children's Museum, Springs Preserve, and more", es: "DISCOVERY Children's Museum, Springs Preserve y más" },
+  ab_src_5: { en: "Community submissions from parents & local organizers", es: "Aportes de la comunidad: padres y organizadores locales" },
+  ab_safety_h: { en: "A note on safety", es: "Una nota sobre seguridad" },
+  ab_safety_p: {
+    en: "We focus on family-friendly, kid-safe programming. Listings are aggregated from public sources — please always confirm the details with the venue before you go.",
+    es: "Nos enfocamos en actividades familiares y seguras para niños. Los listados se recopilan de fuentes públicas — confirma siempre los detalles con el lugar antes de ir.",
+  },
+
+  // ── Contact page ──
+  ct_type_feedback: { en: "💬 Feedback", es: "💬 Comentarios" },
+  ct_type_suggestion: { en: "💡 Suggestion", es: "💡 Sugerencia" },
+  ct_type_eventtip: { en: "📅 Event tip", es: "📅 Aviso de evento" },
+  ct_type_bug: { en: "🐛 Something's broken", es: "🐛 Algo no funciona" },
+  ct_done_h: { en: "Thank you!", es: "¡Gracias!" },
+  ct_done_p: { en: "We read every message. If you left an email, we might just write back.", es: "Leemos cada mensaje. Si dejaste un correo, quizá te respondamos." },
+  ct_send_another: { en: "Send another", es: "Enviar otro" },
+  ct_h: { en: "Say hello 👋", es: "Saluda 👋" },
+  ct_intro: {
+    en: "Got feedback, a great event we missed, or an idea to make Vegas Kiddos better? We'd love to hear it.",
+    es: "¿Tienes comentarios, un buen evento que se nos pasó, o una idea para mejorar Vegas Kiddos? Nos encantaría saberlo.",
+  },
+  ct_about_q: { en: "What's this about?", es: "¿De qué se trata?" },
+  ct_name: { en: "Your name", es: "Tu nombre" },
+  ct_name_ph: { en: "Optional", es: "Opcional" },
+  ct_email: { en: "Email", es: "Correo" },
+  ct_email_ph: { en: "So we can reply (optional)", es: "Para poder responder (opcional)" },
+  ct_msg: { en: "Message *", es: "Mensaje *" },
+  ct_msg_ph: { en: "Tell us what's on your mind…", es: "Cuéntanos qué piensas…" },
+  ct_err: { en: "Hmm, that didn't send. Please try again.", es: "Mmm, no se envió. Inténtalo de nuevo." },
+  ct_send: { en: "Send message", es: "Enviar mensaje" },
+  ct_sending: { en: "Sending…", es: "Enviando…" },
+
+  // ── Features / ideas page ──
+  ft_h: { en: "Help shape Vegas Kiddos", es: "Ayuda a dar forma a Vegas Kiddos" },
+  ft_intro: {
+    en: "Vote on what we build next — or pitch your own idea. The most-loved ideas jump to the top of our list.",
+    es: "Vota por lo que construimos a continuación — o propón tu propia idea. Las ideas más queridas suben a lo más alto de nuestra lista.",
+  },
+  ft_suggest: { en: "💡 Suggest an idea", es: "💡 Propón una idea" },
+  ft_idea_title_ph: { en: "Your idea in a sentence", es: "Tu idea en una frase" },
+  ft_idea_desc_ph: { en: "Any details? (optional)", es: "¿Algún detalle? (opcional)" },
+  ft_add: { en: "Add my idea", es: "Agregar mi idea" },
+  ft_adding: { en: "Adding…", es: "Agregando…" },
+  ft_loading: { en: "Loading ideas…", es: "Cargando ideas…" },
+  ft_empty: { en: "No ideas yet — be the first!", es: "Aún no hay ideas — ¡sé el primero!" },
+  ft_footer: { en: "Your vote really does steer the roadmap.", es: "Tu voto sí guía nuestro plan." },
+  ft_status_idea: { en: "idea", es: "idea" },
+  ft_status_planned: { en: "planned", es: "planeado" },
+  ft_status_building: { en: "building", es: "en desarrollo" },
+  ft_status_shipped: { en: "shipped", es: "lanzado" },
+
+  // ── Changelog page ──
+  cl_h: { en: "What's New", es: "Novedades" },
+  cl_intro: {
+    en: "We're building Vegas Kiddos in the open. Here's everything we've shipped.",
+    es: "Estamos construyendo Vegas Kiddos a la vista de todos. Esto es todo lo que hemos lanzado.",
+  },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

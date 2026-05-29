@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import type { KidEvent } from "@/lib/types";
 import { t as i18nT, ageLabel, priceLabel, hoodLabel, type Lang, type StringKey } from "@/lib/i18n";
 import { EventCard } from "./EventCard";
+import { track } from "@/lib/track";
 import {
   AGE_TIERS,
   PRICE_TIERS,
@@ -297,19 +298,19 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
       {/* Control bar: quick picks on the left, a single Filters toggle on the
           right. Detailed filter rows live behind the toggle to cut clutter. */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <button onClick={() => { setPrices(new Set(["free"])); setDateRange("weekend"); }}
+        <button onClick={() => { track("Quick Pick", { pick: "free_weekend" }); setPrices(new Set(["free"])); setDateRange("weekend"); }}
           className="hover-pop rounded-full bg-teal px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">{tr("qp_free_weekend")}</button>
-        <button onClick={() => { setPrices(new Set(["free"])); useMyLocation(); }}
+        <button onClick={() => { track("Quick Pick", { pick: "free_near" }); setPrices(new Set(["free"])); useMyLocation(); }}
           className="hover-pop rounded-full bg-coral px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">{tr("qp_free_near")}</button>
-        <button onClick={() => setDateRange("today")}
+        <button onClick={() => { track("Quick Pick", { pick: "today" }); setDateRange("today"); }}
           className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-700 transition ${dateRange === "today" ? "border-teal bg-teal text-white" : "border-ink/15 bg-white text-ink/70 hover:border-teal"}`}>{tr("qp_today")}</button>
-        <button onClick={() => setOnlyFavs((v) => !v)}
+        <button onClick={() => { if (!onlyFavs) track("Quick Pick", { pick: "my_list" }); setOnlyFavs((v) => !v); }}
           className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-800 transition ${onlyFavs ? "border-coral bg-coral text-white" : "border-ink/15 bg-white text-ink/70 hover:border-coral"}`}>
           {tr("my_list")}{favs.size ? ` (${favs.size})` : ""}
         </button>
 
         <button
-          onClick={() => setShowFilters((v) => !v)}
+          onClick={() => { if (!showFilters) track("Filters Opened"); setShowFilters((v) => !v); }}
           aria-expanded={showFilters}
           className={`ml-auto inline-flex items-center gap-1.5 rounded-full border-2 px-4 py-1.5 text-sm font-800 transition ${
             showFilters || activeCount
