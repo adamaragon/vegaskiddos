@@ -3,6 +3,7 @@ import { EventBrowser } from "@/components/EventBrowser";
 import { Reveal } from "@/components/Reveal";
 import { HeroCanvas } from "@/components/HeroCanvas";
 import { ShareButtons } from "@/components/ShareButtons";
+import { SubscribeBox } from "@/components/SubscribeBox";
 import { JsonLd } from "@/components/JsonLd";
 import { Sun, Cloud, Star, Underline, Scribble } from "@/components/Doodles";
 
@@ -58,6 +59,19 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Weekly digest signup */}
+      <Reveal as="section" variant="pop" className="mt-8">
+        <div className="flex flex-col items-center gap-3 rounded-blob bg-gradient-to-br from-teal to-grape p-6 text-center text-white shadow-card sm:flex-row sm:justify-between sm:text-left">
+          <div>
+            <h2 className="font-display text-xl font-700">📬 This week&apos;s kid events, in your inbox</h2>
+            <p className="text-sm text-white/90">Free weekly email — the best upcoming events for Vegas families.</p>
+          </div>
+          <div className="w-full max-w-sm rounded-full bg-white/10 p-1.5 sm:w-auto">
+            <SubscribeBox />
+          </div>
+        </div>
+      </Reveal>
 
       {/* Browser */}
       <section className="mt-8">

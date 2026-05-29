@@ -1,0 +1,24 @@
+name: Weekly email digest
+
+# Compiles "This Week for Vegas Kids" from Airtable and emails subscribers.
+# Sends via Resend when RESEND_API_KEY is set; otherwise just compiles (preview).
+
+on:
+  schedule:
+    - cron: "0 16 * * 4" # Thursdays 09:00 PT
+  workflow_dispatch: {}
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Send weekly digest
+        env:
+          AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_FROM: ${{ secrets.DIGEST_FROM }}
+        run: node tools/send-digest.mjs

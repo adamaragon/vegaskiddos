@@ -3,7 +3,13 @@ import { Fredoka, Nunito } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { CrayonDefs, Star } from "@/components/Doodles";
+import { PWARegister } from "@/components/PWARegister";
+import type { Viewport } from "next";
 import Link from "next/link";
+
+export const viewport: Viewport = {
+  themeColor: "#FF6B5E",
+};
 
 const fredoka = Fredoka({
   subsets: ["latin"],
@@ -41,6 +47,7 @@ export const metadata: Metadata = {
   verification: process.env.GOOGLE_SITE_VERIFICATION
     ? { google: process.env.GOOGLE_SITE_VERIFICATION }
     : undefined,
+  appleWebApp: { capable: true, title: "Vegas Kiddos", statusBarStyle: "default" },
 };
 
 export default function RootLayout({
@@ -51,6 +58,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${fredoka.variable} ${nunito.variable}`}>
       <body className="font-body min-h-screen antialiased">
+        <PWARegister />
         <CrayonDefs />
         <Header />
         <main>{children}</main>
