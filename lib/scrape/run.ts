@@ -2,7 +2,7 @@ import type { ScrapedEvent, SourceResult } from "./types";
 import { makeTribeAdapter } from "./sources/tribe";
 import { fetchNevadaMoms } from "./sources/nevadaMoms";
 import { fetchLibrary } from "./sources/library";
-import { upsertEvents } from "./airtable";
+import { upsertEvents, dedupeApprovedEvents } from "./airtable";
 import { collapseRecurring } from "./recurring";
 
 const vegasFamilyGuide = makeTribeAdapter({
@@ -70,6 +70,11 @@ export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary
   const counts = dryRun || !collapsed.length
     ? { created: 0, updated: 0 }
     : await upsertEvents(collapsed);
+
+  // Self-heal: collapse any approved cross-source/leftover duplicates.
+  if (!dryRun) {
+    try { await dedupeApprovedEvents(); } catch (e) { console.error("dedupe skipped:", e); }
+  }
 
   return {
     ranAt: new Date().toISOString(),

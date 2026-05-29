@@ -37,6 +37,56 @@ function toFields(e: ScrapedEvent) {
   return f;
 }
 
+// Self-healing dedup: among APPROVED events, collapse same title+venue dupes
+// (the same event listed by multiple sources, or a one-time left behind when it
+// became a recurring series). Keeps the best record (recurring series > has
+// image > richest) and soft-rejects the rest. Runs after each scrape.
+export async function dedupeApprovedEvents(): Promise<number> {
+  const { token, base, table } = cfg();
+  const norm = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const recs: { id: string; fields: Record<string, unknown> }[] = [];
+  let offset: string | undefined;
+  do {
+    const url = new URL(`${API}/${base}/${encodeURIComponent(table)}`);
+    url.searchParams.set("pageSize", "100");
+    url.searchParams.set("filterByFormula", "{Approved}=1");
+    ["Title", "Venue", "Recurrence", "Image", "Description", "ExternalId"].forEach((f) =>
+      url.searchParams.append("fields[]", f)
+    );
+    if (offset) url.searchParams.set("offset", offset);
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return 0;
+    const data = (await res.json()) as { records: typeof recs; offset?: string };
+    recs.push(...data.records);
+    offset = data.offset;
+  } while (offset);
+
+  const score = (r: (typeof recs)[number]) => {
+    const f = r.fields;
+    return (String(f.ExternalId || "").startsWith("series:") ? 100 : 0) +
+      (f.Image ? 10 : 0) + Math.min(5, String(f.Description || "").length / 100);
+  };
+  const groups = new Map<string, typeof recs>();
+  for (const r of recs) {
+    const k = `${norm(String(r.fields.Title))}|${norm(String(r.fields.Venue))}`;
+    (groups.get(k) || groups.set(k, []).get(k)!).push(r);
+  }
+  const reject: string[] = [];
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    g.sort((a, b) => score(b) - score(a));
+    reject.push(...g.slice(1).map((r) => r.id));
+  }
+  for (let i = 0; i < reject.length; i += 10) {
+    await fetch(`${API}/${base}/${encodeURIComponent(table)}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ records: reject.slice(i, i + 10).map((id) => ({ id, fields: { Approved: false, Rejected: true } })) }),
+    });
+  }
+  return reject.length;
+}
+
 // Upsert by ExternalId: creates new (pending) events, refreshes existing ones'
 // content (incl. the next date for recurring series) without touching approval.
 export async function upsertEvents(
