@@ -125,6 +125,98 @@ async function scrapeClarkCounty(browser) {
   return events;
 }
 
+const MONTHS = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+async function scrapeHenderson(browser) {
+  const page = await browser.newPage();
+  await page.setUserAgent(UA);
+  await page.goto("https://www.cityofhenderson.com/our-city/event-meeting-calendar", { waitUntil: "domcontentloaded", timeout: 60000 });
+  await new Promise((r) => setTimeout(r, 4000));
+
+  const today = new Date().toISOString().slice(0, 10);
+  const events = [];
+  const seen = new Set();
+
+  // Parse the visible month grid, then advance to the next month and repeat.
+  for (let pass = 0; pass < 2; pass++) {
+    const grid = await page.evaluate(() => {
+      const hdrText = document.body.innerText.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b/i);
+      const cells = [...document.querySelectorAll("td")].filter((td) => td.querySelector('a[href*="/Calendar/Event/"]'));
+      const items = [];
+      for (const td of cells) {
+        const dayM = (td.textContent || "").trim().match(/^\s*(\d{1,2})\b/);
+        for (const a of td.querySelectorAll('a[href*="/Calendar/Event/"]')) {
+          const wrap = a.closest("li,div,span,p") || a.parentElement;
+          const tm = (wrap?.textContent || "").match(/(\d{1,2}(?::\d{2})?\s*[ap]\.?m\.?)/i);
+          items.push({ day: dayM ? +dayM[1] : null, time: tm ? tm[1] : null, title: a.textContent.trim(), href: a.getAttribute("href") });
+        }
+      }
+      return { hdr: hdrText ? `${hdrText[1]} ${hdrText[2]}` : "", items };
+    });
+
+    const hm = grid.hdr.toLowerCase().match(/(\w+)\s+(\d{4})/);
+    if (hm) {
+      const month = MONTHS.indexOf(hm[1]) + 1;
+      const year = hm[2];
+      for (const it of grid.items) {
+        if (!it.day || !it.title) continue;
+        const blob = it.title;
+        if (!kidRelevant(blob)) continue;
+        const date = `${year}-${String(month).padStart(2, "0")}-${String(it.day).padStart(2, "0")}`;
+        if (date < today) continue;
+        const idM = it.href.match(/Event\/(\d+)/);
+        const ext = `hen:${idM ? idM[1] : it.title}:${date}`;
+        if (seen.has(ext)) continue;
+        seen.add(ext);
+        const venueM = it.title.match(/\(([^)]+)\)/);
+        events.push({
+          externalId: ext,
+          title: it.title.replace(/\s*\([^)]+\)\s*$/, "").trim().slice(0, 120),
+          description: "",
+          venue: venueM ? venueM[1] : "City of Henderson",
+          address: "",
+          neighborhood: "henderson",
+          start: `${date}T${it.time ? parseTime(it.time) : "09:00"}:00-07:00`,
+          ageTiers: classifyAges(blob),
+          priceTier: classifyPrice(blob),
+          url: `https://www.cityofhenderson.com${it.href}`,
+          source: "City of Henderson",
+        });
+      }
+    }
+    // advance to next month
+    const next = await page.evaluate(() => {
+      const a = [...document.querySelectorAll("a,button")].find((e) => /next month/i.test(e.textContent || ""));
+      if (a) { a.click(); return true; }
+      return false;
+    });
+    if (!next) break;
+    await new Promise((r) => setTimeout(r, 2500));
+  }
+  await page.close();
+  return events;
+}
+
+/* ---------------- collapse repeated instances into recurring series -------- */
+const WD = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+function collapse(events) {
+  const groups = new Map();
+  for (const e of events) {
+    const k = `${e.source}|${e.title.toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}|${(e.venue||"").toLowerCase()}`;
+    (groups.get(k) || groups.set(k, []).get(k)).push(e);
+  }
+  const out = [];
+  for (const [k, g] of groups) {
+    if (g.length === 1) { out.push(g[0]); continue; }
+    g.sort((a, b) => a.start.localeCompare(b.start));
+    const days = [...new Set(g.map((e) => new Date(e.start).getDay()))];
+    const s = { ...g[0] };
+    s.recurrence = days.length === 1 ? `Weekly on ${WD[days[0]]}s` : days.length >= 5 ? "Multiple days a week" : `${g.length} upcoming dates`;
+    s.externalId = `series:${k}`;
+    out.push(s);
+  }
+  return out;
+}
+
 /* ---------------- Airtable upsert ---------------- */
 async function upsert(events) {
   const token = process.env.AIRTABLE_TOKEN, base = process.env.AIRTABLE_BASE_ID, table = "Events";
@@ -157,7 +249,7 @@ async function upsert(events) {
 /* ---------------- main ---------------- */
 const dryRun = process.argv.includes("--dry");
 const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
-const sources = { "City of Las Vegas": scrapeCityOfLV, "Clark County": scrapeClarkCounty };
+const sources = { "City of Las Vegas": scrapeCityOfLV, "Clark County": scrapeClarkCounty, "City of Henderson": scrapeHenderson };
 let all = [];
 for (const [name, fn] of Object.entries(sources)) {
   try {
@@ -169,7 +261,8 @@ for (const [name, fn] of Object.entries(sources)) {
   }
 }
 await browser.close();
-console.log(`total: ${all.length}`);
+all = collapse(all);
+console.log(`total after collapse: ${all.length}`);
 if (dryRun) {
   for (const e of all.slice(0, 8)) console.log(`   - ${e.title} | ${e.start.slice(0,16)} | ${e.neighborhood} | ${e.priceTier} | ${e.recurrence || "one-time"}`);
 } else if (all.length) {
