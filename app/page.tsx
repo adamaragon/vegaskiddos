@@ -64,14 +64,14 @@ export default async function HomePage() {
 
       {/* Weekly digest signup */}
       <Reveal as="section" variant="pop" className="mt-8">
-        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-teal to-grape px-6 py-7 text-white shadow-card sm:px-8 sm:py-8">
+        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-teal to-grape px-6 py-5 text-white shadow-card sm:px-8 sm:py-6">
           {/* Decorative doodles fill the negative space */}
           <Star className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rotate-12 text-white/10" />
           <Cloud className="pointer-events-none absolute -bottom-2 left-1/4 hidden h-14 w-14 text-white/10 lg:block" />
           <div className="relative grid items-center gap-8 lg:grid-cols-[1fr_minmax(20rem,26rem)]">
             <div className="text-center lg:text-left">
-              <h2 className="font-display text-2xl font-800 leading-tight sm:text-3xl">{t(lang, "nl_title")}</h2>
-              <p className="mt-2 text-sm text-white/90 sm:text-base">{t(lang, "nl_sub")}</p>
+              <h2 className="font-display text-3xl font-800 leading-tight sm:text-4xl">{t(lang, "nl_title")}</h2>
+              <p className="mt-2 text-base text-white/90 sm:text-lg">{t(lang, "nl_sub")}</p>
               <ul className="mx-auto mt-4 inline-flex flex-col gap-1.5 text-left text-sm font-600 text-white/95 lg:mx-0">
                 <li className="flex items-center gap-2"><span aria-hidden>✅</span>{t(lang, "nl_perk_curated")}</li>
                 <li className="flex items-center gap-2"><span aria-hidden>📍</span>{t(lang, "nl_perk_local")}</li>
