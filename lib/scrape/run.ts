@@ -1,7 +1,21 @@
 import type { ScrapedEvent, SourceResult } from "./types";
-import { fetchVegasFamilyGuide } from "./sources/vegasFamilyGuide";
+import { makeTribeAdapter } from "./sources/tribe";
 import { fetchNevadaMoms } from "./sources/nevadaMoms";
+import { fetchLibrary } from "./sources/library";
 import { existingExternalIds, insertEvents } from "./airtable";
+
+const vegasFamilyGuide = makeTribeAdapter({
+  source: "Vegas Family Guide",
+  apiBase: "https://vegasfamilyevents.com/wp-json/tribe/events/v1/events",
+  pages: 4,
+  perPage: 50,
+});
+const uncommons = makeTribeAdapter({
+  source: "The UnCommons",
+  apiBase: "https://uncommons.com/wp-json/tribe/events/v1/events",
+  pages: 3,
+  perPage: 50,
+});
 
 export interface RunSummary {
   ranAt: string;
@@ -15,8 +29,10 @@ export interface RunSummary {
 
 // Registered source adapters. Add new ones here as they're built.
 const SOURCES: (() => Promise<SourceResult>)[] = [
-  () => fetchVegasFamilyGuide({ pages: 4, perPage: 50 }),
+  vegasFamilyGuide,
+  uncommons,
   () => fetchNevadaMoms(),
+  () => fetchLibrary({ days: 30 }),
 ];
 
 export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary> {
