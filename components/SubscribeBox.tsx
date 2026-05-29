@@ -5,7 +5,7 @@ import { NEIGHBORHOODS } from "@/lib/constants";
 import { t, hoodLabel, type Lang } from "@/lib/i18n";
 
 // Email capture for the weekly digest. Posts to /api/subscribe.
-export function SubscribeBox({ compact = false, lang = "en" }: { compact?: boolean; lang?: Lang }) {
+export function SubscribeBox({ compact = false, stacked = false, lang = "en" }: { compact?: boolean; stacked?: boolean; lang?: Lang }) {
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
   const tr = (k: Parameters<typeof t>[1]) => t(lang, k);
@@ -29,23 +29,26 @@ export function SubscribeBox({ compact = false, lang = "en" }: { compact?: boole
   }
 
   if (status === "done") {
-    return <p className={`font-700 text-teal-dark ${compact ? "text-sm" : ""}`}>{tr("nl_done")}</p>;
+    return <p className={`font-700 text-teal-dark ${compact ? "text-sm" : stacked ? "text-center text-lg" : ""}`}>{tr("nl_done")}</p>;
   }
 
+  // Stacked = full-width vertical fields, for a square card that fills a column.
+  const field = stacked ? "w-full py-3 text-base" : compact ? "py-2 text-sm" : "py-2.5";
+
   return (
-    <form onSubmit={submit} className="flex flex-wrap items-center gap-2">
+    <form onSubmit={submit} className={stacked ? "flex flex-col gap-3" : "flex flex-wrap items-center gap-2"}>
       <input
         name="email"
         type="email"
         required
         placeholder={tr("nl_email_ph")}
-        className={`w-full min-w-[12rem] flex-1 basis-full rounded-full border-2 border-ink/15 bg-white px-4 outline-none focus:border-teal sm:basis-0 ${compact ? "py-2 text-sm" : "py-2.5"}`}
+        className={`rounded-full border-2 border-ink/15 bg-white px-4 outline-none focus:border-teal ${stacked ? field : `w-full min-w-[12rem] flex-1 basis-full sm:basis-0 ${field}`}`}
       />
       <select
         name="neighborhood"
         aria-label={tr("nl_area_label")}
         defaultValue=""
-        className={`flex-1 rounded-full border-2 border-ink/15 bg-white px-3 text-ink/70 outline-none focus:border-teal sm:flex-none ${compact ? "py-2 text-sm" : "py-2.5"}`}
+        className={`rounded-full border-2 border-ink/15 bg-white px-3 text-ink/70 outline-none focus:border-teal ${stacked ? field : `flex-1 sm:flex-none ${field}`}`}
       >
         <option value="">{tr("nl_all_areas")}</option>
         {NEIGHBORHOODS.map((n) => (
@@ -55,11 +58,11 @@ export function SubscribeBox({ compact = false, lang = "en" }: { compact?: boole
       <button
         type="submit"
         disabled={status === "sending"}
-        className={`hover-pop rounded-full bg-coral font-800 text-white shadow-pop disabled:opacity-50 ${compact ? "px-4 py-2 text-sm" : "px-5 py-2.5"}`}
+        className={`hover-pop rounded-full bg-coral font-800 text-white shadow-pop disabled:opacity-50 ${stacked ? "w-full py-3 text-base" : compact ? "px-4 py-2 text-sm" : "px-5 py-2.5"}`}
       >
         {status === "sending" ? "…" : tr("nl_button")}
       </button>
-      {status === "error" && <span className="w-full text-sm font-700 text-coral-dark">{msg}</span>}
+      {status === "error" && <span className={`text-sm font-700 text-coral-dark ${stacked ? "text-center" : "w-full"}`}>{msg}</span>}
     </form>
   );
 }

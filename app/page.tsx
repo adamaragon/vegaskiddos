@@ -64,24 +64,22 @@ export default async function HomePage() {
 
       {/* Weekly digest signup */}
       <Reveal as="section" variant="pop" className="mt-8">
-        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-teal to-grape px-6 py-10 text-white shadow-card sm:px-10 sm:py-12">
+        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-teal to-grape px-6 py-7 text-white shadow-card sm:px-8 sm:py-8">
           {/* Decorative doodles fill the negative space */}
-          <Star className="pointer-events-none absolute -right-4 -top-4 h-24 w-24 rotate-12 text-white/10" />
-          <Cloud className="pointer-events-none absolute bottom-2 left-1/3 hidden h-16 w-16 text-white/10 lg:block" />
-          <div className="relative grid items-center gap-8 lg:grid-cols-2">
+          <Star className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rotate-12 text-white/10" />
+          <Cloud className="pointer-events-none absolute -bottom-2 left-1/4 hidden h-14 w-14 text-white/10 lg:block" />
+          <div className="relative grid items-center gap-8 lg:grid-cols-[1fr_minmax(20rem,26rem)]">
             <div className="text-center lg:text-left">
-              <h2 className="font-display text-3xl font-800 leading-tight sm:text-4xl">{t(lang, "nl_title")}</h2>
-              <p className="mt-2 text-base text-white/90 sm:text-lg">{t(lang, "nl_sub")}</p>
-              <ul className="mx-auto mt-5 inline-flex flex-col gap-2 text-left text-sm font-600 text-white/95 sm:text-base lg:mx-0">
+              <h2 className="font-display text-2xl font-800 leading-tight sm:text-3xl">{t(lang, "nl_title")}</h2>
+              <p className="mt-2 text-sm text-white/90 sm:text-base">{t(lang, "nl_sub")}</p>
+              <ul className="mx-auto mt-4 inline-flex flex-col gap-1.5 text-left text-sm font-600 text-white/95 lg:mx-0">
                 <li className="flex items-center gap-2"><span aria-hidden>✅</span>{t(lang, "nl_perk_curated")}</li>
                 <li className="flex items-center gap-2"><span aria-hidden>📍</span>{t(lang, "nl_perk_local")}</li>
                 <li className="flex items-center gap-2"><span aria-hidden>🎉</span>{t(lang, "nl_perk_free")}</li>
               </ul>
             </div>
-            <div className="mx-auto w-full max-w-md">
-              <div className="rounded-3xl bg-white/10 p-3 backdrop-blur-sm sm:p-4">
-                <SubscribeBox lang={lang} />
-              </div>
+            <div className="w-full rounded-3xl bg-white/12 p-5 backdrop-blur-sm sm:p-6">
+              <SubscribeBox lang={lang} stacked />
               <p className="mt-3 text-center text-xs text-white/70">{t(lang, "nl_note")}</p>
             </div>
           </div>
