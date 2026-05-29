@@ -87,9 +87,11 @@ export default async function RootLayout({
               <p className="font-display font-600 text-ink/80">{t(lang, "foot_explore")}</p>
               <ul className="mt-2 space-y-1.5 text-ink/60">
                 {[
-                  ["/", "Events"],
+                  ["/", "All events"],
+                  ["/this-weekend", "This weekend"],
+                  ["/free", "Free events"],
+                  ["/today", "Today"],
                   ["/features", "Vote on features"],
-                  ["/changelog", "What's new"],
                   ["/about", "About"],
                 ].map(([href, label]) => (
                   <li key={href}>
