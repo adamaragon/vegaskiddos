@@ -16,7 +16,9 @@
     "ensure-art-field": "node tools/ensure-art-field.mjs",
     "check-links": "node tools/check-links.mjs",
     "fb-post": "node tools/fb-post.mjs",
-    "gen-art": "node tools/gen-event-art.mjs"
+    "gen-art": "node tools/gen-event-art.mjs",
+    "ensure-reminders-table": "node tools/ensure-reminders-table.mjs",
+    "send-reminders": "node tools/send-reminders.mjs"
   },
   "dependencies": {
     "leaflet": "1.9.4",
@@ -24,7 +26,8 @@
     "next": "^15.5.18",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "three": "^0.171.0"
+    "three": "^0.171.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@netlify/functions": "^5.2.2",

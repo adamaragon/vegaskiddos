@@ -6,14 +6,17 @@ import type { KidEvent } from "@/lib/types";
 import { getFavorites } from "@/lib/favorites";
 import { EventCard } from "./EventCard";
 import { ShareButtons } from "./ShareButtons";
+import { RemindMe } from "./RemindMe";
 
-export function MyList({ events }: { events: KidEvent[] }) {
+export function MyList({ events, lang = "en" }: { events: KidEvent[]; lang?: "en" | "es" }) {
   const [ids, setIds] = useState<string[] | null>(null);
+  const [shared, setShared] = useState(false);
 
   useEffect(() => {
     // A shared list passes ?ids=; otherwise use this device's saved favorites.
     const p = new URLSearchParams(window.location.search);
     const shared = p.get("ids");
+    setShared(!!shared);
     setIds(shared ? shared.split(",").filter(Boolean) : getFavorites());
     const sync = () => {
       if (!new URLSearchParams(window.location.search).get("ids")) setIds(getFavorites());
@@ -50,6 +53,11 @@ export function MyList({ events }: { events: KidEvent[] }) {
         </div>
         <ShareButtons url={shareUrl} title="My Vegas Kiddos list" text="Check out these kid events I saved on Vegas Kiddos" compact />
       </header>
+      {!shared && (
+        <div className="mt-5">
+          <RemindMe favoriteIds={ids} lang={lang} />
+        </div>
+      )}
       <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {mine.map((e, i) => (
           <EventCard key={e.id} event={e} index={i} />

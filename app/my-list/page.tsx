@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 export default async function MyListPage() {
   const lang = await getLang();
   const events = await getEvents(lang);
-  return <MyList events={events} />;
+  return <MyList events={events} lang={lang} />;
 }
