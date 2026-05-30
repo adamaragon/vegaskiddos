@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { KidEvent } from "./types";
 import { MOCK_EVENTS } from "./mock-events";
 import type { AgeTierId, PriceTierId, NeighborhoodId } from "./constants";
@@ -76,7 +77,10 @@ function localize(events: KidEvent[], lang: Lang): KidEvent[] {
   );
 }
 
-export async function getEvents(lang: Lang = "en"): Promise<KidEvent[]> {
+// Wrapped in React cache() so multiple calls in one request (e.g. an event
+// page's generateMetadata + render, or the homepage's strip + browser) share a
+// single fetch + parse. Cross-request data is already cached via revalidate:600.
+export const getEvents = cache(async (lang: Lang = "en"): Promise<KidEvent[]> => {
   if (!isAirtableConfigured()) {
     return localize([...MOCK_EVENTS].sort(byNextOccurrence), lang);
   }
@@ -112,7 +116,7 @@ export async function getEvents(lang: Lang = "en"): Promise<KidEvent[]> {
     console.error("Airtable fetch failed, using seed data:", err);
     return localize([...MOCK_EVENTS].sort(byNextOccurrence), lang);
   }
-}
+});
 
 export async function getEvent(id: string, lang: Lang = "en"): Promise<KidEvent | undefined> {
   const events = await getEvents(lang);

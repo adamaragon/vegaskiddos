@@ -261,6 +261,18 @@ async function runVerify() {
   console.log("token type:", info.type || "(unknown)");
   console.log("expires_at:", exp === 0 ? "0 → never expires (long-lived ✅)" : exp ? new Date(exp * 1000).toISOString() : "(debug_token unavailable with this token)");
   console.log(me?.category ? `✅ Valid PAGE token for "${me.name}" (id ${me.id})` : "⚠️ This is NOT a Page token (no category on /me).");
+
+  // Warn (and exit non-zero) when the token is close to expiring, so a scheduled
+  // verify run surfaces it before posting silently breaks.
+  if (typeof exp === "number" && exp > 0) {
+    const days = Math.floor((exp * 1000 - Date.now()) / 86_400_000);
+    if (days <= 10) {
+      console.error(`⚠️  TOKEN EXPIRES IN ${days} DAY(S) — refresh FB_PAGE_TOKEN soon (regenerate a long-lived Page token and re-set the secret).`);
+      process.exitCode = 3;
+    } else {
+      console.log(`token healthy: ~${days} days until expiry.`);
+    }
+  }
 }
 
 if (mode === "roundup") await runRoundup();

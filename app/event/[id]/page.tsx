@@ -83,6 +83,8 @@ export default async function EventPage({
     `&location=${encodeURIComponent(event.address || event.venue)}`;
 
   const shareUrl = `${SITE}/event/${event.id}`;
+  // Free → "0"; paid → first number in the price text (e.g. "$8 / child" → "8").
+  const ldPrice = event.priceTier === "free" ? "0" : event.priceText?.match(/\d+(?:\.\d+)?/)?.[0];
   const eventLd = {
     "@context": "https://schema.org",
     "@type": "Event",
@@ -103,11 +105,13 @@ export default async function EventPage({
     ...(event.image ? { image: [event.image] } : {}),
     offers: {
       "@type": "Offer",
-      price: event.priceTier === "free" ? "0" : undefined,
+      ...(ldPrice ? { price: ldPrice } : {}),
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       url: event.url || shareUrl,
     },
+    organizer: { "@type": "Organization", name: "Vegas Kiddos", url: SITE },
+    inLanguage: lang,
     url: shareUrl,
     isAccessibleForFree: event.priceTier === "free",
   };

@@ -34,7 +34,7 @@ export function EventThumb({ event }: { event: KidEvent }) {
       <div className="relative h-28 w-full overflow-hidden bg-sand">
         <Image
           src={event.image}
-          alt=""
+          alt={event.venue ? `${event.title} — ${event.venue}` : event.title}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition group-hover:scale-105"
