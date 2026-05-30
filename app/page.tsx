@@ -69,9 +69,9 @@ export default async function HomePage() {
           {/* Decorative doodles fill the negative space */}
           <Star className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rotate-12 text-white/10" />
           <Cloud className="pointer-events-none absolute -bottom-2 left-1/4 hidden h-14 w-14 text-white/10 lg:block" />
-          <div className="relative grid items-center gap-8 lg:grid-cols-2">
-            <div className="text-center lg:text-left">
-              <h2 className="font-display text-2xl font-800 leading-tight sm:text-3xl">{t(lang, "nl_title")}</h2>
+          <div className="relative grid items-center gap-8 lg:grid-cols-5">
+            <div className="text-center lg:col-span-3 lg:text-left">
+              <h2 className="font-display text-3xl font-800 leading-tight sm:text-4xl">{t(lang, "nl_title")}</h2>
               <p className="mt-3 text-xl text-white/90 sm:text-2xl">{t(lang, "nl_sub")}</p>
               <ul className="mx-auto mt-5 inline-flex flex-col gap-2.5 text-left text-lg font-600 text-white/95 lg:mx-0">
                 <li className="flex items-center gap-2"><span aria-hidden>✅</span>{t(lang, "nl_perk_curated")}</li>
@@ -79,7 +79,7 @@ export default async function HomePage() {
                 <li className="flex items-center gap-2"><span aria-hidden>🎉</span>{t(lang, "nl_perk_free")}</li>
               </ul>
             </div>
-            <div className="w-full rounded-3xl bg-white/12 p-6 backdrop-blur-sm sm:p-7">
+            <div className="w-full rounded-3xl bg-white/12 p-6 backdrop-blur-sm sm:p-7 lg:col-span-2">
               <SubscribeBox lang={lang} stacked />
               <p className="mt-3 text-center text-sm text-white/70">{t(lang, "nl_note")}</p>
             </div>
