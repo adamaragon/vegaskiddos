@@ -18,6 +18,11 @@ on:
       limit:
         description: "Cap how many to upload (batch mode; blank = all)"
         default: ""
+      quality:
+        description: "Image quality (cost/look tradeoff)"
+        type: choice
+        default: low
+        options: [low, medium, high]
 
 jobs:
   gen:
@@ -31,6 +36,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          GEN_QUALITY: ${{ github.event.inputs.quality || 'low' }}
         run: |
           if [ "${{ github.event.inputs.mode }}" = "batch" ]; then
             if [ -n "${{ github.event.inputs.limit }}" ]; then

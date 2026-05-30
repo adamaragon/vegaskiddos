@@ -65,9 +65,39 @@ function subjectFor(text) {
   return "balloons, confetti and a cheerful celebration";
 }
 
-function promptFor(f) {
+// Deterministic per-event variation so events that share a subject (e.g. many
+// storytimes) still get visibly different art.
+const VARIANTS = {
+  layout: [
+    "a single centered scene",
+    "a playful flat-lay arrangement of elements",
+    "a rounded badge / emblem composition",
+    "a wide horizontal banner scene",
+    "an isometric mini-diorama",
+    "a cluster of elements bursting from one corner",
+  ],
+  dominant: ["coral red", "teal", "sunny yellow", "grape purple"],
+  accent: [
+    "a tiny saguaro cactus in a corner",
+    "a smiling sun peeking in",
+    "a couple of soft rounded clouds",
+    "scattered confetti dots",
+    "a sprinkle of little stars",
+    "small rolling desert dunes",
+  ],
+  mood: ["bold and graphic", "soft and rounded", "geometric and modern", "whimsical and hand-drawn"],
+};
+const hashStr = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; };
+const pickV = (arr, h, salt) => arr[(h + salt) % arr.length];
+
+function promptFor(f, id = "") {
   const subject = subjectFor(`${f.Title} ${f.Description || ""}`);
-  return `Flat vector children's illustration of ${subject}. Bright and cheerful with simple, rounded geometric shapes and a clean warm-sand background. Color palette: coral red, teal, sunny yellow, grape purple. Subtle Las Vegas desert motifs (a small cactus, a warm sun). Friendly and playful, designed as a thumbnail for a kids' events website. Absolutely no text, no letters, no words, and no real human faces. Centered composition with comfortable margins.`;
+  const h = hashStr(id || f.Title || "");
+  const layout = pickV(VARIANTS.layout, h, 1);
+  const dominant = pickV(VARIANTS.dominant, h, 2);
+  const accent = pickV(VARIANTS.accent, h, 3);
+  const mood = pickV(VARIANTS.mood, h, 4);
+  return `Flat vector children's illustration of ${subject}, composed as ${layout}. Style: ${mood}, simple rounded shapes, clean warm-sand background. Use the brand palette (coral red, teal, sunny yellow, grape purple) with ${dominant} as the dominant accent. Include ${accent}. Friendly and playful, designed as a thumbnail for a kids' events website. Absolutely no text, no letters, no words, and no real human faces, no photorealism. Comfortable margins.`;
 }
 
 async function generate(prompt) {
@@ -92,8 +122,8 @@ async function uploadToAirtable(recordId, b64) {
   if (!r.ok) throw new Error(`Airtable upload ${r.status}: ${(await r.text()).slice(0, 200)}`);
 }
 
-// Selection: approved, (recurring OR scheduled-to-FB), and no image yet.
-const formula = "AND({Approved}=1, OR(NOT({Recurrence}=BLANK()), NOT({FBPostedAt}=BLANK())), {Image}=BLANK(), {ArtImage}=BLANK())";
+// Selection: every approved event that has no image of any kind yet.
+const formula = "AND({Approved}=1, {Image}=BLANK(), {ArtImage}=BLANK())";
 let recs;
 try {
   recs = (await airtableAll("Events", `&filterByFormula=${encodeURIComponent(formula)}`)).filter((r) => r.fields.Title);
@@ -105,10 +135,10 @@ try {
   throw e;
 }
 
-console.log(`${recs.length} event(s) need artwork (recurring + scheduled, no image yet). Mode: ${mode}${DRY ? " (dry-run)" : ""}.`);
+console.log(`${recs.length} approved event(s) with no image yet. Mode: ${mode}, quality: ${QUALITY}${DRY ? " (dry-run)" : ""}.`);
 
 if (DRY) {
-  for (const r of recs.slice(0, 40)) console.log(`  • ${r.fields.Title}\n      ${promptFor(r.fields).slice(0, 110)}…`);
+  for (const r of recs.slice(0, 40)) console.log(`  • ${r.fields.Title}\n      ${promptFor(r.fields, r.id).slice(0, 110)}…`);
   process.exit(0);
 }
 if (!OPENAI) { console.error("OPENAI_API_KEY required to generate. Add it to .env.local."); process.exit(1); }
@@ -119,7 +149,7 @@ if (mode === "sample") {
   const picks = recs.slice(0, sampleN);
   for (const r of picks) {
     console.log(`🎨 ${r.fields.Title} …`);
-    const b64 = await generate(promptFor(r.fields));
+    const b64 = await generate(promptFor(r.fields, r.id));
     const path = `${dir}/${r.id}.png`;
     fs.writeFileSync(path, Buffer.from(b64, "base64"));
     console.log(`   saved ${path}`);
@@ -130,7 +160,7 @@ if (mode === "sample") {
   let ok = 0, fail = 0;
   for (const r of picks) {
     try {
-      const b64 = await generate(promptFor(r.fields));
+      const b64 = await generate(promptFor(r.fields, r.id));
       await uploadToAirtable(r.id, b64);
       ok++;
       console.log(`✅ ${ok}/${picks.length}  ${r.fields.Title}`);
