@@ -5,6 +5,10 @@ import { venueSlug } from "@/lib/constants";
 
 const BASE = "https://vegaskiddos.com";
 
+// Regenerate hourly so newly-scraped/approved events appear in the sitemap
+// without waiting for a redeploy (it was static-at-build-time before).
+export const revalidate = 3600;
+
 // Each content URL exists in English (canonical) and Spanish (/es). Emit the
 // English URL with an `es` alternate so Google indexes both — matches the
 // reciprocal hreflang tags rendered in the page <head>.
