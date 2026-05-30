@@ -121,17 +121,47 @@ function Chip({
   return (
     <button
       onClick={onClick}
-      className={`border-l border-ink/10 px-2.5 py-2 text-center text-xs font-700 transition first:border-l-0 sm:text-sm ${
+      className={`border-l border-ink/25 px-2.5 py-2 text-center text-xs font-700 shadow-[inset_7px_0_6px_-7px_rgba(45,42,50,0.22)] transition first:border-l-0 first:rounded-l-full first:shadow-none last:rounded-r-full sm:text-sm ${
         scroll ? "flex-none whitespace-nowrap sm:flex-1 sm:truncate" : "flex-1 truncate"
       } ${
         active
-          ? "bg-coral text-white"
+          ? "select-hop halo-coral bg-coral text-white"
           : "bg-white text-ink/70 hover:bg-coral/10"
       }`}
     >
       {children}
     </button>
   );
+}
+
+// Splits a leading emoji off a quick-pick label so the icon can be sized up
+// independently of the text. Falls back to plain text when there's no emoji.
+function pick(text: string) {
+  const m = text.match(/^(\S+)\s+([\s\S]*)$/u);
+  if (m && /\p{Extended_Pictographic}/u.test(m[1])) {
+    return (
+      <>
+        <span className="text-lg leading-none">{m[1]}</span>
+        <span>{m[2]}</span>
+      </>
+    );
+  }
+  return <span>{text}</span>;
+}
+
+// Enlarges a leading emoji slightly (relative em, so it scales with the chip
+// font) while leaving the label text alone. Used by the filter-row chips.
+function withBigIcon(text: string) {
+  const m = text.match(/^(\S+)\s*([\s\S]*)$/u);
+  if (m && /\p{Extended_Pictographic}/u.test(m[1])) {
+    return (
+      <>
+        <span className="text-[1.3em] leading-none">{m[1]}</span>
+        {m[2] ? <> {m[2]}</> : null}
+      </>
+    );
+  }
+  return <>{text}</>;
 }
 
 export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang?: Lang }) {
@@ -273,6 +303,12 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
     ages.size + prices.size + hoods.size + (dateRange !== "any" ? 1 : 0) +
     (env !== "any" ? 1 : 0) + (q.trim() ? 1 : 0) + (onlyFavs ? 1 : 0);
 
+  // The two action quick-picks read as "selected" when the exact filter combo
+  // they apply is currently active — so clicking them highlights, and clicking
+  // again clears it.
+  const freeWeekendOn = prices.size === 1 && prices.has("free") && dateRange === "weekend";
+  const freeNearOn = prices.size === 1 && prices.has("free") && coords !== null;
+
   function clearAll() {
     setAgesPersist(new Set());
     setPrices(new Set());
@@ -302,17 +338,22 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
           aria-label="Search events"
           className="w-full rounded-full border-2 border-ink/15 bg-white px-5 py-3 font-700 text-ink/80 outline-none transition focus:border-teal sm:w-1/2"
         />
-        <div className="flex flex-1 flex-wrap items-center gap-2 sm:justify-end">
-          <button onClick={() => { track("Quick Pick", { pick: "free_weekend" }); setPrices(new Set(["free"])); setDateRange("weekend"); }}
-            className="hover-pop rounded-full bg-teal px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">{tr("qp_free_weekend")}</button>
-          <button onClick={() => { track("Quick Pick", { pick: "free_near" }); setPrices(new Set(["free"])); useMyLocation(); }}
-            className="hover-pop rounded-full bg-coral px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">{tr("qp_free_near")}</button>
-          <button onClick={() => { track("Quick Pick", { pick: "today" }); setDateRange("today"); }}
-            className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-700 transition ${dateRange === "today" ? "border-teal bg-teal text-white" : "border-ink/15 bg-white text-ink/70 hover:border-teal"}`}>{tr("qp_today")}</button>
-          <button onClick={() => { if (!onlyFavs) track("Quick Pick", { pick: "my_list" }); setOnlyFavs((v) => !v); }}
-            className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-800 transition ${onlyFavs ? "border-coral bg-coral text-white" : "border-ink/15 bg-white text-ink/70 hover:border-coral"}`}>
-            {tr("my_list")}{favs.size ? ` (${favs.size})` : ""}
-          </button>
+        {/* Quick-picks as one combined segmented bar that matches the search
+            field's height — darkened dividers + a soft inset shadow delineate
+            each segment. Scrolls sideways on very narrow screens. */}
+        <div className="flex flex-1 sm:justify-end">
+          <div className="flex h-[52px] w-fit max-w-full items-stretch overflow-x-auto overflow-y-hidden rounded-full border-2 border-ink/15 bg-white shadow-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <button onClick={() => { if (freeWeekendOn) { setPrices(new Set()); setDateRange("any"); } else { track("Quick Pick", { pick: "free_weekend" }); setPrices(new Set(["free"])); setDateRange("weekend"); } }}
+              className={`flex items-center gap-1.5 whitespace-nowrap px-4 text-base font-700 transition ${freeWeekendOn ? "select-pop halo-teal bg-teal text-white" : "bg-white text-ink/70 hover:bg-teal/10"}`}>{pick(tr("qp_free_weekend"))}</button>
+            <button onClick={() => { if (freeNearOn) { setPrices(new Set()); setCoords(null); setGeoMsg(""); } else { track("Quick Pick", { pick: "free_near" }); setPrices(new Set(["free"])); useMyLocation(); } }}
+              className={`flex items-center gap-1.5 whitespace-nowrap border-l border-ink/25 px-4 text-base font-700 transition ${freeNearOn ? "select-pop halo-coral bg-coral text-white" : "bg-white text-ink/70 hover:bg-coral/10"}`}>{pick(tr("qp_free_near"))}</button>
+            <button onClick={() => { track("Quick Pick", { pick: "today" }); setDateRange("today"); }}
+              className={`flex items-center gap-1.5 whitespace-nowrap border-l border-ink/25 px-4 text-base font-700 transition ${dateRange === "today" ? "select-pop halo-teal bg-teal text-white" : "bg-white text-ink/70 hover:bg-teal/10"}`}>{pick(tr("qp_today"))}</button>
+            <button onClick={() => { if (!onlyFavs) track("Quick Pick", { pick: "my_list" }); setOnlyFavs((v) => !v); }}
+              className={`flex items-center gap-1.5 whitespace-nowrap border-l border-ink/25 px-4 text-base font-800 transition ${onlyFavs ? "select-pop halo-coral bg-coral text-white" : "bg-white text-ink/70 hover:bg-coral/10"}`}>
+              {pick(tr("my_list") + (favs.size ? ` (${favs.size})` : ""))}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -354,7 +395,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
             const L = ageLabel(lang, a.id);
             return (
               <Chip key={a.id} active={ages.has(a.id)} onClick={() => toggle(ages, a.id, setAgesPersist)}>
-                {a.emoji} {L.label}
+                {withBigIcon(`${a.emoji} ${L.label}`)}
               </Chip>
             );
           })}
@@ -363,14 +404,14 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
         <FilterRow label={tr("f_price")}>
           {PRICE_TIERS.map((p) => (
             <Chip key={p.id} active={prices.has(p.id)} onClick={() => toggle(prices, p.id, setPrices)}>
-              {p.emoji} {priceLabel(lang, p.id)}
+              {withBigIcon(`${p.emoji} ${priceLabel(lang, p.id)}`)}
             </Chip>
           ))}
         </FilterRow>
 
         <FilterRow label={tr("f_where")}>
           {([["any", tr("anywhere")], ["indoor", tr("indoor")], ["outdoor", tr("outdoor")]] as const).map(([id, label]) => (
-            <Chip key={id} active={env === id} onClick={() => setEnv(id)}>{label}</Chip>
+            <Chip key={id} active={env === id} onClick={() => setEnv(id)}>{withBigIcon(label)}</Chip>
           ))}
         </FilterRow>
 
@@ -499,8 +540,8 @@ function FilterRow({
         <div
           className={`flex flex-1 rounded-full border-2 border-ink/15 bg-white ${
             scroll
-              ? "overflow-x-auto sm:overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              : "overflow-hidden"
+              ? "overflow-x-auto sm:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              : "overflow-visible"
           }`}
         >
           {children}

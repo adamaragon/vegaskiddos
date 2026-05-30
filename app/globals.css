@@ -79,6 +79,42 @@ body {
 .hover-pop { transition: transform 0.2s cubic-bezier(.34,1.56,.64,1); }
 .hover-pop:hover { transform: scale(1.05) rotate(-1deg); }
 
+/* Fun "pop + glow" when a filter chip or pill becomes selected. Combines a
+   bouncy scale overshoot, a brightness flash, a bright inner glow, and a
+   colored outer halo (--halo, set per accent). Inside the segmented bars the
+   halo bleeds onto neighbors a touch since they're clipped to the pill shape.
+   Settles into a persistent glow while the chip stays selected. */
+@keyframes select-pop {
+  0%   { transform: scale(1);    filter: brightness(1);
+         box-shadow: 0 0 0 0 var(--halo, transparent), inset 0 0 0 0 rgba(255,255,255,0); }
+  35%  { transform: scale(1.09); filter: brightness(1.4);
+         box-shadow: 0 0 26px 5px var(--halo, transparent), inset 0 0 22px 4px rgba(255,255,255,0.75); }
+  60%  { transform: scale(0.97); filter: brightness(1.18);
+         box-shadow: 0 0 16px 3px var(--halo, transparent), inset 0 0 14px 1px rgba(255,255,255,0.5); }
+  100% { transform: scale(1);    filter: brightness(1.1);
+         box-shadow: 0 0 13px 2px var(--halo, transparent), inset 0 0 12px 0 rgba(255,255,255,0.45); }
+}
+.select-pop { animation: select-pop 0.55s cubic-bezier(.34,1.7,.5,1) both; }
+.halo-coral { --halo: rgba(255,107,94,0.7); }
+.halo-teal  { --halo: rgba(35,196,181,0.7); }
+
+/* Dramatic "pop up and back down" for filter chips: the selected chip lifts off
+   the bar with a cast shadow, overshoots, and settles. Much less glow than
+   .select-pop — the motion is the effect. Needs an overflow-visible row so the
+   lift isn't clipped; z-index keeps it above its neighbors mid-hop. */
+@keyframes select-hop {
+  0%   { transform: translateY(0)     scale(1);    box-shadow: 0 0 0 0 var(--halo, transparent); }
+  28%  { transform: translateY(-11px) scale(1.05); box-shadow: 0 11px 16px -6px rgba(45,42,50,0.42), 0 0 8px 1px var(--halo, transparent); }
+  52%  { transform: translateY(3px)   scale(0.98); box-shadow: 0 2px 6px -3px rgba(45,42,50,0.3); }
+  72%  { transform: translateY(-4px)  scale(1.01); }
+  100% { transform: translateY(0)     scale(1);    filter: brightness(1.04); box-shadow: 0 0 6px 0 var(--halo, transparent); }
+}
+.select-hop {
+  position: relative;
+  z-index: 20;
+  animation: select-hop 0.52s cubic-bezier(.3,1.5,.5,1) both;
+}
+
 /* Scroll reveal (toggled by Reveal.tsx) */
 .reveal {
   opacity: 0;
@@ -110,6 +146,11 @@ body {
   .animate-wiggle, .animate-float, .animate-bob, .animate-spin-slow,
   .hover-wobble:hover, .hover-shake:hover, .reveal-pop.is-visible,
   .animate-card-in { animation: none !important; }
+  /* Keep the glow + halo as a static state, drop the motion. */
+  .select-pop { animation: none !important; filter: brightness(1.1);
+    box-shadow: 0 0 13px 2px var(--halo, transparent), inset 0 0 12px 0 rgba(255,255,255,0.45); }
+  .select-hop { animation: none !important; transform: none;
+    box-shadow: 0 0 6px 0 var(--halo, transparent); }
   .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
   .hover-pop:hover { transform: none; }
 }
