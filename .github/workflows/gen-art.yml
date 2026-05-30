@@ -1,0 +1,50 @@
+name: Generate event art
+
+# AI event artwork via OpenAI → uploaded into the Events ArtImage field.
+# Manual only. `sample` writes a few images and exposes them as a downloadable
+# artifact for review; `batch` generates + uploads to Airtable.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "sample = preview a few · batch = generate + upload all"
+        type: choice
+        default: sample
+        options: [sample, batch]
+      count:
+        description: "How many to preview (sample mode)"
+        default: "2"
+      limit:
+        description: "Cap how many to upload (batch mode; blank = all)"
+        default: ""
+
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Generate
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+        run: |
+          if [ "${{ github.event.inputs.mode }}" = "batch" ]; then
+            if [ -n "${{ github.event.inputs.limit }}" ]; then
+              node tools/gen-event-art.mjs batch --limit "${{ github.event.inputs.limit }}"
+            else
+              node tools/gen-event-art.mjs batch
+            fi
+          else
+            node tools/gen-event-art.mjs sample "${{ github.event.inputs.count || '2' }}"
+          fi
+      - name: Upload samples for review
+        if: ${{ github.event.inputs.mode == 'sample' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: art-samples
+          path: art-samples/
+          if-no-files-found: warn
