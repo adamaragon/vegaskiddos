@@ -40,3 +40,15 @@ export function getSavedAges(): string[] {
 export function saveAges(ages: string[]) {
   write(AGE_KEY, ages);
 }
+
+// Remembered home neighborhood (powers the "This week near you" strip).
+const HOOD_KEY = "vk_hood";
+export function getHood(): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(HOOD_KEY) || "";
+}
+export function saveHood(id: string) {
+  if (id) localStorage.setItem(HOOD_KEY, id);
+  else localStorage.removeItem(HOOD_KEY);
+  window.dispatchEvent(new Event("vk-prefs"));
+}

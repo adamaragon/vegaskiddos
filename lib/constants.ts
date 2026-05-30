@@ -58,6 +58,22 @@ export function neighborhoodsForZip(zip: string): NeighborhoodId[] {
   return [primary, ...NEARBY[primary]];
 }
 
+// A neighborhood plus its geographic neighbors (for "near you" widening).
+export function nearbyHoods(id: NeighborhoodId): NeighborhoodId[] {
+  return [id, ...(NEARBY[id] || [])];
+}
+
+// Nearest neighborhood to a lat/lng (by straight-line distance to centers).
+export function nearestHood(lat: number, lng: number): NeighborhoodId {
+  let best: NeighborhoodId = NEIGHBORHOODS[0].id;
+  let min = Infinity;
+  for (const n of NEIGHBORHOODS) {
+    const d = (n.center[0] - lat) ** 2 + (n.center[1] - lng) ** 2;
+    if (d < min) { min = d; best = n.id; }
+  }
+  return best;
+}
+
 export const venueSlug = (v: string) =>
   (v || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 

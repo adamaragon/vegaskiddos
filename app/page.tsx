@@ -1,5 +1,6 @@
 import { getEvents } from "@/lib/data";
 import { EventBrowser } from "@/components/EventBrowser";
+import { ThisWeekNearYou } from "@/components/ThisWeekNearYou";
 import { Reveal } from "@/components/Reveal";
 import { HeroCanvas } from "@/components/HeroCanvas";
 import { ShareButtons } from "@/components/ShareButtons";
@@ -85,6 +86,9 @@ export default async function HomePage() {
           </div>
         </div>
       </Reveal>
+
+      {/* Personalized "this week near you" strip (client-only, progressive) */}
+      <ThisWeekNearYou events={events} lang={lang} />
 
       {/* Browser */}
       <section className="mt-8">

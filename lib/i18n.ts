@@ -196,6 +196,20 @@ export const STRINGS = {
     en: "Find baby, toddler, kid, and tween events near you in Las Vegas. Filter by neighborhood, age, and price. A free resource for local parents.",
     es: "Encuentra eventos para bebés, niños pequeños y preadolescentes cerca de ti en Las Vegas. Filtra por vecindario, edad y precio. Un recurso gratuito para papás locales.",
   },
+  // "This week near you" personalization strip
+  tw_title: { en: "This week near you", es: "Esta semana cerca de ti" },
+  tw_title_all: { en: "This week in Las Vegas", es: "Esta semana en Las Vegas" },
+  tw_sub: { en: "Happening in the next 7 days", es: "En los próximos 7 días" },
+  tw_pick: { en: "Pick your area", es: "Elige tu zona" },
+  tw_all: { en: "All of Las Vegas", es: "Todo Las Vegas" },
+  tw_loc: { en: "📍 Use my location", es: "📍 Usar mi ubicación" },
+  tw_locating: { en: "Locating…", es: "Ubicando…" },
+  tw_geo_off: { en: "Location unavailable", es: "Ubicación no disponible" },
+  tw_empty_area: {
+    en: "Nothing in your area this week — here's what's on across the valley.",
+    es: "Nada en tu zona esta semana — esto es lo que hay por todo el valle.",
+  },
+  tw_see_all: { en: "See all events →", es: "Ver todos los eventos →" },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;
