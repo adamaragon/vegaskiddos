@@ -109,6 +109,7 @@ export default async function RootLayout({
                   ["/this-weekend", "This weekend"],
                   ["/free", "Free events"],
                   ["/today", "Today"],
+                  ["/beat-the-heat", "Beat the heat"],
                   ["/features", "Vote on features"],
                   ["/about", "About"],
                 ].map(([href, label]) => (

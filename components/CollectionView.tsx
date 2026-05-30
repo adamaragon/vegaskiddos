@@ -3,8 +3,7 @@ import type { KidEvent } from "@/lib/types";
 import type { Collection } from "@/lib/collections";
 import { EventCard } from "./EventCard";
 import { JsonLd } from "./JsonLd";
-
-const SITE = "https://vegaskiddos.com";
+import { SITE, breadcrumbLd } from "@/lib/seo";
 
 export function CollectionView({ meta, events }: { meta: Collection; events: KidEvent[] }) {
   const ld = {
@@ -19,9 +18,13 @@ export function CollectionView({ meta, events }: { meta: Collection; events: Kid
       name: e.title,
     })),
   };
+  const crumbs = breadcrumbLd([
+    { name: "Vegas Kiddos", url: SITE },
+    { name: meta.heading, url: `${SITE}/${meta.slug}` },
+  ]);
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <JsonLd data={ld} />
+      <JsonLd data={[ld, crumbs]} />
       <Link href="/" className="text-sm font-700 text-teal-dark hover:underline">← All events</Link>
       <header className="mt-3">
         <h1 className="font-display text-3xl font-700 sm:text-4xl">

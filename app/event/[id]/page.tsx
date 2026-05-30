@@ -7,6 +7,7 @@ import { formatWhen, EventCard } from "@/components/EventCard";
 import { ShareButtons } from "@/components/ShareButtons";
 import { TrackedLink } from "@/components/TrackedLink";
 import { JsonLd } from "@/components/JsonLd";
+import { breadcrumbLd } from "@/lib/seo";
 import { nextOccurrenceISO } from "@/lib/recurrence";
 import { AdminEventControls } from "@/components/AdminEventControls";
 import { getLang } from "@/lib/lang-server";
@@ -118,7 +119,7 @@ export default async function EventPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <JsonLd data={eventLd} />
+      <JsonLd data={[eventLd, breadcrumbLd([{ name: "Vegas Kiddos", url: SITE }, { name: event.title, url: shareUrl }])]} />
       <Link
         href="/"
         className="text-sm font-700 text-teal-dark hover:underline"

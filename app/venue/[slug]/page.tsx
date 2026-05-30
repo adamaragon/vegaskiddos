@@ -4,9 +4,11 @@ import { notFound } from "next/navigation";
 import { getEvents } from "@/lib/data";
 import { venueSlug } from "@/lib/constants";
 import { EventCard } from "@/components/EventCard";
+import { JsonLd } from "@/components/JsonLd";
 import { nextOccurrenceISO } from "@/lib/recurrence";
 import { getLang } from "@/lib/lang-server";
 import type { Lang } from "@/lib/i18n";
+import { SITE, breadcrumbLd } from "@/lib/seo";
 
 // Dynamic so the vk_lang cookie can switch venue pages to Spanish; the
 // Airtable fetch stays cached (revalidate: 600).
@@ -36,8 +38,24 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
   const { name, list } = await venueEvents(slug, lang);
   if (!name) notFound();
 
+  const venueUrl = `${SITE}/venue/${slug}`;
+  const v = list[0];
+  const venueLd = {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name,
+    ...(v?.address ? { address: v.address } : {}),
+    ...(v?.lat && v?.lng ? { geo: { "@type": "GeoCoordinates", latitude: v.lat, longitude: v.lng } } : {}),
+    url: venueUrl,
+  };
+  const crumbs = breadcrumbLd([
+    { name: "Vegas Kiddos", url: SITE },
+    { name, url: venueUrl },
+  ]);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
+      <JsonLd data={[venueLd, crumbs]} />
       <Link href="/" className="text-sm font-700 text-teal-dark hover:underline">← All events</Link>
       <h1 className="mt-3 font-display text-4xl font-700">{name}</h1>
       <p className="mt-1 text-ink/60">

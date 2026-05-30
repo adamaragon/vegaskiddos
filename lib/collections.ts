@@ -52,7 +52,20 @@ export const COLLECTIONS: Collection[] = [
       return t >= Math.max(sat, dayStart(now)) && t < sat + 2 * 86400000;
     },
   },
+  {
+    slug: "beat-the-heat",
+    title: "Indoor Kids Events in Las Vegas — Beat the Heat",
+    heading: "Beat the heat",
+    description: "Air-conditioned, indoor kid & family events across Las Vegas — libraries, museums, theaters and play spaces. Perfect for triple-digit days.",
+    emoji: "🧊",
+    // The scraped `indoor` flag is sparse, so also infer it from venues that are
+    // reliably indoor + air-conditioned.
+    predicate: (e) => Boolean(e.indoor) || INDOOR_VENUE_RE.test(`${e.venue} ${e.title}`),
+  },
 ];
+
+const INDOOR_VENUE_RE =
+  /\b(librar|museum|theat(?:er|re)|gallery|aquarium|indoor|arcade|bowl|trampoline|rec(?:reation)? center|community center|discovery)\b/i;
 
 export function getCollectionMeta(slug: string) {
   return COLLECTIONS.find((c) => c.slug === slug);
