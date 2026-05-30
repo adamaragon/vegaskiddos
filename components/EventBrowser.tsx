@@ -283,6 +283,9 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
 
   return (
     <div>
+      {/* Search + filters grouped in one soft panel, set apart from the
+          results grid below to cut the "floating pills" clutter. */}
+      <div className="rounded-blob border border-ink/10 bg-gradient-to-br from-white to-sand/70 p-4 shadow-sm sm:p-5">
       {/* Search */}
       <div className="mb-3">
         <input
@@ -331,7 +334,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
 
       {/* Collapsible filter panel */}
       {showFilters && (
-      <div className="animate-card-in rounded-blob border border-ink/10 bg-white p-4 shadow-card sm:p-6">
+      <div className="animate-card-in mt-1 rounded-2xl bg-white/70 p-4 sm:p-5">
         <FilterRow label={tr("f_when")}>
           {DATE_FILTERS.map((d) => (
             <Chip key={d.id} active={dateRange === d.id} onClick={() => setDateRange(d.id)}>
@@ -400,6 +403,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
         )}
       </div>
       )}
+      </div>
 
       {/* Results header + view toggle */}
       <div className="mt-6 flex items-center justify-between">

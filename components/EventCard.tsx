@@ -35,7 +35,7 @@ export function EventCard({ event, index = 0, distanceMi }: { event: KidEvent; i
     <Link
       href={`/event/${event.id}`}
       style={{ animationDelay: `${delay}ms` }}
-      className="animate-card-in group flex flex-col overflow-hidden rounded-blob border border-ink/10 bg-white shadow-card transition-shadow hover:-translate-y-1 hover:shadow-lg"
+      className="animate-card-in group flex h-full flex-col overflow-hidden rounded-blob border border-ink/10 bg-white shadow-card transition-shadow hover:-translate-y-1 hover:shadow-lg"
     >
       <div className="relative">
         <EventThumb event={event} />
@@ -83,7 +83,7 @@ export function EventCard({ event, index = 0, distanceMi }: { event: KidEvent; i
         })}
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-ink/10 px-5 py-3 text-xs text-ink/60">
+      <div className="mt-auto flex items-center justify-between border-t border-ink/10 px-5 py-3 text-xs text-ink/60">
         <span className="font-700">📍 {event.venue}</span>
         <span className="rounded-full bg-grape/10 px-2 py-0.5 font-700 text-grape">
           {hood.label}
