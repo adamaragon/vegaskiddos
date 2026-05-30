@@ -27,6 +27,14 @@ interface AirtableRecord {
   fields: Record<string, unknown>;
 }
 
+// First URL out of an Airtable attachment field ([{ url }, ...]).
+function attachmentUrl(v: unknown): string | undefined {
+  if (Array.isArray(v) && v[0] && typeof v[0] === "object" && "url" in (v[0] as object)) {
+    return String((v[0] as { url?: unknown }).url || "") || undefined;
+  }
+  return undefined;
+}
+
 function mapRecord(rec: AirtableRecord): KidEvent | null {
   const f = rec.fields;
   if (!f.Title || !f.Start) return null;
@@ -49,7 +57,8 @@ function mapRecord(rec: AirtableRecord): KidEvent | null {
     priceTier: (f.PriceTier as PriceTierId) || "free",
     priceText: f.PriceText ? String(f.PriceText) : undefined,
     url: f.Url ? String(f.Url) : undefined,
-    image: f.Image ? String(f.Image) : undefined,
+    // Prefer AI-generated art (Airtable attachment) over the scraped image URL.
+    image: attachmentUrl((f as Record<string, unknown>).ArtImage) || (f.Image ? String(f.Image) : undefined),
     source: String(f.Source || "Community"),
     indoor: Boolean(f.Indoor),
     recurrence: f.Recurrence ? String(f.Recurrence) : undefined,

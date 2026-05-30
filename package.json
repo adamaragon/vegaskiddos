@@ -10,8 +10,10 @@
     "translate": "node tools/translate-backfill.mjs",
     "ensure-sub-lang": "node tools/ensure-subscriber-lang.mjs",
     "ensure-fb-fields": "node tools/ensure-fb-fields.mjs",
+    "ensure-art-field": "node tools/ensure-art-field.mjs",
     "check-links": "node tools/check-links.mjs",
-    "fb-post": "node tools/fb-post.mjs"
+    "fb-post": "node tools/fb-post.mjs",
+    "gen-art": "node tools/gen-event-art.mjs"
   },
   "dependencies": {
     "leaflet": "1.9.4",
