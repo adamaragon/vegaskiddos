@@ -27,3 +27,18 @@ jobs:
           # Optional: enables auto-translation of new events to Spanish.
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: node tools/gov-scrape.mjs
+
+      # Self-heal incomplete events from every source (gov, library, Netlify
+      # scraper): fill blank descriptions, geocode missing coordinates, and tag
+      # missing age groups. All idempotent — they only touch non-rejected events
+      # still missing the field, so it's cheap once the catalog is backfilled.
+      - name: Enrich events (descriptions, coordinates, age tiers)
+        if: ${{ always() }}
+        env:
+          AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          node tools/fill-blank-descriptions.mjs
+          node tools/geocode-events.mjs
+          node tools/infer-ages.mjs

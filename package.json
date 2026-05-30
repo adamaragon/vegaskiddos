@@ -9,6 +9,8 @@
     "lint": "next lint",
     "translate": "node tools/translate-backfill.mjs",
     "fill-descriptions": "node tools/fill-blank-descriptions.mjs",
+    "geocode": "node tools/geocode-events.mjs",
+    "infer-ages": "node tools/infer-ages.mjs",
     "ensure-sub-lang": "node tools/ensure-subscriber-lang.mjs",
     "ensure-fb-fields": "node tools/ensure-fb-fields.mjs",
     "ensure-art-field": "node tools/ensure-art-field.mjs",

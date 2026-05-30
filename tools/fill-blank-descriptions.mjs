@@ -98,7 +98,7 @@ async function patch(id, fields) {
 }
 
 const recs = await allRecords();
-const blanks = recs.filter((r) => r.fields.Approved && (r.fields.Description || "").trim().length < MIN_LEN);
+const blanks = recs.filter((r) => !r.fields.Rejected && (r.fields.Description || "").trim().length < MIN_LEN);
 console.log(`${recs.filter(r=>r.fields.Approved).length} approved · ${blanks.length} blank description${blanks.length===1?"":"s"}${DRY?" (DRY RUN)":""}\n`);
 
 let done = 0;
