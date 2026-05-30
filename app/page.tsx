@@ -71,9 +71,9 @@ export default async function HomePage() {
           <Cloud className="pointer-events-none absolute -bottom-2 left-1/4 hidden h-14 w-14 text-white/10 lg:block" />
           <div className="relative grid items-center gap-8 lg:grid-cols-2">
             <div className="text-center lg:text-left">
-              <h2 className="font-display text-4xl font-800 leading-tight sm:text-5xl">{t(lang, "nl_title")}</h2>
-              <p className="mt-3 text-lg text-white/90 sm:text-xl">{t(lang, "nl_sub")}</p>
-              <ul className="mx-auto mt-5 inline-flex flex-col gap-2 text-left text-base font-600 text-white/95 lg:mx-0">
+              <h2 className="font-display text-2xl font-800 leading-tight sm:text-3xl">{t(lang, "nl_title")}</h2>
+              <p className="mt-3 text-xl text-white/90 sm:text-2xl">{t(lang, "nl_sub")}</p>
+              <ul className="mx-auto mt-5 inline-flex flex-col gap-2.5 text-left text-lg font-600 text-white/95 lg:mx-0">
                 <li className="flex items-center gap-2"><span aria-hidden>✅</span>{t(lang, "nl_perk_curated")}</li>
                 <li className="flex items-center gap-2"><span aria-hidden>📍</span>{t(lang, "nl_perk_local")}</li>
                 <li className="flex items-center gap-2"><span aria-hidden>🎉</span>{t(lang, "nl_perk_free")}</li>

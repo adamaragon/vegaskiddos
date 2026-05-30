@@ -117,10 +117,10 @@ function Chip({
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-700 transition ${
+      className={`flex-1 truncate border-l border-ink/10 px-2.5 py-2 text-center text-xs font-700 transition first:border-l-0 sm:text-sm ${
         active
-          ? "border-coral bg-coral text-white shadow-pop"
-          : "border-ink/15 bg-white text-ink/70 hover:border-coral/50"
+          ? "bg-coral text-white"
+          : "bg-white text-ink/70 hover:bg-coral/10"
       }`}
     >
       {children}
@@ -286,32 +286,32 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
       {/* Search + filters grouped in one soft panel, set apart from the
           results grid below to cut the "floating pills" clutter. */}
       <div className="rounded-blob border border-ink/10 bg-gradient-to-br from-white to-sand/70 p-4 shadow-sm sm:p-5">
-      {/* Search */}
-      <div className="mb-3">
+      {/* Search (left half) + the 4 quick-picks inline (right half) */}
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={tr("search_ph")}
           aria-label="Search events"
-          className="w-full rounded-full border-2 border-ink/15 bg-white px-5 py-3 font-700 text-ink/80 outline-none transition focus:border-teal"
+          className="w-full rounded-full border-2 border-ink/15 bg-white px-5 py-3 font-700 text-ink/80 outline-none transition focus:border-teal sm:w-1/2"
         />
+        <div className="flex flex-1 flex-wrap items-center gap-2 sm:justify-end">
+          <button onClick={() => { track("Quick Pick", { pick: "free_weekend" }); setPrices(new Set(["free"])); setDateRange("weekend"); }}
+            className="hover-pop rounded-full bg-teal px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">{tr("qp_free_weekend")}</button>
+          <button onClick={() => { track("Quick Pick", { pick: "free_near" }); setPrices(new Set(["free"])); useMyLocation(); }}
+            className="hover-pop rounded-full bg-coral px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">{tr("qp_free_near")}</button>
+          <button onClick={() => { track("Quick Pick", { pick: "today" }); setDateRange("today"); }}
+            className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-700 transition ${dateRange === "today" ? "border-teal bg-teal text-white" : "border-ink/15 bg-white text-ink/70 hover:border-teal"}`}>{tr("qp_today")}</button>
+          <button onClick={() => { if (!onlyFavs) track("Quick Pick", { pick: "my_list" }); setOnlyFavs((v) => !v); }}
+            className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-800 transition ${onlyFavs ? "border-coral bg-coral text-white" : "border-ink/15 bg-white text-ink/70 hover:border-coral"}`}>
+            {tr("my_list")}{favs.size ? ` (${favs.size})` : ""}
+          </button>
+        </div>
       </div>
 
-      {/* Control bar: quick picks on the left, a single Filters toggle on the
-          right. Detailed filter rows live behind the toggle to cut clutter. */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <button onClick={() => { track("Quick Pick", { pick: "free_weekend" }); setPrices(new Set(["free"])); setDateRange("weekend"); }}
-          className="hover-pop rounded-full bg-teal px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">{tr("qp_free_weekend")}</button>
-        <button onClick={() => { track("Quick Pick", { pick: "free_near" }); setPrices(new Set(["free"])); useMyLocation(); }}
-          className="hover-pop rounded-full bg-coral px-3.5 py-1.5 text-sm font-800 text-white shadow-pop">{tr("qp_free_near")}</button>
-        <button onClick={() => { track("Quick Pick", { pick: "today" }); setDateRange("today"); }}
-          className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-700 transition ${dateRange === "today" ? "border-teal bg-teal text-white" : "border-ink/15 bg-white text-ink/70 hover:border-teal"}`}>{tr("qp_today")}</button>
-        <button onClick={() => { if (!onlyFavs) track("Quick Pick", { pick: "my_list" }); setOnlyFavs((v) => !v); }}
-          className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-800 transition ${onlyFavs ? "border-coral bg-coral text-white" : "border-ink/15 bg-white text-ink/70 hover:border-coral"}`}>
-          {tr("my_list")}{favs.size ? ` (${favs.size})` : ""}
-        </button>
-
+      {/* Filters toggle — detailed filter rows live behind it to cut clutter. */}
+      <div className="mb-3 flex">
         <button
           onClick={() => { if (!showFilters) track("Filters Opened"); setShowFilters((v) => !v); }}
           aria-expanded={showFilters}
@@ -348,7 +348,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
             const L = ageLabel(lang, a.id);
             return (
               <Chip key={a.id} active={ages.has(a.id)} onClick={() => toggle(ages, a.id, setAgesPersist)}>
-                {a.emoji} {L.label} <span className="font-400 opacity-90">{L.sublabel}</span>
+                {a.emoji} {L.label}
               </Chip>
             );
           })}
@@ -371,13 +371,13 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
         <FilterRow label={tr("f_area")}>
           {NEIGHBORHOODS.map((n) => (
             <Chip key={n.id} active={hoods.has(n.id)} onClick={() => toggle(hoods, n.id, setHoods)}>
-              {hoodLabel(lang, n.id)}
+              {hoodLabel(lang, n.id).split(" / ")[0]}
             </Chip>
           ))}
         </FilterRow>
 
         {/* ZIP on its own clean row */}
-        <FilterRow label={tr("f_near")}>
+        <FilterRow label={tr("f_near")} plain>
           <div className="flex flex-wrap items-center gap-2">
             <input
               inputMode="numeric"
@@ -468,16 +468,26 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
 function FilterRow({
   label,
   children,
+  plain = false,
 }: {
   label: string;
   children: React.ReactNode;
+  plain?: boolean;
 }) {
   return (
-    <div className="mb-3 flex flex-col gap-1.5 last:mb-0 sm:flex-row sm:items-start sm:gap-3">
-      <span className="shrink-0 pt-1.5 font-display text-sm font-600 text-ink/50 sm:w-20">
+    <div className="mb-3 flex flex-col gap-1.5 last:mb-0 sm:flex-row sm:items-center sm:gap-3">
+      <span className="shrink-0 font-display text-sm font-600 text-ink/50 sm:w-20">
         {label}
       </span>
-      <div className="flex flex-1 flex-wrap gap-2">{children}</div>
+      {plain ? (
+        <div className="flex flex-1 flex-wrap items-center gap-2">{children}</div>
+      ) : (
+        // Continuous segmented bar — options stretch to fill equal widths so
+        // every row is the same length and reads as one cohesive control.
+        <div className="flex flex-1 overflow-hidden rounded-full border-2 border-ink/15 bg-white">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
