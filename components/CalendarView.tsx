@@ -28,6 +28,12 @@ const fmtKey = new Intl.DateTimeFormat("en-CA", {
   month: "2-digit",
   day: "2-digit",
 });
+// "4:00 PM" in Las Vegas time, for the hover bubble.
+const fmtTime = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Los_Angeles",
+  hour: "numeric",
+  minute: "2-digit",
+});
 function dayKey(iso: string) {
   return fmtKey.format(new Date(iso));
 }
@@ -79,6 +85,12 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
   const todayKey = dayKey(new Date().toISOString());
   const [selected, setSelected] = useState<string>(todayKey);
 
+  // Hover bubble: which event + the anchor rect of the label it's over.
+  const [hover, setHover] = useState<{ ev: KidEvent; rect: DOMRect } | null>(null);
+  const showBubble = (ev: KidEvent, el: HTMLElement) =>
+    setHover({ ev, rect: el.getBoundingClientRect() });
+  const hideBubble = () => setHover(null);
+
   const { y, m } = view;
   const firstDow = new Date(y, m, 1).getDay();
   const daysInMonth = new Date(y, m + 1, 0).getDate();
@@ -119,7 +131,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
         </div>
 
         {/* Weekday header */}
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-800 text-ink/40">
+        <div className="grid grid-cols-7 gap-1 text-center text-base font-800 text-ink/40">
           {DOW.map((d) => (
             <div key={d} className="py-1">
               <span className="hidden sm:inline">{d}</span>
@@ -141,7 +153,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
                 key={k}
                 onClick={() => setSelected(k)}
                 className={`flex aspect-square flex-col items-center rounded-xl border-2 p-1 text-left align-top transition sm:aspect-auto sm:items-stretch ${
-                  dayEvents.length ? "sm:min-h-[9rem]" : "sm:min-h-[4.5rem]"
+                  dayEvents.length ? "sm:min-h-[12.5rem]" : "sm:min-h-[5.5rem]"
                 } ${
                   isSelected
                     ? "border-teal bg-teal/10"
@@ -150,7 +162,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
                     : "border-transparent hover:bg-sand"
                 }`}
               >
-                <span className={`self-center text-xs font-800 sm:self-start sm:text-sm ${isToday ? "flex h-5 w-5 items-center justify-center rounded-full bg-coral text-white" : "text-ink/70"}`}>
+                <span className={`self-center text-base font-800 sm:self-start sm:text-lg ${isToday ? "flex h-7 w-7 items-center justify-center rounded-full bg-coral text-white" : "text-ink/70"}`}>
                   {day}
                 </span>
 
@@ -162,16 +174,18 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
                         <span key={j} className={`h-1.5 w-1.5 rounded-full ${PRICE_DOT[e.priceTier] || "bg-ink/40"}`} />
                       ))}
                     </span>
-                    {/* Larger: up to ~6 event title labels */}
+                    {/* Larger: up to ~6 event title labels, each with a hover bubble */}
                     <span className="mt-1 hidden flex-col gap-0.5 sm:flex">
                       {dayEvents.slice(0, 6).map((e, j) => (
-                        <span key={j} title={e.title}
-                          className={`truncate rounded px-1 py-0.5 text-[10px] font-700 leading-tight ${PRICE_CHIP[e.priceTier] || "bg-ink/10 text-ink/70"}`}>
+                        <span key={j}
+                          onMouseEnter={(ev) => showBubble(e, ev.currentTarget)}
+                          onMouseLeave={hideBubble}
+                          className={`cursor-pointer truncate rounded px-1.5 py-0.5 text-sm font-700 leading-snug transition hover:brightness-95 ${PRICE_CHIP[e.priceTier] || "bg-ink/10 text-ink/70"}`}>
                           {e.recurrence ? "🔁 " : ""}{e.title}
                         </span>
                       ))}
                       {dayEvents.length > 6 && (
-                        <span className="px-1 text-[10px] font-800 text-ink/45">+{dayEvents.length - 6} more</span>
+                        <span className="px-1 text-sm font-800 text-ink/45">+{dayEvents.length - 6} more</span>
                       )}
                     </span>
                   </>
@@ -182,7 +196,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
         </div>
 
         {/* Legend */}
-        <div className="mt-3 flex flex-wrap gap-3 border-t border-ink/10 pt-3 text-xs font-700 text-ink/50">
+        <div className="mt-3 flex flex-wrap gap-3 border-t border-ink/10 pt-3 text-sm font-700 text-ink/50">
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-teal" /> Free</span>
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-sunny" /> $1–10</span>
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-coral" /> $11–25</span>
@@ -212,6 +226,42 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
           </div>
         )}
       </div>
+
+      {/* Hover bubble — quick context for an event without leaving the calendar.
+          Fixed-positioned + pointer-events-none so it never gets clipped by the
+          grid and never steals the hover. */}
+      {hover && (() => {
+        const cx = hover.rect.left + hover.rect.width / 2;
+        const below = hover.rect.top < 200; // flip under the label near the top edge
+        const left = Math.min(Math.max(cx, 140), (typeof window !== "undefined" ? window.innerWidth : 1280) - 140);
+        return (
+          <div
+            role="tooltip"
+            className="pointer-events-none fixed z-50 w-64 rounded-2xl border border-ink/10 bg-white p-3 text-left shadow-card"
+            style={{
+              left,
+              top: below ? hover.rect.bottom + 10 : hover.rect.top - 10,
+              transform: below ? "translate(-50%, 0)" : "translate(-50%, -100%)",
+            }}
+          >
+            <p className="font-display text-sm font-800 leading-snug text-ink">
+              {hover.ev.recurrence ? "🔁 " : ""}{hover.ev.title}
+            </p>
+            <p className="mt-1 text-xs font-800 text-teal-dark">
+              {fmtTime.format(new Date(hover.ev.start))}{hover.ev.recurrence ? ` · ${hover.ev.recurrence}` : ""}
+            </p>
+            {hover.ev.venue && (
+              <p className="mt-1 text-xs font-700 text-ink/70">📍 {hover.ev.venue}</p>
+            )}
+            <p className="mt-0.5 text-xs font-700 text-ink/70">
+              💲 {hover.ev.priceText || priceTier(hover.ev.priceTier).label}
+            </p>
+            {hover.ev.description && (
+              <p className="mt-1.5 line-clamp-3 text-xs leading-snug text-ink/55">{hover.ev.description}</p>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
