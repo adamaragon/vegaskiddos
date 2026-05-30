@@ -61,7 +61,9 @@ function mapRecord(rec: AirtableRecord): KidEvent | null {
     // Prefer AI-generated art (Airtable attachment) over the scraped image URL.
     image: attachmentUrl((f as Record<string, unknown>).ArtImage) || (f.Image ? String(f.Image) : undefined),
     source: String(f.Source || "Community"),
-    indoor: Boolean(f.Indoor),
+    // Preserve "unknown" — coercing a missing Indoor field to false would
+    // mislabel every unflagged event as outdoor (e.g. library storytimes).
+    indoor: f.Indoor == null ? undefined : Boolean(f.Indoor),
     recurrence: f.Recurrence ? String(f.Recurrence) : undefined,
   };
 }

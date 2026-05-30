@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEvent, getEvents } from "@/lib/data";
 import { ageTier, priceTier, neighborhood, venueSlug } from "@/lib/constants";
+import { eventEnv } from "@/lib/env";
 import { formatWhen, EventCard } from "@/components/EventCard";
 import { ShareButtons } from "@/components/ShareButtons";
 import { TrackedLink } from "@/components/TrackedLink";
@@ -162,9 +163,9 @@ export default async function EventPage({
             <span className="rounded-full bg-sand px-3 py-1 text-sm font-700 text-ink/70">
               {price.emoji} {event.priceText || priceLabel(lang, event.priceTier)}
             </span>
-            {event.indoor !== undefined && (
+            {eventEnv(event) && (
               <span className="rounded-full bg-sand px-3 py-1 text-sm font-700 text-ink/70">
-                {event.indoor ? t(lang, "indoor") : t(lang, "outdoor")}
+                {eventEnv(event) === "indoor" ? t(lang, "indoor") : t(lang, "outdoor")}
               </span>
             )}
             <span className="rounded-full bg-sand px-3 py-1 text-sm font-700 text-ink/70">

@@ -16,6 +16,7 @@ import {
   type NeighborhoodId,
 } from "@/lib/constants";
 import { getFavorites, getSavedAges, saveAges } from "@/lib/favorites";
+import { eventEnv } from "@/lib/env";
 
 const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), {
   ssr: false,
@@ -37,18 +38,6 @@ const CalendarView = dynamic(() => import("./CalendarView").then((m) => m.Calend
 
 type View = "list" | "calendar" | "map";
 
-// Infer indoor/outdoor from venue + title keywords (most scraped events don't
-// carry the flag). Returns "indoor" | "outdoor" | null.
-const INDOOR_RE = /library|museum|\bcenter\b|indoor|gallery|theat(er|re)|studio|\bgym\b|arena|hall|academy|clinic|store|shop|mall/i;
-const OUTDOOR_RE = /\bpark\b|trail|\bpool\b|splash|garden|farmers? market|festival|outdoor|plaza|field|preserve|\bhike\b|amphitheater|ballfield|playground|courtyard/i;
-function eventEnv(e: KidEvent): "indoor" | "outdoor" | null {
-  if (e.indoor === true) return "indoor";
-  if (e.indoor === false) return "outdoor";
-  const t = `${e.title} ${e.venue}`;
-  if (OUTDOOR_RE.test(t)) return "outdoor";
-  if (INDOOR_RE.test(t)) return "indoor";
-  return null;
-}
 // Distance in miles between two lat/lng (haversine).
 function milesBetween(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 3959, toR = (d: number) => (d * Math.PI) / 180;
