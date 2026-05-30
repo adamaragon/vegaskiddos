@@ -108,16 +108,22 @@ function inDateRange(iso: string, range: DateRangeId): boolean {
 function Chip({
   active,
   onClick,
+  scroll = false,
   children,
 }: {
   active: boolean;
   onClick: () => void;
+  // When true, the chip sizes to its content on mobile (so the row scrolls
+  // instead of squishing) and only stretches to equal width at sm+.
+  scroll?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 truncate border-l border-ink/10 px-2.5 py-2 text-center text-xs font-700 transition first:border-l-0 sm:text-sm ${
+      className={`border-l border-ink/10 px-2.5 py-2 text-center text-xs font-700 transition first:border-l-0 sm:text-sm ${
+        scroll ? "flex-none whitespace-nowrap sm:flex-1 sm:truncate" : "flex-1 truncate"
+      } ${
         active
           ? "bg-coral text-white"
           : "bg-white text-ink/70 hover:bg-coral/10"
@@ -335,9 +341,9 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
       {/* Collapsible filter panel */}
       {showFilters && (
       <div className="animate-card-in mt-1 rounded-2xl bg-white/70 p-4 sm:p-5">
-        <FilterRow label={tr("f_when")}>
+        <FilterRow label={tr("f_when")} scroll>
           {DATE_FILTERS.map((d) => (
-            <Chip key={d.id} active={dateRange === d.id} onClick={() => setDateRange(d.id)}>
+            <Chip key={d.id} scroll active={dateRange === d.id} onClick={() => setDateRange(d.id)}>
               {dateLabel(d.id)}
             </Chip>
           ))}
@@ -368,9 +374,9 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
           ))}
         </FilterRow>
 
-        <FilterRow label={tr("f_area")}>
+        <FilterRow label={tr("f_area")} scroll>
           {NEIGHBORHOODS.map((n) => (
-            <Chip key={n.id} active={hoods.has(n.id)} onClick={() => toggle(hoods, n.id, setHoods)}>
+            <Chip key={n.id} scroll active={hoods.has(n.id)} onClick={() => toggle(hoods, n.id, setHoods)}>
               {hoodLabel(lang, n.id).split(" / ")[0]}
             </Chip>
           ))}
@@ -469,10 +475,14 @@ function FilterRow({
   label,
   children,
   plain = false,
+  scroll = false,
 }: {
   label: string;
   children: React.ReactNode;
   plain?: boolean;
+  // For rows with many options (When, Area): scroll horizontally on phones
+  // rather than crushing 6 segments into illegible slivers.
+  scroll?: boolean;
 }) {
   return (
     <div className="mb-3 flex flex-col gap-1.5 last:mb-0 sm:flex-row sm:items-center sm:gap-3">
@@ -484,7 +494,15 @@ function FilterRow({
       ) : (
         // Continuous segmented bar — options stretch to fill equal widths so
         // every row is the same length and reads as one cohesive control.
-        <div className="flex flex-1 overflow-hidden rounded-full border-2 border-ink/15 bg-white">
+        // Crowded rows (scroll) instead swipe sideways on mobile, then snap
+        // back to the equal-fill bar at sm+.
+        <div
+          className={`flex flex-1 rounded-full border-2 border-ink/15 bg-white ${
+            scroll
+              ? "overflow-x-auto sm:overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              : "overflow-hidden"
+          }`}
+        >
           {children}
         </div>
       )}
