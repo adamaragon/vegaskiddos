@@ -7,3 +7,4 @@ out
 .netlify
 next-env.d.ts
 *.tsbuildinfo
+SECRETS.local.md
