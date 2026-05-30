@@ -6,3 +6,4 @@ out
 *.log
 .netlify
 next-env.d.ts
+*.tsbuildinfo
