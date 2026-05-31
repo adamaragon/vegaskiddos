@@ -93,7 +93,7 @@ export default function AdminPage() {
               className="w-full rounded-2xl border-2 border-ink/15 px-4 py-3 text-center outline-none focus:border-teal" />
             {err && <p className="text-sm font-700 text-coral-dark">{err}</p>}
             <button type="submit"
-              className="hover-pop w-full rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop">
+              className="hover-pop w-full rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop">
               Sign in
             </button>
           </form>
@@ -121,7 +121,7 @@ export default function AdminPage() {
       <div className="mt-4 flex rounded-full border-2 border-ink/15 bg-white p-1">
         {(["pending", "approved", "rejected"] as const).map((q) => (
           <button key={q} onClick={() => setQueue(q)}
-            className={`flex-1 rounded-full px-3 py-2 text-sm font-800 transition ${queue === q ? "bg-teal text-white" : "text-ink/60"}`}>
+            className={`flex-1 rounded-full px-3 py-2 text-sm font-800 transition ${queue === q ? "bg-teal-btn text-white" : "text-ink/60"}`}>
             {q === "pending" ? "📥 Review" : q === "approved" ? "✅ Published" : "🗑️ Removed"}
           </button>
         ))}
@@ -154,18 +154,18 @@ export default function AdminPage() {
               {queue === "pending" ? (
                 <>
                   <button disabled={busy === e.id} onClick={() => act(e.id, "approve")}
-                    className="rounded-full bg-teal px-4 py-2 text-sm font-800 text-white transition hover:bg-teal-dark disabled:opacity-50">
+                    className="rounded-full bg-teal-btn px-4 py-2 text-sm font-800 text-white transition hover:bg-teal-dark disabled:opacity-50">
                     ✓ Approve
                   </button>
                   <button disabled={busy === e.id} onClick={() => act(e.id, "reject")}
-                    className="rounded-full border-2 border-coral px-4 py-2 text-sm font-800 text-coral transition hover:bg-coral hover:text-white disabled:opacity-50">
+                    className="rounded-full border-2 border-coral px-4 py-2 text-sm font-800 text-coral transition hover:bg-coral-btn hover:text-white disabled:opacity-50">
                     ✕ Reject
                   </button>
                 </>
               ) : queue === "approved" ? (
                 <>
                   <button disabled={busy === e.id} onClick={() => act(e.id, "reject")}
-                    className="rounded-full bg-coral px-4 py-2 text-sm font-800 text-white transition hover:bg-coral-dark disabled:opacity-50">
+                    className="rounded-full bg-coral-btn px-4 py-2 text-sm font-800 text-white transition hover:bg-coral-dark disabled:opacity-50">
                     🗑️ Remove
                   </button>
                   <button disabled={busy === e.id} onClick={() => act(e.id, "unapprove")}
@@ -175,7 +175,7 @@ export default function AdminPage() {
                 </>
               ) : (
                 <button disabled={busy === e.id} onClick={() => act(e.id, "approve")}
-                  className="rounded-full bg-teal px-4 py-2 text-sm font-800 text-white transition hover:bg-teal-dark disabled:opacity-50">
+                  className="rounded-full bg-teal-btn px-4 py-2 text-sm font-800 text-white transition hover:bg-teal-dark disabled:opacity-50">
                   ♻️ Restore (republish)
                 </button>
               )}

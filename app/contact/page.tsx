@@ -47,7 +47,7 @@ export default function ContactPage() {
         <h1 className="mt-4 font-display text-3xl font-700">{tr("ct_done_h")}</h1>
         <p className="mt-2 text-ink/70">{tr("ct_done_p")}</p>
         <button onClick={() => setStatus("idle")}
-          className="hover-pop mt-6 rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop">
+          className="hover-pop mt-6 rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop">
           {tr("ct_send_another")}
         </button>
       </div>
@@ -67,7 +67,7 @@ export default function ContactPage() {
             {TYPES.map((opt) => (
               <button type="button" key={opt.id} onClick={() => setType(opt.id)}
                 className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-700 transition ${
-                  type === opt.id ? "border-teal bg-teal text-white" : "border-ink/15 bg-white text-ink/70"
+                  type === opt.id ? "border-teal bg-teal-btn text-white" : "border-ink/15 bg-white text-ink/70"
                 }`}>
                 {tr(opt.key)}
               </button>
@@ -95,7 +95,7 @@ export default function ContactPage() {
           </p>
         )}
         <button type="submit" disabled={status === "sending"}
-          className="hover-pop w-full rounded-full bg-coral px-5 py-4 font-800 text-white shadow-pop disabled:opacity-50">
+          className="hover-pop w-full rounded-full bg-coral-btn px-5 py-4 font-800 text-white shadow-pop disabled:opacity-50">
           {status === "sending" ? tr("ct_sending") : tr("ct_send")}
         </button>
       </form>

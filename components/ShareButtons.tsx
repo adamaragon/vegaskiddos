@@ -62,7 +62,7 @@ export function ShareButtons({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button onClick={nativeShare}
-        className="hover-pop inline-flex items-center gap-1.5 rounded-full bg-teal px-4 py-2 text-sm font-800 text-white shadow-pop">
+        className="hover-pop inline-flex items-center gap-1.5 rounded-full bg-teal-btn px-4 py-2 text-sm font-800 text-white shadow-pop">
         ↗ Share
       </button>
       <button onClick={copyLink}

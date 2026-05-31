@@ -60,7 +60,7 @@ export function SubscribeBox({ compact = false, stacked = false, lang = "en" }: 
       <button
         type="submit"
         disabled={status === "sending"}
-        className={`hover-pop rounded-full bg-coral font-800 text-white shadow-pop disabled:opacity-50 ${stacked ? "w-full py-3 text-base" : compact ? "px-4 py-2 text-sm" : "px-5 py-2.5"}`}
+        className={`hover-pop rounded-full bg-coral-btn font-800 text-white shadow-pop disabled:opacity-50 ${stacked ? "w-full py-3 text-base" : compact ? "px-4 py-2 text-sm" : "px-5 py-2.5"}`}
       >
         {status === "sending" ? "…" : tr("nl_button")}
       </button>

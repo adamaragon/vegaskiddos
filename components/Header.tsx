@@ -42,7 +42,7 @@ export function Header({ lang = "en" }: { lang?: Lang }) {
           <LangToggle lang={lang} />
           <Link
             href="/submit"
-            className="whitespace-nowrap rounded-full bg-coral px-4 py-2 text-white shadow-pop transition hover:bg-coral-dark"
+            className="whitespace-nowrap rounded-full bg-coral-btn px-4 py-2 text-white shadow-pop transition hover:bg-coral-dark"
           >
             <span className="sm:hidden">{t(lang, "nav_add_short")}</span>
             <span className="hidden sm:inline">{t(lang, "nav_add")}</span>

@@ -135,7 +135,7 @@ export function RemindMe({ favoriteIds, lang = "en" }: { favoriteIds: string[]; 
         {supported ? (
           pushOn ? (
             <>
-              <span className="rounded-full border-2 border-teal bg-teal px-4 py-2 text-sm font-800 text-white">
+              <span className="rounded-full border-2 border-teal bg-teal-btn px-4 py-2 text-sm font-800 text-white">
                 ✓ {t("Reminders on (this device)", "Recordatorios activos")}
               </span>
               <button onClick={sendTest} disabled={busy}
@@ -149,7 +149,7 @@ export function RemindMe({ favoriteIds, lang = "en" }: { favoriteIds: string[]; 
             </>
           ) : (
             <button onClick={enablePush} disabled={busy}
-              className="hover-pop rounded-full bg-coral px-4 py-2 text-sm font-800 text-white shadow-pop disabled:opacity-50">
+              className="hover-pop rounded-full bg-coral-btn px-4 py-2 text-sm font-800 text-white shadow-pop disabled:opacity-50">
               {busy ? "…" : t("🔔 Remind me on this device", "🔔 Avísame en este dispositivo")}
             </button>
           )

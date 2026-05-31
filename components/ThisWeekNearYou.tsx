@@ -118,7 +118,7 @@ export function ThisWeekNearYou({ events, lang = "en" }: { events: KidEvent[]; l
           <button
             type="button"
             onClick={useMyLocation}
-            className="hover-pop whitespace-nowrap rounded-full bg-teal px-3 py-1.5 text-sm font-800 text-white shadow-pop"
+            className="hover-pop whitespace-nowrap rounded-full bg-teal-btn px-3 py-1.5 text-sm font-800 text-white shadow-pop"
           >
             {geoMsg || t(lang, "tw_loc")}
           </button>

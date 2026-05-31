@@ -6,9 +6,9 @@ import { EventThumb } from "./EventThumb";
 import { FavButton } from "./FavButton";
 
 const PRICE_BG: Record<string, string> = {
-  teal: "bg-teal text-white",
+  teal: "bg-teal-btn text-white",
   sunny: "bg-sunny text-ink",
-  coral: "bg-coral text-white",
+  coral: "bg-coral-btn text-white",
   grape: "bg-grape text-white",
 };
 

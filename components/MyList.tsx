@@ -38,7 +38,7 @@ export function MyList({ events, lang = "en" }: { events: KidEvent[]; lang?: "en
         <p className="text-5xl">❤️</p>
         <h1 className="mt-3 font-display text-3xl font-700">Your list is empty</h1>
         <p className="mt-2 text-ink/70">Tap the ❤️ on any event to save it here for your weekend planning.</p>
-        <Link href="/" className="hover-pop mt-5 inline-block rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop">Browse events</Link>
+        <Link href="/" className="hover-pop mt-5 inline-block rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop">Browse events</Link>
       </div>
     );
   }

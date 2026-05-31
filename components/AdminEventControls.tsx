@@ -43,7 +43,7 @@ export function AdminEventControls({ id }: { id: string }) {
       ) : (
         <>
           <button disabled={busy} onClick={() => act("reject", "Removed from the site")}
-            className="rounded-full bg-coral px-4 py-1.5 text-sm font-800 text-white transition hover:bg-coral-dark disabled:opacity-50">
+            className="rounded-full bg-coral-btn px-4 py-1.5 text-sm font-800 text-white transition hover:bg-coral-dark disabled:opacity-50">
             🗑️ Remove event
           </button>
           <button disabled={busy} onClick={() => act("unapprove", "Unpublished (moved to review queue)")}

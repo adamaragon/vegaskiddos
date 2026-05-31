@@ -56,7 +56,7 @@ export default function SubmitPage() {
         </p>
         <button
           onClick={() => setStatus("idle")}
-          className="mt-6 rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop hover:bg-coral-dark"
+          className="mt-6 rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop hover:bg-coral-dark"
         >
           Submit another
         </button>
@@ -135,7 +135,7 @@ export default function SubmitPage() {
                 onClick={() => toggleAge(a.id)}
                 className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-700 transition ${
                   ages.includes(a.id)
-                    ? "border-teal bg-teal text-white"
+                    ? "border-teal bg-teal-btn text-white"
                     : "border-ink/15 bg-white text-ink/70"
                 }`}
               >
@@ -176,7 +176,7 @@ export default function SubmitPage() {
         <button
           type="submit"
           disabled={status === "sending" || ages.length === 0}
-          className="w-full rounded-full bg-coral px-5 py-4 font-800 text-white shadow-pop transition hover:bg-coral-dark disabled:opacity-50"
+          className="w-full rounded-full bg-coral-btn px-5 py-4 font-800 text-white shadow-pop transition hover:bg-coral-dark disabled:opacity-50"
         >
           {status === "sending" ? "Submitting…" : "Submit for review"}
         </button>

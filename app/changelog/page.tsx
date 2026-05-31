@@ -7,8 +7,8 @@ import { t } from "@/lib/i18n";
 export const metadata = { title: "What's New — Vegas Kiddos" };
 
 const TAG_STYLE: Record<ChangeTag, string> = {
-  Launch: "bg-coral text-white",
-  Feature: "bg-teal text-white",
+  Launch: "bg-coral-btn text-white",
+  Feature: "bg-teal-btn text-white",
   Design: "bg-grape text-white",
   Data: "bg-sunny text-ink",
   Fix: "bg-ink/80 text-white",

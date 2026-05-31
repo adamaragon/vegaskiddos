@@ -9,7 +9,7 @@ export default function NotFound() {
         We couldn&apos;t find that page. The event may have ended or the link moved.
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <Link href="/" className="hover-pop rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop">
+        <Link href="/" className="hover-pop rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop">
           Browse all events
         </Link>
         <Link href="/this-weekend" className="rounded-full border-2 border-ink/15 px-5 py-3 font-800 text-ink/70 transition hover:border-teal">

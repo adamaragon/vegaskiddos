@@ -104,7 +104,7 @@ export default async function HomePage() {
           <Scribble className="pointer-events-none absolute left-10 bottom-3 hidden h-10 w-10 text-grape/50 sm:block" />
           <h2 className="font-display text-2xl font-700">{t(lang, "cta_title")}</h2>
           <p className="mx-auto mt-2 max-w-md text-ink/70">{t(lang, "cta_sub")}</p>
-          <a href="/submit" className="hover-pop mt-4 inline-block rounded-full bg-coral px-6 py-3 font-800 text-white shadow-pop">
+          <a href="/submit" className="hover-pop mt-4 inline-block rounded-full bg-coral-btn px-6 py-3 font-800 text-white shadow-pop">
             {t(lang, "nav_add")}
           </a>
           <div className="mt-6 flex flex-col items-center gap-2 border-t border-ink/10 pt-5">

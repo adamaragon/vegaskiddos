@@ -30,7 +30,7 @@ export function LangToggle({ lang }: { lang: Lang }) {
           key={l}
           onClick={() => set(l)}
           aria-label={l === "en" ? "English" : "Español"}
-          className={`rounded-full px-2.5 py-1 transition ${lang === l ? "bg-teal text-white" : "text-ink/70"}`}
+          className={`rounded-full px-2.5 py-1 transition ${lang === l ? "bg-teal-btn text-white" : "text-ink/70"}`}
         >
           {l === "en" ? "EN" : "ES"}
         </button>

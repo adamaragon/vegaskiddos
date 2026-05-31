@@ -10,7 +10,7 @@ const STATUS_STYLE: Record<string, string> = {
   idea: "bg-sand text-ink/60",
   planned: "bg-sunny/30 text-sunny-dark",
   building: "bg-teal/20 text-teal-dark",
-  shipped: "bg-teal text-white",
+  shipped: "bg-teal-btn text-white",
 };
 const STATUS_KEY: Record<string, StringKey> = {
   idea: "ft_status_idea",
@@ -84,7 +84,7 @@ export default function FeaturesPage() {
       <p className="mt-3 text-lg text-ink/70">{tr("ft_intro")}</p>
 
       <button onClick={() => setShowForm((s) => !s)}
-        className="hover-pop mt-5 inline-flex items-center gap-2 rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop">
+        className="hover-pop mt-5 inline-flex items-center gap-2 rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop">
         {tr("ft_suggest")}
       </button>
 
@@ -95,7 +95,7 @@ export default function FeaturesPage() {
           <textarea name="description" rows={2} placeholder={tr("ft_idea_desc_ph")}
             className="w-full rounded-2xl border-2 border-ink/15 px-4 py-3 outline-none focus:border-teal" />
           <button type="submit" disabled={submitting}
-            className="rounded-full bg-teal px-5 py-2.5 font-800 text-white disabled:opacity-50">
+            className="rounded-full bg-teal-btn px-5 py-2.5 font-800 text-white disabled:opacity-50">
             {submitting ? tr("ft_adding") : tr("ft_add")}
           </button>
         </form>
@@ -114,12 +114,12 @@ export default function FeaturesPage() {
                 className={`flex items-center gap-4 rounded-blob border bg-white p-4 shadow-card transition ${f.featured ? "border-sunny" : "border-ink/10"}`}>
                 <div className="flex flex-col items-center">
                   <button aria-label="Upvote" onClick={() => vote(f.id, 1)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition hover:scale-110 ${myVote === 1 ? "border-teal bg-teal text-white" : "border-ink/15 text-ink/50"}`}>
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition hover:scale-110 ${myVote === 1 ? "border-teal bg-teal-btn text-white" : "border-ink/15 text-ink/50"}`}>
                     ▲
                   </button>
                   <span className="my-1 font-display text-xl font-700 tabular-nums">{f.votes}</span>
                   <button aria-label="Downvote" onClick={() => vote(f.id, -1)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition hover:scale-110 ${myVote === -1 ? "border-coral bg-coral text-white" : "border-ink/15 text-ink/50"}`}>
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition hover:scale-110 ${myVote === -1 ? "border-coral bg-coral-btn text-white" : "border-ink/15 text-ink/50"}`}>
                     ▼
                   </button>
                 </div>

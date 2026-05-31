@@ -10,9 +10,12 @@ const config: Config = {
       colors: {
         // Vegas Kiddos — bright, playful desert-sunset palette
         sand: "#FFF8EE",
-        coral: { DEFAULT: "#FF6B5E", dark: "#E8503F" },
+        // `btn` shades are the deepest the brand goes while clearing WCAG AA
+        // (4.5:1) against white text — used only for white-text buttons/pills.
+        // DEFAULT stays bright for backgrounds, badges, tints, and accents.
+        coral: { DEFAULT: "#FF6B5E", dark: "#E8503F", btn: "#C45248" },
         sunny: { DEFAULT: "#FFC93C", dark: "#F2B705" },
-        teal: { DEFAULT: "#23C4B5", dark: "#0FA89A" },
+        teal: { DEFAULT: "#23C4B5", dark: "#0FA89A", btn: "#178379" },
         grape: { DEFAULT: "#7B5EA7", dark: "#664A8F" },
         ink: "#2D2A32",
       },

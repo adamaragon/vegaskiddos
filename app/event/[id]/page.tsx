@@ -204,7 +204,7 @@ export default async function EventPage({
               href={mapsHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full bg-teal px-5 py-3 font-800 text-white shadow-pop transition hover:bg-teal-dark"
+              className="rounded-full bg-teal-btn px-5 py-3 font-800 text-white shadow-pop transition hover:bg-teal-dark"
             >
               {t(lang, "ev_directions")}
             </TrackedLink>
@@ -223,7 +223,7 @@ export default async function EventPage({
                 href={event.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop transition hover:bg-coral-dark"
+                className="rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop transition hover:bg-coral-dark"
               >
                 {t(lang, "ev_rsvp")}
               </TrackedLink>
