@@ -37,6 +37,7 @@
     "@types/react": "19.0.7",
     "@types/react-dom": "19.0.3",
     "@types/three": "^0.171.0",
+    "@types/web-push": "^3.6.4",
     "autoprefixer": "10.4.20",
     "postcss": "^8.5.15",
     "puppeteer": "^25.1.0",

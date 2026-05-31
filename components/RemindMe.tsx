@@ -75,6 +75,24 @@ export function RemindMe({ favoriteIds, lang = "en" }: { favoriteIds: string[]; 
     setBusy(false);
   }
 
+  async function sendTest() {
+    setBusy(true); setMsg("");
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (!sub) { setMsg(t("Turn reminders on first.", "Activa los recordatorios primero.")); setBusy(false); return; }
+      const r = await fetch("/api/reminders/test", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: sub.endpoint, keys: sub.toJSON().keys }),
+      });
+      if (!r.ok) throw new Error();
+      setMsg(t("Sent! Check your notifications.", "¡Enviado! Revisa tus notificaciones."));
+    } catch {
+      setMsg(t("Test failed — check notification permissions.", "Falló — revisa los permisos de notificación."));
+    }
+    setBusy(false);
+  }
+
   async function disablePush() {
     setBusy(true);
     try {
@@ -116,10 +134,19 @@ export function RemindMe({ favoriteIds, lang = "en" }: { favoriteIds: string[]; 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {supported ? (
           pushOn ? (
-            <button onClick={disablePush} disabled={busy}
-              className="rounded-full border-2 border-teal bg-teal px-4 py-2 text-sm font-800 text-white transition hover:brightness-105 disabled:opacity-50">
-              ✓ {t("Reminders on (this device)", "Recordatorios activos")} · {t("turn off", "desactivar")}
-            </button>
+            <>
+              <span className="rounded-full border-2 border-teal bg-teal px-4 py-2 text-sm font-800 text-white">
+                ✓ {t("Reminders on (this device)", "Recordatorios activos")}
+              </span>
+              <button onClick={sendTest} disabled={busy}
+                className="rounded-full border-2 border-ink/15 bg-white px-4 py-2 text-sm font-800 text-ink/70 transition hover:border-teal disabled:opacity-50">
+                {busy ? "…" : t("Send a test", "Enviar prueba")}
+              </button>
+              <button onClick={disablePush} disabled={busy}
+                className="text-sm font-700 text-ink/50 underline-offset-2 hover:underline disabled:opacity-50">
+                {t("turn off", "desactivar")}
+              </button>
+            </>
           ) : (
             <button onClick={enablePush} disabled={busy}
               className="hover-pop rounded-full bg-coral px-4 py-2 text-sm font-800 text-white shadow-pop disabled:opacity-50">
