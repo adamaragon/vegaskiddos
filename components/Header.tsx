@@ -37,7 +37,7 @@ export function Header({ lang = "en" }: { lang?: Lang }) {
             aria-label="My saved list"
             className="rounded-full px-3 py-2 text-ink/70 transition hover:bg-white hover:text-ink"
           >
-            ⭐
+            ❤️
           </Link>
           <LangToggle lang={lang} />
           <Link

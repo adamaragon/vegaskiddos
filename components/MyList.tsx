@@ -35,9 +35,9 @@ export function MyList({ events, lang = "en" }: { events: KidEvent[]; lang?: "en
   if (!mine.length) {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center">
-        <p className="text-5xl">⭐</p>
+        <p className="text-5xl">❤️</p>
         <h1 className="mt-3 font-display text-3xl font-700">Your list is empty</h1>
-        <p className="mt-2 text-ink/70">Tap the ☆ on any event to save it here for your weekend planning.</p>
+        <p className="mt-2 text-ink/70">Tap the ❤️ on any event to save it here for your weekend planning.</p>
         <Link href="/" className="hover-pop mt-5 inline-block rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop">Browse events</Link>
       </div>
     );
@@ -48,7 +48,7 @@ export function MyList({ events, lang = "en" }: { events: KidEvent[]; lang?: "en
       <Link href="/" className="text-sm font-700 text-teal-dark hover:underline">← All events</Link>
       <header className="mt-3 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl font-700 sm:text-4xl">⭐ My list</h1>
+          <h1 className="font-display text-3xl font-700 sm:text-4xl">❤️ My list</h1>
           <p className="mt-1 text-ink/70">{mine.length} saved {mine.length === 1 ? "event" : "events"}</p>
         </div>
         <ShareButtons url={shareUrl} title="My Vegas Kiddos list" text="Check out these kid events I saved on Vegas Kiddos" compact />

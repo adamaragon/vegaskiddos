@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Fredoka, Nunito } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
-import { CrayonDefs, Star } from "@/components/Doodles";
+import { CrayonDefs, Heart } from "@/components/Doodles";
 import { PWARegister } from "@/components/PWARegister";
 import { LangToggle } from "@/components/LangToggle";
 import { getLang, getPath } from "@/lib/lang-server";
@@ -141,7 +141,7 @@ export default async function RootLayout({
           </div>
           <div className="border-t border-ink/10 py-5 text-center text-sm text-ink/60">
             <p className="flex items-center justify-center gap-1.5">
-              {t(lang, "foot_madeby")} <Star className="inline h-4 w-4 text-coral" /> {lang === "es" ? "por" : "by"}{" "}
+              {t(lang, "foot_madeby")} <Heart className="inline h-4 w-4 text-coral" /> {lang === "es" ? "por" : "by"}{" "}
               <span className="font-700 text-ink/80">Adam &amp; Michelle Aragon</span>
             </p>
             <p className="mt-1 text-xs text-ink/50">
