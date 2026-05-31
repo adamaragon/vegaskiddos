@@ -16,7 +16,37 @@ export function MapView({ events }: { events: KidEvent[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const layerRef = useRef<import("leaflet").LayerGroup | null>(null);
+  const meRef = useRef<import("leaflet").Marker | null>(null);
   const router = useRouter();
+  const [locating, setLocating] = useState(false);
+  const [geoErr, setGeoErr] = useState("");
+
+  // Center on the visitor and drop a "you are here" marker.
+  async function locateMe() {
+    if (!navigator.geolocation || !mapRef.current) { setGeoErr("Location isn't available."); return; }
+    setLocating(true); setGeoErr("");
+    const L = (await import("leaflet")).default;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        const map = mapRef.current!;
+        if (meRef.current) meRef.current.remove();
+        meRef.current = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: "kk-me",
+            html: `<div style="width:18px;height:18px;border-radius:50%;background:#2D6BFF;border:3px solid white;box-shadow:0 0 0 6px rgba(45,107,255,.25)"></div>`,
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
+          }),
+          zIndexOffset: 1000,
+        }).addTo(map);
+        map.setView([lat, lng], 13, { animate: true });
+        setLocating(false);
+      },
+      () => { setGeoErr("Couldn't get your location."); setLocating(false); },
+      { timeout: 8000 }
+    );
+  }
   // Flips true once the map + layer are ready, so the markers effect re-runs
   // after the async init finishes (it used to lose the race and never render).
   const [ready, setReady] = useState(false);
@@ -105,9 +135,23 @@ export function MapView({ events }: { events: KidEvent[] }) {
   }, [events, router, ready]);
 
   return (
-    <div
-      ref={containerRef}
-      className="h-[60vh] min-h-[420px] w-full rounded-blob border border-ink/10 shadow-card"
-    />
+    <div className="relative">
+      <div
+        ref={containerRef}
+        className="h-[60vh] min-h-[420px] w-full rounded-blob border border-ink/10 shadow-card"
+      />
+      <button
+        onClick={locateMe}
+        disabled={locating}
+        className="hover-pop absolute right-3 top-3 z-[500] rounded-full bg-white px-4 py-2 text-sm font-800 text-ink/80 shadow-card transition hover:text-teal-dark disabled:opacity-60"
+      >
+        {locating ? "📍 Locating…" : "📍 Near me"}
+      </button>
+      {geoErr && (
+        <span className="absolute left-3 top-3 z-[500] rounded-full bg-white/90 px-3 py-1.5 text-xs font-700 text-coral-dark shadow">
+          {geoErr}
+        </span>
+      )}
+    </div>
   );
 }

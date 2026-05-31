@@ -9,16 +9,22 @@ in GitHub Actions using repo **secrets**.
 | Var | Used by |
 |---|---|
 | `AIRTABLE_TOKEN`, `AIRTABLE_BASE_ID` | everything |
-| `OPENAI_API_KEY` | `translate-backfill`, `gov-scrape` (auto-translate), `gen-event-art` |
-| `RESEND_API_KEY`, `DIGEST_FROM` | `send-digest` (preview-only if unset) |
+| `OPENAI_API_KEY` | `translate-backfill`, `gov-scrape` (auto-translate), `gen-event-art`, `fill-blank-descriptions`, `infer-ages` |
+| `RESEND_API_KEY`, `DIGEST_FROM` | `send-digest`, `send-reminders` (email channel) |
 | `FB_PAGE_ID`, `FB_PAGE_TOKEN` | `fb-post` (compose-only if unset) |
+| `VAPID_PUBLIC_KEY`/`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | `send-reminders` (web push) |
 
 ## Scripts
 
 | Script | npm | What it does |
 |---|---|---|
-| `gov-scrape.mjs` | — | Headless-browser scraper for JS gov calendars → Airtable review queue. Auto-translates new events. Runs daily via `gov-scrape.yml`. |
+| `gov-scrape.mjs` | — | Headless-browser scraper for JS gov calendars → Airtable review queue. Auto-translates new events, then runs the three enrichers below. Runs daily via `gov-scrape.yml`. |
 | `translate-backfill.mjs` | `translate` | Backfills `TitleEs`/`DescriptionEs` (OpenAI). Idempotent — only fills empty. |
+| `fill-blank-descriptions.mjs` | `fill-descriptions` | Generates grounded bilingual descriptions for events that arrive blank (e.g. Henderson gov). `--dry`. Idempotent. |
+| `geocode-events.mjs` | `geocode` | Backfills missing `Lat`/`Lng` via OSM Nominatim (metro-bounded, no key) so events map. `--dry`, `--limit n`. Idempotent. |
+| `infer-ages.mjs` | `infer-ages` | Tags missing `AgeTiers` from title+description (gpt-4o-mini). `--dry`. Idempotent. |
+| `send-reminders.mjs` | `send-reminders` | Daily: notifies subscribers about favorited events happening tomorrow via web push + email. `--dry`. Runs via `reminders.yml` (5pm PT). |
+| `ensure-reminders-table.mjs` | `ensure-reminders-table` | Creates the `Reminders` table (push/email subscriptions). Idempotent. |
 | `send-digest.mjs` | — | Weekly email digest (Resend), per-subscriber language. Preview-writes HTML if no `RESEND_API_KEY`. Runs Thu via `weekly-digest.yml`. |
 | `fb-post.mjs` | `fb-post` | Facebook Page posting. Modes: `daily` \| `roundup` \| `schedule [n]` \| `verify`. `--dry-run`, `--force`. Crons in `fb-post.yml` (self-pause until `RESUME_AFTER`). |
 | `gen-event-art.mjs` | `gen-art` | AI event artwork (OpenAI) → `ArtImage` attachment. Modes: `sample [n]` \| `batch [--limit n]`, `--dry-run`. Run via `gen-art.yml`. |
