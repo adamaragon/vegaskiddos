@@ -2,6 +2,7 @@ import type { ScrapedEvent, SourceResult } from "./types";
 import { makeTribeAdapter } from "./sources/tribe";
 import { fetchNevadaMoms } from "./sources/nevadaMoms";
 import { fetchLibrary } from "./sources/library";
+import { fetchHendersonLibraries } from "./sources/hendersonLibraries";
 import { upsertEvents, dedupeApprovedEvents } from "./airtable";
 import { collapseRecurring } from "./recurring";
 
@@ -43,6 +44,7 @@ const SOURCES: (() => Promise<SourceResult>)[] = [
   familyFunVegas,
   () => fetchNevadaMoms(),
   () => fetchLibrary({ days: 45 }),
+  () => fetchHendersonLibraries({ days: 45 }),
 ];
 
 export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary> {
