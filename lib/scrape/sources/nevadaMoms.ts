@@ -1,96 +1,122 @@
-// Source adapter: Nevada Moms (nvmoms.com) — a daily-updated Southern Nevada
-// family calendar on the Modern Events Calendar plugin, which exposes a rich
-// RSS feed with namespaced mec:* fields. We filter to Southern Nevada and pull
-// upcoming events as review-queue leads.
+// Source adapter: Nevada Moms (nvmoms.com) — a Modern Events Calendar site.
+//
+// The RSS feed (/events/feed/) only carries the ~10 most-recently-published
+// items, which are Reno-dominated and mostly evergreen "(Click Here!)" roundup
+// posts — so it yielded zero usable Southern Nevada events. Instead we hit MEC's
+// own list endpoint (admin-ajax `mec_list_load_more`) filtered to the "Southern
+// Nevada (Henderson-Vegas)" category (term 1329). It needs no nonce and pages by
+// date window via `mec_start_date`. The list markup gives title + date + a stable
+// event id + link; venue/description/coords are left for the enrich pass
+// (fill-blank-descriptions, infer-ages, geocode) like other lightweight sources.
 
 import type { ScrapedEvent, SourceResult } from "../types";
-import {
-  classifyAges,
-  classifyPrice,
-  passesAdultFilter,
-  neighborhoodFromZip,
-  stripHtml,
-} from "../classify";
+import { classifyAges, isKidRelevant, stripHtml } from "../classify";
 
 const SOURCE = "Nevada Moms";
-const FEED = "https://nvmoms.com/events/feed/";
+const AJAX = "https://nvmoms.com/wp-admin/admin-ajax.php";
+const SN_CATEGORY = "1329"; // "Southern Nevada (Henderson-Vegas)" MEC category
+const UA = "VegasKiddos/1.0 (+https://vegaskiddos.com)";
+const DAY_MS = 86_400_000;
 
-function field(block: string, tag: string): string {
-  const m = block.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`));
-  if (!m) return "";
-  return m[1].replace(/<!\[CDATA\[|\]\]>/g, "").trim();
+// "Uptown Tot Time", "Mommy & Me", "Stroller Strides" — family signals the
+// shared (broad-source) KID_INCLUDE list deliberately omits. nvmoms is already a
+// Southern-Nevada family calendar, so a slightly wider net is safe here.
+const EXTRA_FAMILY = /\b(tot|tots|mommy|stroller|nursing|babywearing|homeschool)\b/i;
+// Explicit kid words that rescue an otherwise-adult class (e.g. "Family Yoga").
+const KID_WORD = /\b(kid|kids|child|children|family|families|baby|babies|toddler|tot|teen|tween|story ?time|preschool)\b/i;
+// Evergreen directory/roundup posts, not real events — always skip.
+const ROUNDUP = /\(click here!?\)/i;
+// nvmoms mixes adult fitness classes into the family calendar; drop them unless
+// the title is explicitly kid-tagged.
+const ADULT_FITNESS = /\b(yoga|pilates|zumba|barre|bootcamp|cardio|hiit)\b|enhance fitness|high fitness|\bworkout\b/i;
+
+function decode(s: string): string {
+  return stripHtml(s)
+    .replace(/&#0?38;|&amp;/g, "&")
+    .replace(/&#8217;|&rsquo;|&#0?39;/g, "'")
+    .replace(/&#8211;|&ndash;/g, "–")
+    .trim();
 }
 
-// "10:00 am" | "All Day" | "" -> "HH:MM"
-function to24h(raw: string): string {
-  const s = raw.trim().toLowerCase();
-  if (!s || s === "all day") return "09:00";
-  const m = s.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
-  if (!m) return "09:00";
-  let h = parseInt(m[1], 10);
-  const min = m[2] || "00";
-  if (m[3] === "pm" && h !== 12) h += 12;
-  if (m[3] === "am" && h === 12) h = 0;
-  return `${String(h).padStart(2, "0")}:${min}`;
+interface Article {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  link: string;
 }
 
-export async function fetchNevadaMoms(): Promise<SourceResult> {
+function parseArticles(html: string): Article[] {
+  const out: Article[] = [];
+  for (const a of html.match(/<article[\s\S]*?<\/article>/g) || []) {
+    const ym = a.match(/mec-toggle-(\d{4})(\d{2})-\d+/);
+    const day = a.match(/event-d[^>]*>\s*(\d{1,2})/);
+    const id = a.match(/data-event-id="(\d+)"/);
+    const tA = a.match(/mec-event-title"[^>]*>\s*<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/);
+    if (!ym || !day || !id || !tA) continue;
+    const date = `${ym[1]}-${ym[2]}-${day[1].padStart(2, "0")}`;
+    out.push({ id: id[1], date, link: tA[1], title: decode(tA[2]) });
+  }
+  return out;
+}
+
+export async function fetchNevadaMoms(opts?: { days?: number }): Promise<SourceResult> {
   const errors: string[] = [];
   const events: ScrapedEvent[] = [];
+  const days = opts?.days ?? 60;
   const today = new Date().toISOString().slice(0, 10);
 
   try {
-    const res = await fetch(FEED, {
-      headers: { "User-Agent": "VegasKiddos/1.0 (+https://vegaskiddos.com)" },
-    });
-    if (!res.ok) return { source: SOURCE, events, errors: [`HTTP ${res.status}`] };
-    const xml = await res.text();
-    const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
-
-    for (const it of items) {
-      const category = field(it, "mec:category");
-      // Southern Nevada / Las Vegas only — skip Reno/Tahoe listings.
-      if (/northern nevada|reno|tahoe|carson/i.test(category)) continue;
-
-      const title = stripHtml(field(it, "title"));
-      const startDate = field(it, "mec:startDate");
-      if (!title || !startDate || startDate < today) continue;
-
-      const desc = stripHtml(field(it, "description")).slice(0, 600);
-      const location = stripHtml(field(it, "mec:location"));
-      const cost = field(it, "mec:cost");
-      const link = field(it, "link");
-      const blob = `${title} ${desc} ${category}`;
-      // Nevada Moms is already a vetted family calendar — keep all but adult-only.
-      if (!passesAdultFilter(blob)) continue;
-
-      const start = `${startDate}T${to24h(field(it, "mec:startHour"))}:00-07:00`;
-      const endDate = field(it, "mec:endDate");
-      const endHour = field(it, "mec:endHour");
-      // Skip multi-month "ongoing" ranges as the end (keep single-day framing).
-      const end =
-        endDate && endDate === startDate
-          ? `${endDate}T${to24h(endHour)}:00-07:00`
-          : undefined;
-
-      const zipMatch = location.match(/\b(89\d{3})\b/);
-      events.push({
-        externalId: link || `${SOURCE}:${title}:${startDate}`,
-        title,
-        description: desc,
-        venue: location,
-        address: location,
-        neighborhood: neighborhoodFromZip(zipMatch?.[1]),
-        lat: null,
-        lng: null,
-        start,
-        end,
-        ageTiers: classifyAges(blob),
-        priceTier: classifyPrice(cost, blob),
-        priceText: cost || undefined,
-        url: link || undefined,
-        source: SOURCE,
+    // Walk the start-date window forward in ~10-day steps and dedup by event id
+    // (recurring events recur across windows). One occurrence per event.
+    const seen = new Set<string>();
+    const base = new Date(`${today}T12:00:00Z`).getTime();
+    for (let offset = 0; offset <= days; offset += 10) {
+      const start = new Date(base + offset * DAY_MS).toISOString().slice(0, 10);
+      const body = new URLSearchParams({
+        action: "mec_list_load_more",
+        "atts[category]": SN_CATEGORY,
+        "atts[show_only_one_occurrence]": "1",
+        mec_start_date: start,
       });
+      const res = await fetch(AJAX, {
+        method: "POST",
+        headers: { "User-Agent": UA, "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+      });
+      if (!res.ok) {
+        errors.push(`HTTP ${res.status} @ ${start}`);
+        continue;
+      }
+      const json = (await res.json()) as { html?: string };
+      for (const art of parseArticles(json.html || "")) {
+        if (seen.has(art.id)) continue;
+        seen.add(art.id);
+        if (art.date < today) continue;
+        // Title-only relevance (no description in the list markup): keep genuine
+        // kid/family programming, drop the adult yoga/fitness/social classes and
+        // roundup posts that share this calendar.
+        if (ROUNDUP.test(art.title)) continue;
+        if (ADULT_FITNESS.test(art.title) && !KID_WORD.test(art.title)) continue;
+        if (!isKidRelevant(art.title) && !EXTRA_FAMILY.test(art.title)) continue;
+
+        events.push({
+          externalId: `${SOURCE}:${art.id}`,
+          title: art.title,
+          description: "",
+          venue: "",
+          address: "",
+          neighborhood: null,
+          lat: null,
+          lng: null,
+          start: `${art.date}T09:00:00-07:00`,
+          end: undefined,
+          ageTiers: classifyAges(art.title),
+          priceTier: null,
+          priceText: undefined,
+          url: art.link && /^https?:/.test(art.link) ? art.link : undefined,
+          source: SOURCE,
+        });
+      }
     }
   } catch (err) {
     errors.push((err as Error).message);

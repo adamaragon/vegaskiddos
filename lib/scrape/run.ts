@@ -43,7 +43,7 @@ const SOURCES: (() => Promise<SourceResult>)[] = [
   vegasFamilyGuide,
   uncommons,
   familyFunVegas,
-  () => fetchNevadaMoms(),
+  () => fetchNevadaMoms({ days: 60 }),
   () => fetchLibrary({ days: 45 }),
   () => fetchHendersonLibraries({ days: 45 }),
 ];
