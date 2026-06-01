@@ -10,7 +10,7 @@
 // (fill-blank-descriptions, infer-ages, geocode) like other lightweight sources.
 
 import type { ScrapedEvent, SourceResult } from "../types";
-import { classifyAges, isKidRelevant, stripHtml } from "../classify";
+import { classifyAges, isKidRelevant, neighborhoodFromZip, stripHtml } from "../classify";
 
 const SOURCE = "Nevada Moms";
 const AJAX = "https://nvmoms.com/wp-admin/admin-ajax.php";
@@ -45,6 +45,29 @@ interface Article {
   link: string;
 }
 
+// MEC suppresses location in this theme's single-event HTML and REST, but its
+// per-event iCal export (`?method=ical&id=<id>`) carries a full street address
+// on the LOCATION line. One cheap GET per kept event; the geocode enrich pass
+// turns the address into map coordinates (no GEO/lat-lng is exposed).
+async function fetchVenue(id: string): Promise<string> {
+  try {
+    const res = await fetch(`https://nvmoms.com/?method=ical&id=${id}`, {
+      headers: { "User-Agent": UA },
+    });
+    if (!res.ok) return "";
+    const ics = (await res.text()).replace(/\r?\n[ \t]/g, ""); // unfold
+    const m = ics.match(/^LOCATION:(.+)$/m);
+    if (!m) return "";
+    return m[1]
+      .replace(/\\,/g, ",")
+      .replace(/\\;/g, ";")
+      .replace(/\\n/gi, ", ")
+      .trim();
+  } catch {
+    return "";
+  }
+}
+
 function parseArticles(html: string): Article[] {
   const out: Article[] = [];
   for (const a of html.match(/<article[\s\S]*?<\/article>/g) || []) {
@@ -69,6 +92,7 @@ export async function fetchNevadaMoms(opts?: { days?: number }): Promise<SourceR
     // Walk the start-date window forward in ~10-day steps and dedup by event id
     // (recurring events recur across windows). One occurrence per event.
     const seen = new Set<string>();
+    const kept: Article[] = [];
     const base = new Date(`${today}T12:00:00Z`).getTime();
     for (let offset = 0; offset <= days; offset += 10) {
       const start = new Date(base + offset * DAY_MS).toISOString().slice(0, 10);
@@ -98,26 +122,33 @@ export async function fetchNevadaMoms(opts?: { days?: number }): Promise<SourceR
         if (ROUNDUP.test(art.title)) continue;
         if (ADULT_FITNESS.test(art.title) && !KID_WORD.test(art.title)) continue;
         if (!isKidRelevant(art.title) && !EXTRA_FAMILY.test(art.title)) continue;
-
-        events.push({
-          externalId: `${SOURCE}:${art.id}`,
-          title: art.title,
-          description: "",
-          venue: "",
-          address: "",
-          neighborhood: null,
-          lat: null,
-          lng: null,
-          start: `${art.date}T09:00:00-07:00`,
-          end: undefined,
-          ageTiers: classifyAges(art.title),
-          priceTier: null,
-          priceText: undefined,
-          url: art.link && /^https?:/.test(art.link) ? art.link : undefined,
-          source: SOURCE,
-        });
+        kept.push(art);
       }
     }
+
+    // Fetch each kept event's address from its iCal export (parallel).
+    const venues = await Promise.all(kept.map((a) => fetchVenue(a.id)));
+    kept.forEach((art, i) => {
+      const venue = venues[i];
+      const zip = venue.match(/\b(89\d{3})\b/)?.[1];
+      events.push({
+        externalId: `${SOURCE}:${art.id}`,
+        title: art.title,
+        description: "",
+        venue,
+        address: venue,
+        neighborhood: zip ? neighborhoodFromZip(zip) : null,
+        lat: null,
+        lng: null,
+        start: `${art.date}T09:00:00-07:00`,
+        end: undefined,
+        ageTiers: classifyAges(art.title),
+        priceTier: null,
+        priceText: undefined,
+        url: art.link && /^https?:/.test(art.link) ? art.link : undefined,
+        source: SOURCE,
+      });
+    });
   } catch (err) {
     errors.push((err as Error).message);
   }
