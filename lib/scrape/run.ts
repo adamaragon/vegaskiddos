@@ -3,7 +3,7 @@ import { makeTribeAdapter } from "./sources/tribe";
 import { fetchNevadaMoms } from "./sources/nevadaMoms";
 import { fetchLibrary } from "./sources/library";
 import { fetchHendersonLibraries } from "./sources/hendersonLibraries";
-import { upsertEvents, dedupeApprovedEvents } from "./airtable";
+import { upsertEvents, dedupeApprovedEvents, approveAllPending } from "./airtable";
 import { collapseRecurring } from "./recurring";
 
 const vegasFamilyGuide = makeTribeAdapter({
@@ -33,6 +33,7 @@ export interface RunSummary {
   recurringSeries: number;
   inserted: number; // newly created
   updated: number; // existing refreshed
+  approved: number; // auto-approved this run (newly published)
   dryRun: boolean;
   sampleTitles: string[];
 }
@@ -73,8 +74,12 @@ export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary
     ? { created: 0, updated: 0 }
     : await upsertEvents(collapsed);
 
-  // Self-heal: collapse any approved cross-source/leftover duplicates.
+  // Auto-publish: approve everything pending (except explicitly-rejected), then
+  // collapse approved cross-source/leftover duplicates. Order matters — approve
+  // first so dedupe sees the full approved set and can merge fresh dups.
+  let approved = 0;
   if (!dryRun) {
+    try { approved = await approveAllPending(); } catch (e) { console.error("auto-approve skipped:", e); }
     try { await dedupeApprovedEvents(); } catch (e) { console.error("dedupe skipped:", e); }
   }
 
@@ -90,6 +95,7 @@ export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary
     recurringSeries,
     inserted: counts.created,
     updated: counts.updated,
+    approved,
     dryRun,
     sampleTitles: collapsed.filter((e) => e.recurrence).slice(0, 8).map((e) => `${e.title} (${e.recurrence})`),
   };

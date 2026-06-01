@@ -87,6 +87,38 @@ export async function dedupeApprovedEvents(): Promise<number> {
   return reject.length;
 }
 
+// Auto-approve every pending event that hasn't been explicitly rejected. Lets
+// the daily scrape publish straight to the public site so nothing sits in a
+// queue waiting on a manual click. Skips Rejected=true records (dedupe losers,
+// hand-rejected events) so they never come back. The isKidRelevant filter
+// already removed adult/civic content before insert; dedupe runs after this to
+// collapse any cross-source dups that just got approved.
+export async function approveAllPending(): Promise<number> {
+  const { token, base, table } = cfg();
+  const ids: string[] = [];
+  let offset: string | undefined;
+  do {
+    const url = new URL(`${API}/${base}/${encodeURIComponent(table)}`);
+    url.searchParams.set("pageSize", "100");
+    url.searchParams.set("filterByFormula", "AND(NOT({Approved}), NOT({Rejected}))");
+    url.searchParams.append("fields[]", "ExternalId");
+    if (offset) url.searchParams.set("offset", offset);
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return 0;
+    const data = (await res.json()) as { records: { id: string }[]; offset?: string };
+    ids.push(...data.records.map((r) => r.id));
+    offset = data.offset;
+  } while (offset);
+  for (let i = 0; i < ids.length; i += 10) {
+    await fetch(`${API}/${base}/${encodeURIComponent(table)}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ records: ids.slice(i, i + 10).map((id) => ({ id, fields: { Approved: true } })) }),
+    });
+  }
+  return ids.length;
+}
+
 // Upsert by ExternalId: creates new (pending) events, refreshes existing ones'
 // content (incl. the next date for recurring series) without touching approval.
 export async function upsertEvents(
