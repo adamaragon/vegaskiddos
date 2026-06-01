@@ -40,8 +40,8 @@ export default function StyleGuidePage() {
               <div className={`${c.var} h-20`} />
               <div className="p-3">
                 <p className="font-display font-600">{c.name}</p>
-                <p className="text-xs text-ink/50">{c.hex}</p>
-                <p className="mt-1 text-xs text-ink/60">{c.use}</p>
+                <p className="text-xs text-ink/70">{c.hex}</p>
+                <p className="mt-1 text-xs text-ink/70">{c.use}</p>
               </div>
             </div>
           ))}
@@ -54,7 +54,7 @@ export default function StyleGuidePage() {
           <p className="font-display text-xl font-500">Rounded, friendly, used for headings & the logo.</p>
           <hr className="border-ink/10" />
           <p className="font-body text-lg">Nunito — Body text. Warm and highly readable for parents skimming on a phone at the park.</p>
-          <p className="font-body text-sm text-ink/60">Small print and metadata live here.</p>
+          <p className="font-body text-sm text-ink/70">Small print and metadata live here.</p>
         </div>
       </Section>
 
@@ -64,7 +64,7 @@ export default function StyleGuidePage() {
           <Cloud className="h-12 w-20" /><Scribble className="h-14 w-14" /><Arrow className="h-12 w-16" />
           <Squiggle className="h-6 w-40" />
         </div>
-        <p className="mt-2 text-sm text-ink/60">
+        <p className="mt-2 text-sm text-ink/70">
           Hand-drawn SVGs with a turbulence filter for that waxy, child-drawn edge. All decorative &amp; <code>aria-hidden</code>.
         </p>
       </Section>
@@ -83,13 +83,13 @@ export default function StyleGuidePage() {
 
       <Section title="Motion">
         <div className="flex flex-wrap items-center gap-8 rounded-blob border border-ink/10 bg-white p-6 shadow-card">
-          <div className="text-center"><div className="animate-wiggle text-4xl">🌵</div><p className="mt-1 text-xs text-ink/60">wiggle</p></div>
-          <div className="text-center"><div className="animate-float text-4xl">🎈</div><p className="mt-1 text-xs text-ink/60">float</p></div>
-          <div className="text-center"><div className="animate-bob text-4xl">⭐</div><p className="mt-1 text-xs text-ink/60">bob</p></div>
-          <div className="text-center"><div className="animate-spin-slow text-4xl">☀️</div><p className="mt-1 text-xs text-ink/60">spin-slow</p></div>
-          <div className="text-center"><div className="hover-pop text-4xl">🧸</div><p className="mt-1 text-xs text-ink/60">hover-pop</p></div>
+          <div className="text-center"><div className="animate-wiggle text-4xl">🌵</div><p className="mt-1 text-xs text-ink/70">wiggle</p></div>
+          <div className="text-center"><div className="animate-float text-4xl">🎈</div><p className="mt-1 text-xs text-ink/70">float</p></div>
+          <div className="text-center"><div className="animate-bob text-4xl">⭐</div><p className="mt-1 text-xs text-ink/70">bob</p></div>
+          <div className="text-center"><div className="animate-spin-slow text-4xl">☀️</div><p className="mt-1 text-xs text-ink/70">spin-slow</p></div>
+          <div className="text-center"><div className="hover-pop text-4xl">🧸</div><p className="mt-1 text-xs text-ink/70">hover-pop</p></div>
         </div>
-        <p className="mt-2 text-sm text-ink/60">
+        <p className="mt-2 text-sm text-ink/70">
           Everything respects <code>prefers-reduced-motion</code>. Scroll reveals fire once on entry.
         </p>
       </Section>

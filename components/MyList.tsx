@@ -25,7 +25,7 @@ export function MyList({ events, lang = "en" }: { events: KidEvent[]; lang?: "en
     return () => window.removeEventListener("vk-prefs", sync);
   }, []);
 
-  if (ids === null) return <p className="py-16 text-center text-ink/40">Loading…</p>;
+  if (ids === null) return <p className="py-16 text-center text-ink/70">Loading…</p>;
 
   const mine = ids.map((id) => events.find((e) => e.id === id)).filter(Boolean) as KidEvent[];
   const shareUrl = ids.length
@@ -45,7 +45,7 @@ export function MyList({ events, lang = "en" }: { events: KidEvent[]; lang?: "en
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <Link href="/" className="text-sm font-700 text-teal-dark hover:underline">← All events</Link>
+      <Link href="/" className="text-sm font-700 text-teal-btn hover:underline">← All events</Link>
       <header className="mt-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-700 sm:text-4xl">❤️ My list</h1>

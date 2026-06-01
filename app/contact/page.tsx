@@ -90,7 +90,7 @@ export default function ContactPage() {
             placeholder={tr("ct_msg_ph")} />
         </label>
         {status === "error" && (
-          <p className="rounded-2xl bg-coral/10 px-4 py-3 text-sm font-700 text-coral-dark">
+          <p className="rounded-2xl bg-coral/10 px-4 py-3 text-sm font-700 text-ink/80">
             {tr("ct_err")}
           </p>
         )}

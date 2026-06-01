@@ -10,7 +10,7 @@ export function Header({ lang = "en" }: { lang?: Lang }) {
           <span className="animate-wiggle text-3xl sm:text-4xl">🌵</span>
           <span className="font-display text-3xl font-700 leading-none sm:text-4xl">
             <span className="text-coral-dark">Vegas</span>{" "}
-            <span className="text-teal-dark">Kiddos</span>
+            <span className="text-teal-btn">Kiddos</span>
           </span>
         </Link>
         <nav className="flex items-center gap-1 text-sm font-700 sm:gap-2">

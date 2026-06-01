@@ -168,7 +168,7 @@ export default function SubmitPage() {
         </Labeled>
 
         {status === "error" && (
-          <p className="rounded-2xl bg-coral/10 px-4 py-3 text-sm font-700 text-coral-dark">
+          <p className="rounded-2xl bg-coral/10 px-4 py-3 text-sm font-700 text-ink/80">
             Something went wrong. Please try again.
           </p>
         )}
@@ -181,7 +181,7 @@ export default function SubmitPage() {
           {status === "sending" ? "Submitting…" : "Submit for review"}
         </button>
         {ages.length === 0 && (
-          <p className="text-center text-xs text-ink/50">
+          <p className="text-center text-xs text-ink/70">
             Pick at least one age group above.
           </p>
         )}

@@ -21,7 +21,7 @@ import { eventEnv } from "@/lib/env";
 const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[60vh] min-h-[420px] w-full items-center justify-center rounded-blob border border-ink/10 bg-white text-ink/40">
+    <div className="flex h-[60vh] min-h-[420px] w-full items-center justify-center rounded-blob border border-ink/10 bg-white text-ink/70">
       Loading map…
     </div>
   ),
@@ -30,7 +30,7 @@ const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), {
 const CalendarView = dynamic(() => import("./CalendarView").then((m) => m.CalendarView), {
   ssr: false,
   loading: () => (
-    <div className="flex min-h-[420px] w-full items-center justify-center rounded-blob border border-ink/10 bg-white text-ink/40">
+    <div className="flex min-h-[420px] w-full items-center justify-center rounded-blob border border-ink/10 bg-white text-ink/70">
       Loading calendar…
     </div>
   ),
@@ -360,13 +360,13 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
           <span>⚙</span>
           {showFilters ? tr("qp_hide_filters") : tr("qp_filters")}
           {activeCount > 0 && (
-            <span className={`ml-0.5 rounded-full px-1.5 text-xs ${showFilters || activeCount ? "bg-white/25" : "bg-grape/15 text-grape"}`}>
+            <span className={`ml-0.5 rounded-full px-1.5 text-xs ${showFilters || activeCount ? "bg-white/25" : "bg-grape/15 text-grape-dark"}`}>
               {activeCount}
             </span>
           )}
         </button>
       </div>
-      {geoMsg && <p className="mb-3 text-sm font-700 text-teal-dark">{geoMsg}</p>}
+      {geoMsg && <p className="mb-3 text-sm font-700 text-teal-btn">{geoMsg}</p>}
 
       {/* Collapsible filter panel */}
       {showFilters && (
@@ -423,7 +423,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
               aria-label="Find events near a ZIP code"
               className="w-40 rounded-full border-2 border-ink/15 bg-white px-4 py-1.5 text-sm font-700 text-ink/80 outline-none transition focus:border-teal"
             />
-            {zipNote && <span className="text-sm font-700 text-teal-dark">{zipNote}</span>}
+            {zipNote && <span className="text-sm font-700 text-teal-btn">{zipNote}</span>}
           </div>
         </FilterRow>
 
@@ -431,7 +431,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
           <div className="mt-3 border-t border-ink/10 pt-3">
             <button
               onClick={clearAll}
-              className="text-sm font-700 text-coral underline-offset-2 hover:underline"
+              className="text-sm font-700 text-coral-btn underline-offset-2 hover:underline"
             >
               {tr("clear_all")} ({activeCount})
             </button>
@@ -452,7 +452,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
               key={v}
               onClick={() => setView(v)}
               className={`rounded-full px-3 py-1.5 text-sm font-800 capitalize transition sm:px-4 ${
-                view === v ? "bg-teal-btn text-white" : "text-ink/60"
+                view === v ? "bg-teal-btn text-white" : "text-ink/70"
               }`}
             >
               {v === "list" ? tr("v_list") : v === "calendar" ? tr("v_calendar") : tr("v_map")}
@@ -464,7 +464,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
       {/* Results */}
       <div className="mt-4">
         {filtered.length === 0 ? (
-          <div className="rounded-blob border border-dashed border-ink/20 bg-white py-16 text-center text-ink/50">
+          <div className="rounded-blob border border-dashed border-ink/20 bg-white py-16 text-center text-ink/70">
             <p className="text-2xl">🔍</p>
             <p className="mt-2 font-700">{tr("no_match")}</p>
             <p className="text-sm">{tr("no_match_hint")}</p>
@@ -483,7 +483,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
               ))}
             </div>
             {visible < filtered.length && (
-              <div ref={sentinelRef} className="mt-8 flex items-center justify-center gap-2 py-4 text-ink/40">
+              <div ref={sentinelRef} className="mt-8 flex items-center justify-center gap-2 py-4 text-ink/70">
                 <span className="h-3 w-3 animate-bounce rounded-full bg-coral" />
                 <span className="h-3 w-3 animate-bounce rounded-full bg-sunny" style={{ animationDelay: "0.15s" }} />
                 <span className="h-3 w-3 animate-bounce rounded-full bg-teal" style={{ animationDelay: "0.3s" }} />
@@ -516,7 +516,7 @@ function FilterRow({
 }) {
   return (
     <div className="mb-3 flex flex-col gap-1.5 last:mb-0 sm:flex-row sm:items-center sm:gap-3">
-      <span className="shrink-0 font-display text-sm font-600 text-ink/50 sm:w-20">
+      <span className="shrink-0 font-display text-sm font-600 text-ink/70 sm:w-20">
         {label}
       </span>
       {plain ? (

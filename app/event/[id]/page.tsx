@@ -123,7 +123,7 @@ export default async function EventPage({
       <JsonLd data={[eventLd, breadcrumbLd([{ name: "Vegas Kiddos", url: SITE }, { name: event.title, url: shareUrl }])]} />
       <Link
         href="/"
-        className="text-sm font-700 text-teal-dark hover:underline"
+        className="text-sm font-700 text-teal-btn hover:underline"
       >
         {t(lang, "ev_back")}
       </Link>
@@ -157,7 +157,7 @@ export default async function EventPage({
 
         <div className="p-6 sm:p-8">
           <div className="flex flex-wrap gap-2">
-            <span className="rounded-full bg-grape/10 px-3 py-1 text-sm font-700 text-grape">
+            <span className="rounded-full bg-grape/10 px-3 py-1 text-sm font-700 text-grape-dark">
               {hoodName}
             </span>
             <span className="rounded-full bg-sand px-3 py-1 text-sm font-700 text-ink/70">
@@ -180,7 +180,7 @@ export default async function EventPage({
               return (
                 <span
                   key={aid}
-                  className="rounded-full border-2 border-teal/40 px-3 py-1 text-sm font-700 text-teal-dark"
+                  className="rounded-full border-2 border-teal/40 px-3 py-1 text-sm font-700 text-teal-btn"
                 >
                   {a.emoji} {L.label} <span className="opacity-60">{L.sublabel}</span>
                 </span>
@@ -193,7 +193,7 @@ export default async function EventPage({
           </p>
 
           {event.address && (
-            <p className="mt-6 text-sm text-ink/60">
+            <p className="mt-6 text-sm text-ink/70">
               <span className="font-700">{t(lang, "ev_address")}</span> {event.address}
             </p>
           )}
@@ -231,12 +231,12 @@ export default async function EventPage({
           </div>
 
           <div className="mt-6 border-t border-ink/10 pt-5">
-            <p className="mb-2 text-sm font-700 text-ink/60">{t(lang, "ev_share")}</p>
+            <p className="mb-2 text-sm font-700 text-ink/70">{t(lang, "ev_share")}</p>
             <ShareButtons url={shareUrl} title={event.title}
               text={`${event.title} — a kid-friendly event in ${hood.label}, Las Vegas`} />
           </div>
 
-          <p className="mt-6 text-xs text-ink/40">
+          <p className="mt-6 text-xs text-ink/70">
             {t(lang, "ev_disclaimer")}
           </p>
         </div>

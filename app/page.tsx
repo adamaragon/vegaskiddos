@@ -108,7 +108,7 @@ export default async function HomePage() {
             {t(lang, "nav_add")}
           </a>
           <div className="mt-6 flex flex-col items-center gap-2 border-t border-ink/10 pt-5">
-            <p className="text-sm font-700 text-ink/60">{t(lang, "cta_share")}</p>
+            <p className="text-sm font-700 text-ink/70">{t(lang, "cta_share")}</p>
             <ShareButtons url={SITE} title="Vegas Kiddos"
               text="Vegas Kiddos — find kid-safe Las Vegas family events by age, price & neighborhood" />
           </div>

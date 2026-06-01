@@ -7,9 +7,9 @@ import { useLang } from "@/lib/lang-client";
 import { t, type StringKey } from "@/lib/i18n";
 
 const STATUS_STYLE: Record<string, string> = {
-  idea: "bg-sand text-ink/60",
-  planned: "bg-sunny/30 text-sunny-dark",
-  building: "bg-teal/20 text-teal-dark",
+  idea: "bg-sand text-ink/80",
+  planned: "bg-sunny/30 text-ink/80",
+  building: "bg-teal/20 text-ink/80",
   shipped: "bg-teal-btn text-white",
 };
 const STATUS_KEY: Record<string, StringKey> = {
@@ -103,9 +103,9 @@ export default function FeaturesPage() {
 
       <div className="mt-8 space-y-3">
         {loading ? (
-          <p className="text-ink/40">{tr("ft_loading")}</p>
+          <p className="text-ink/70">{tr("ft_loading")}</p>
         ) : features.length === 0 ? (
-          <p className="text-ink/40">{tr("ft_empty")}</p>
+          <p className="text-ink/70">{tr("ft_empty")}</p>
         ) : (
           features.map((f) => {
             const myVote = voted[f.id] || 0;
@@ -114,12 +114,12 @@ export default function FeaturesPage() {
                 className={`flex items-center gap-4 rounded-blob border bg-white p-4 shadow-card transition ${f.featured ? "border-sunny" : "border-ink/10"}`}>
                 <div className="flex flex-col items-center">
                   <button aria-label="Upvote" onClick={() => vote(f.id, 1)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition hover:scale-110 ${myVote === 1 ? "border-teal bg-teal-btn text-white" : "border-ink/15 text-ink/50"}`}>
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition hover:scale-110 ${myVote === 1 ? "border-teal bg-teal-btn text-white" : "border-ink/15 text-ink/70"}`}>
                     ▲
                   </button>
                   <span className="my-1 font-display text-xl font-700 tabular-nums">{f.votes}</span>
                   <button aria-label="Downvote" onClick={() => vote(f.id, -1)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition hover:scale-110 ${myVote === -1 ? "border-coral bg-coral-btn text-white" : "border-ink/15 text-ink/50"}`}>
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition hover:scale-110 ${myVote === -1 ? "border-coral bg-coral-btn text-white" : "border-ink/15 text-ink/70"}`}>
                     ▼
                   </button>
                 </div>
@@ -139,7 +139,7 @@ export default function FeaturesPage() {
         )}
       </div>
 
-      <div className="mt-10 flex items-center justify-center gap-2 text-ink/40">
+      <div className="mt-10 flex items-center justify-center gap-2 text-ink/70">
         <Arrow className="h-8 w-12" />
         <span className="text-sm">{tr("ft_footer")}</span>
       </div>

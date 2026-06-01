@@ -143,12 +143,12 @@ export function MapView({ events }: { events: KidEvent[] }) {
       <button
         onClick={locateMe}
         disabled={locating}
-        className="hover-pop absolute right-3 top-3 z-[500] rounded-full bg-white px-4 py-2 text-sm font-800 text-ink/80 shadow-card transition hover:text-teal-dark disabled:opacity-60"
+        className="hover-pop absolute right-3 top-3 z-[500] rounded-full bg-white px-4 py-2 text-sm font-800 text-ink/80 shadow-card transition hover:text-teal-btn disabled:opacity-60"
       >
         {locating ? "📍 Locating…" : "📍 Near me"}
       </button>
       {geoErr && (
-        <span className="absolute left-3 top-3 z-[500] rounded-full bg-white/90 px-3 py-1.5 text-xs font-700 text-coral-dark shadow">
+        <span className="absolute left-3 top-3 z-[500] rounded-full bg-white/90 px-3 py-1.5 text-xs font-700 text-coral-btn shadow">
           {geoErr}
         </span>
       )}

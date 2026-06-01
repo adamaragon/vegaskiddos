@@ -39,7 +39,7 @@ function Unsub() {
               className="hover-pop mt-5 rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop disabled:opacity-50">
               {status === "sending" ? "…" : "Yes, unsubscribe me"}
             </button>
-            {status === "error" && <p className="mt-3 text-sm font-700 text-coral-dark">That link looks invalid or expired.</p>}
+            {status === "error" && <p className="mt-3 text-sm font-700 text-coral-btn">That link looks invalid or expired.</p>}
           </>
         )}
       </div>
@@ -49,7 +49,7 @@ function Unsub() {
 
 export default function UnsubscribePage() {
   return (
-    <Suspense fallback={<div className="py-20 text-center text-ink/40">Loading…</div>}>
+    <Suspense fallback={<div className="py-20 text-center text-ink/70">Loading…</div>}>
       <Unsub />
     </Suspense>
   );

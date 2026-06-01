@@ -74,7 +74,7 @@ export default function AdminPage() {
   }
 
   if (authed === null) {
-    return <div className="mx-auto max-w-lg px-4 py-20 text-center text-ink/40">Loading…</div>;
+    return <div className="mx-auto max-w-lg px-4 py-20 text-center text-ink/70">Loading…</div>;
   }
 
   if (!authed) {
@@ -83,7 +83,7 @@ export default function AdminPage() {
         <div className="rounded-blob border border-ink/10 bg-white p-8 shadow-card text-center">
           <p className="text-4xl">🔒</p>
           <h1 className="mt-3 font-display text-2xl font-700">Admin sign-in</h1>
-          <p className="mt-1 text-sm text-ink/60">For the Vegas Kiddos team only.</p>
+          <p className="mt-1 text-sm text-ink/70">For the Vegas Kiddos team only.</p>
           <form onSubmit={login} className="mt-6 space-y-3">
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               placeholder="Email" autoFocus autoComplete="username"
@@ -91,7 +91,7 @@ export default function AdminPage() {
             <input type="password" value={pw} onChange={(e) => setPw(e.target.value)}
               placeholder="Password" autoComplete="current-password"
               className="w-full rounded-2xl border-2 border-ink/15 px-4 py-3 text-center outline-none focus:border-teal" />
-            {err && <p className="text-sm font-700 text-coral-dark">{err}</p>}
+            {err && <p className="text-sm font-700 text-coral-btn">{err}</p>}
             <button type="submit"
               className="hover-pop w-full rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop">
               Sign in
@@ -111,23 +111,23 @@ export default function AdminPage() {
             className="hover-pop rounded-full bg-grape px-4 py-2 text-sm font-800 text-white shadow-pop disabled:opacity-50">
             {scraping ? "🔄 Scraping…" : "🔄 Scrape now"}
           </button>
-          <button onClick={logout} className="text-sm font-700 text-ink/50 hover:text-coral">Sign out</button>
+          <button onClick={logout} className="text-sm font-700 text-ink/70 hover:text-coral">Sign out</button>
         </div>
       </div>
       {scrapeMsg && (
-        <p className="mt-3 rounded-2xl bg-grape/10 px-4 py-2 text-sm font-700 text-grape">{scrapeMsg}</p>
+        <p className="mt-3 rounded-2xl bg-grape/10 px-4 py-2 text-sm font-700 text-grape-dark">{scrapeMsg}</p>
       )}
 
       <div className="mt-4 flex rounded-full border-2 border-ink/15 bg-white p-1">
         {(["pending", "approved", "rejected"] as const).map((q) => (
           <button key={q} onClick={() => setQueue(q)}
-            className={`flex-1 rounded-full px-3 py-2 text-sm font-800 transition ${queue === q ? "bg-teal-btn text-white" : "text-ink/60"}`}>
+            className={`flex-1 rounded-full px-3 py-2 text-sm font-800 transition ${queue === q ? "bg-teal-btn text-white" : "text-ink/70"}`}>
             {q === "pending" ? "📥 Review" : q === "approved" ? "✅ Published" : "🗑️ Removed"}
           </button>
         ))}
       </div>
 
-      <p className="mt-3 text-sm font-700 text-ink/50">
+      <p className="mt-3 text-sm font-700 text-ink/70">
         {loading ? "Loading…" : `${events.length} ${queue === "pending" ? "awaiting review" : queue === "approved" ? "published" : "removed"}`}
       </p>
 
@@ -137,17 +137,17 @@ export default function AdminPage() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h3 className="font-display text-lg font-600 leading-tight">{e.title}</h3>
-                <p className="text-sm text-ink/60">
+                <p className="text-sm text-ink/70">
                   📍 {e.venue || "—"} · {e.start ? new Date(e.start).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "no date"}
                 </p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5 text-xs">
-                  {e.neighborhood && <span className="rounded-full bg-grape/10 px-2 py-0.5 font-700 text-grape">{e.neighborhood}</span>}
-                  {e.priceTier && <span className="rounded-full bg-sand px-2 py-0.5 font-700 text-ink/60">{e.priceTier}</span>}
-                  {(e.ageTiers || []).map((a) => <span key={a} className="rounded-full bg-teal/10 px-2 py-0.5 font-700 text-teal-dark">{a}</span>)}
-                  {e.source && <span className="rounded-full bg-sand px-2 py-0.5 font-700 text-ink/50">via {e.source}</span>}
+                  {e.neighborhood && <span className="rounded-full bg-grape/10 px-2 py-0.5 font-700 text-grape-dark">{e.neighborhood}</span>}
+                  {e.priceTier && <span className="rounded-full bg-sand px-2 py-0.5 font-700 text-ink/80">{e.priceTier}</span>}
+                  {(e.ageTiers || []).map((a) => <span key={a} className="rounded-full bg-teal/10 px-2 py-0.5 font-700 text-ink/80">{a}</span>)}
+                  {e.source && <span className="rounded-full bg-sand px-2 py-0.5 font-700 text-ink/80">via {e.source}</span>}
                 </div>
                 {e.description && <p className="mt-2 line-clamp-2 text-sm text-ink/70">{e.description}</p>}
-                {e.url && <a href={e.url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-700 text-teal-dark hover:underline">source ↗</a>}
+                {e.url && <a href={e.url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-700 text-teal-btn hover:underline">source ↗</a>}
               </div>
             </div>
             <div className="mt-3 flex gap-2">
@@ -158,7 +158,7 @@ export default function AdminPage() {
                     ✓ Approve
                   </button>
                   <button disabled={busy === e.id} onClick={() => act(e.id, "reject")}
-                    className="rounded-full border-2 border-coral px-4 py-2 text-sm font-800 text-coral transition hover:bg-coral-btn hover:text-white disabled:opacity-50">
+                    className="rounded-full border-2 border-coral px-4 py-2 text-sm font-800 text-coral-btn transition hover:bg-coral-btn hover:text-white disabled:opacity-50">
                     ✕ Reject
                   </button>
                 </>
@@ -169,7 +169,7 @@ export default function AdminPage() {
                     🗑️ Remove
                   </button>
                   <button disabled={busy === e.id} onClick={() => act(e.id, "unapprove")}
-                    className="rounded-full border-2 border-ink/20 px-4 py-2 text-sm font-800 text-ink/60 transition hover:border-grape hover:text-grape disabled:opacity-50">
+                    className="rounded-full border-2 border-ink/20 px-4 py-2 text-sm font-800 text-ink/70 transition hover:border-grape hover:text-grape disabled:opacity-50">
                     Unpublish (to review)
                   </button>
                 </>
@@ -183,7 +183,7 @@ export default function AdminPage() {
           </div>
         ))}
         {!loading && events.length === 0 && (
-          <div className="rounded-blob border border-dashed border-ink/20 bg-white py-16 text-center text-ink/50">
+          <div className="rounded-blob border border-dashed border-ink/20 bg-white py-16 text-center text-ink/70">
             <p className="text-2xl">🎉</p>
             <p className="mt-2 font-700">{queue === "pending" ? "Queue's all clear!" : queue === "approved" ? "Nothing published yet." : "Nothing removed."}</p>
           </div>

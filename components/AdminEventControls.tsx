@@ -33,12 +33,12 @@ export function AdminEventControls({ id }: { id: string }) {
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-3 rounded-blob border-2 border-grape/40 bg-grape/10 px-4 py-3">
-      <span className="font-display text-sm font-700 text-grape">🛠️ Admin</span>
+      <span className="font-display text-sm font-700 text-grape-dark">🛠️ Admin</span>
       {done ? (
         <span className="flex items-center gap-3 text-sm font-700 text-ink/70">
           ✓ {done}.
-          <Link href="/" className="text-coral underline">Back to events</Link>
-          <Link href="/admin" className="text-teal-dark underline">Admin panel</Link>
+          <Link href="/" className="text-coral-btn underline">Back to events</Link>
+          <Link href="/admin" className="text-teal-btn underline">Admin panel</Link>
         </span>
       ) : (
         <>
@@ -47,10 +47,10 @@ export function AdminEventControls({ id }: { id: string }) {
             🗑️ Remove event
           </button>
           <button disabled={busy} onClick={() => act("unapprove", "Unpublished (moved to review queue)")}
-            className="rounded-full border-2 border-ink/20 px-4 py-1.5 text-sm font-800 text-ink/60 transition hover:border-grape hover:text-grape disabled:opacity-50">
+            className="rounded-full border-2 border-ink/20 px-4 py-1.5 text-sm font-800 text-ink/70 transition hover:border-grape hover:text-grape disabled:opacity-50">
             Unpublish
           </button>
-          <Link href="/admin" className="ml-auto text-sm font-700 text-teal-dark hover:underline">Open admin panel →</Link>
+          <Link href="/admin" className="ml-auto text-sm font-700 text-teal-btn hover:underline">Open admin panel →</Link>
         </>
       )}
     </div>

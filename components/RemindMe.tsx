@@ -127,7 +127,7 @@ export function RemindMe({ favoriteIds, lang = "en" }: { favoriteIds: string[]; 
       <p className="font-display text-lg font-800 text-ink">
         🔔 {t("Get reminded", "Recibe recordatorios")}
       </p>
-      <p className="mt-1 text-sm text-ink/60">
+      <p className="mt-1 text-sm text-ink/70">
         {t("We'll nudge you the evening before a saved event.", "Te avisamos la tarde anterior a un evento guardado.")}
       </p>
 
@@ -143,7 +143,7 @@ export function RemindMe({ favoriteIds, lang = "en" }: { favoriteIds: string[]; 
                 {busy ? "…" : t("Send a test", "Enviar prueba")}
               </button>
               <button onClick={disablePush} disabled={busy}
-                className="text-sm font-700 text-ink/50 underline-offset-2 hover:underline disabled:opacity-50">
+                className="text-sm font-700 text-ink/70 underline-offset-2 hover:underline disabled:opacity-50">
                 {t("turn off", "desactivar")}
               </button>
             </>
@@ -154,13 +154,13 @@ export function RemindMe({ favoriteIds, lang = "en" }: { favoriteIds: string[]; 
             </button>
           )
         ) : (
-          <span className="text-sm text-ink/50">{t("Push isn't supported on this browser — use email below.", "Este navegador no admite notificaciones — usa el correo.")}</span>
+          <span className="text-sm text-ink/70">{t("Push isn't supported on this browser — use email below.", "Este navegador no admite notificaciones — usa el correo.")}</span>
         )}
       </div>
 
       <form onSubmit={enableEmail} className="mt-3 flex flex-wrap items-center gap-2">
         {emailDone ? (
-          <span className="text-sm font-700 text-teal-dark">✓ {t("We'll email your reminders.", "Te enviaremos recordatorios por correo.")}</span>
+          <span className="text-sm font-700 text-teal-btn">✓ {t("We'll email your reminders.", "Te enviaremos recordatorios por correo.")}</span>
         ) : (
           <>
             <input
@@ -175,7 +175,7 @@ export function RemindMe({ favoriteIds, lang = "en" }: { favoriteIds: string[]; 
           </>
         )}
       </form>
-      {msg && <p className="mt-2 text-sm font-700 text-coral-dark">{msg}</p>}
+      {msg && <p className="mt-2 text-sm font-700 text-coral-btn">{msg}</p>}
     </div>
   );
 }

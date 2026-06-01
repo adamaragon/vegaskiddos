@@ -48,10 +48,10 @@ export function EventCard({ event, index = 0, distanceMi }: { event: KidEvent; i
       </div>
       <div className="flex items-start justify-between gap-2 p-5 pb-3">
         <div>
-          <p className="flex flex-wrap items-center gap-1.5 text-xs font-700 uppercase tracking-wide text-teal-dark">
+          <p className="flex flex-wrap items-center gap-1.5 text-xs font-700 uppercase tracking-wide text-teal-btn">
             {formatWhen(when)}
             {event.recurrence && (
-              <span className="rounded-full bg-grape/15 px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-grape">
+              <span className="rounded-full bg-grape/15 px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-grape-dark">
                 🔁 {event.recurrence}
               </span>
             )}
@@ -83,9 +83,9 @@ export function EventCard({ event, index = 0, distanceMi }: { event: KidEvent; i
         })}
       </div>
 
-      <div className="mt-auto flex items-center justify-between border-t border-ink/10 px-5 py-3 text-xs text-ink/60">
+      <div className="mt-auto flex items-center justify-between border-t border-ink/10 px-5 py-3 text-xs text-ink/70">
         <span className="font-700">📍 {event.venue}</span>
-        <span className="rounded-full bg-grape/10 px-2 py-0.5 font-700 text-grape">
+        <span className="rounded-full bg-grape/10 px-2 py-0.5 font-700 text-grape-dark">
           {hood.label}
         </span>
       </div>

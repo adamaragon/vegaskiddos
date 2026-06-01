@@ -96,14 +96,14 @@ export default async function RootLayout({
           <div className="mx-auto grid max-w-5xl gap-8 px-4 py-10 sm:grid-cols-3">
             <div>
               <p className="font-display text-xl font-700">
-                <span className="text-coral-dark">Vegas</span> <span className="text-teal-dark">Kiddos</span> 🌵
+                <span className="text-coral-dark">Vegas</span> <span className="text-teal-btn">Kiddos</span> 🌵
               </p>
-              <p className="mt-2 text-sm text-ink/60">{t(lang, "foot_tagline")}</p>
+              <p className="mt-2 text-sm text-ink/70">{t(lang, "foot_tagline")}</p>
               <div className="mt-3"><LangToggle lang={lang} /></div>
             </div>
             <nav className="text-sm">
               <p className="font-display font-600 text-ink/80">{t(lang, "foot_explore")}</p>
-              <ul className="mt-2 space-y-1.5 text-ink/60">
+              <ul className="mt-2 space-y-1.5 text-ink/70">
                 {[
                   ["/", "All events"],
                   ["/this-weekend", "This weekend"],
@@ -125,7 +125,7 @@ export default async function RootLayout({
             </nav>
             <nav className="text-sm">
               <p className="font-display font-600 text-ink/80">{t(lang, "foot_more")}</p>
-              <ul className="mt-2 space-y-1.5 text-ink/60">
+              <ul className="mt-2 space-y-1.5 text-ink/70">
                 {[
                   ["/submit", "Add an event"],
                   ["/contact", "Contact & feedback"],
@@ -139,12 +139,12 @@ export default async function RootLayout({
               </ul>
             </nav>
           </div>
-          <div className="border-t border-ink/10 py-5 text-center text-sm text-ink/60">
+          <div className="border-t border-ink/10 py-5 text-center text-sm text-ink/70">
             <p className="flex items-center justify-center gap-1.5">
               {t(lang, "foot_madeby")} <Heart className="inline h-4 w-4 text-coral" /> {lang === "es" ? "por" : "by"}{" "}
               <span className="font-700 text-ink/80">Adam &amp; Michelle Aragon</span>
             </p>
-            <p className="mt-1 text-xs text-ink/50">
+            <p className="mt-1 text-xs text-ink/70">
               A{" "}
               <a href="https://threesided.com" target="_blank" rel="noopener noreferrer"
                 className="font-700 text-grape underline">
@@ -152,7 +152,7 @@ export default async function RootLayout({
               </a>{" "}
               · {t(lang, "foot_confirm")}
             </p>
-            <p className="mt-2 text-[11px] text-ink/40">
+            <p className="mt-2 text-[11px] text-ink/70">
               Hero model:{" "}
               <a href="https://sketchfab.com/3d-models/baby-dino-7f6990157fd44a0c88c5834b5fe04413"
                 target="_blank" rel="noopener noreferrer" className="underline">

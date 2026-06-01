@@ -56,9 +56,9 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <JsonLd data={[venueLd, crumbs]} />
-      <Link href="/" className="text-sm font-700 text-teal-dark hover:underline">← All events</Link>
+      <Link href="/" className="text-sm font-700 text-teal-btn hover:underline">← All events</Link>
       <h1 className="mt-3 font-display text-4xl font-700">{name}</h1>
-      <p className="mt-1 text-ink/60">
+      <p className="mt-1 text-ink/70">
         {list.length} upcoming kid-friendly {list.length === 1 ? "event" : "events"} at this venue
       </p>
       <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

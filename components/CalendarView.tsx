@@ -15,10 +15,10 @@ const PRICE_DOT: Record<string, string> = {
 };
 // Tinted label chips (used on larger screens instead of plain dots).
 const PRICE_CHIP: Record<string, string> = {
-  free: "bg-teal/15 text-teal-dark",
+  free: "bg-teal/15 text-ink/80",
   under10: "bg-sunny/30 text-ink/80",
-  mid: "bg-coral/15 text-coral-dark",
-  premium: "bg-grape/15 text-grape",
+  mid: "bg-coral/15 text-ink/80",
+  premium: "bg-grape/15 text-grape-dark",
 };
 
 // Day key in Las Vegas time, e.g. "2026-05-28".
@@ -120,18 +120,18 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
         {/* Month nav */}
         <div className="mb-3 flex items-center justify-between gap-2">
           <button onClick={() => shiftMonth(-1)}
-            className="flex items-center gap-1 rounded-full border-2 border-ink/15 px-3 py-1.5 text-sm font-800 text-ink/60 transition hover:border-teal hover:text-teal">
+            className="flex items-center gap-1 rounded-full border-2 border-ink/15 px-3 py-1.5 text-sm font-800 text-ink/70 transition hover:border-teal hover:text-teal">
             ‹ {new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "short" })}
           </button>
           <h2 className="font-display text-lg font-700 sm:text-xl">{monthLabel}</h2>
           <button onClick={() => shiftMonth(1)}
-            className="flex items-center gap-1 rounded-full border-2 border-ink/15 px-3 py-1.5 text-sm font-800 text-ink/60 transition hover:border-teal hover:text-teal">
+            className="flex items-center gap-1 rounded-full border-2 border-ink/15 px-3 py-1.5 text-sm font-800 text-ink/70 transition hover:border-teal hover:text-teal">
             {new Date(y, m + 1, 1).toLocaleDateString("en-US", { month: "short" })} ›
           </button>
         </div>
 
         {/* Weekday header */}
-        <div className="grid grid-cols-7 gap-1 text-center text-base font-800 text-ink/40">
+        <div className="grid grid-cols-7 gap-1 text-center text-base font-800 text-ink/70">
           {DOW.map((d) => (
             <div key={d} className="py-1">
               <span className="hidden sm:inline">{d}</span>
@@ -185,7 +185,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
                         </span>
                       ))}
                       {dayEvents.length > 6 && (
-                        <span className="px-1 text-sm font-800 text-ink/45">+{dayEvents.length - 6} more</span>
+                        <span className="px-1 text-sm font-800 text-ink/70">+{dayEvents.length - 6} more</span>
                       )}
                     </span>
                   </>
@@ -196,7 +196,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
         </div>
 
         {/* Legend */}
-        <div className="mt-3 flex flex-wrap gap-3 border-t border-ink/10 pt-3 text-sm font-700 text-ink/50">
+        <div className="mt-3 flex flex-wrap gap-3 border-t border-ink/10 pt-3 text-sm font-700 text-ink/70">
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-teal" /> Free</span>
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-sunny" /> $1–10</span>
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-coral" /> $11–25</span>
@@ -208,12 +208,12 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
       <div className="mt-6">
         <h3 className="font-display text-lg font-700">
           {new Date(selected + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-          <span className="ml-2 text-base font-600 text-ink/50">
+          <span className="ml-2 text-base font-600 text-ink/70">
             {selectedEvents.length} {selectedEvents.length === 1 ? "event" : "events"}
           </span>
         </h3>
         {selectedEvents.length === 0 ? (
-          <div className="mt-3 rounded-blob border border-dashed border-ink/20 bg-white py-12 text-center text-ink/50">
+          <div className="mt-3 rounded-blob border border-dashed border-ink/20 bg-white py-12 text-center text-ink/70">
             <p className="text-2xl">🗓️</p>
             <p className="mt-2 font-700">Nothing on this day.</p>
             <p className="text-sm">Tap a day with dots to see what&apos;s on.</p>
@@ -247,7 +247,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
             <p className="font-display text-sm font-800 leading-snug text-ink">
               {hover.ev.recurrence ? "🔁 " : ""}{hover.ev.title}
             </p>
-            <p className="mt-1 text-xs font-800 text-teal-dark">
+            <p className="mt-1 text-xs font-800 text-teal-btn">
               {fmtTime.format(new Date(hover.ev.start))}{hover.ev.recurrence ? ` · ${hover.ev.recurrence}` : ""}
             </p>
             {hover.ev.venue && (
@@ -257,7 +257,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
               💲 {hover.ev.priceText || priceTier(hover.ev.priceTier).label}
             </p>
             {hover.ev.description && (
-              <p className="mt-1.5 line-clamp-3 text-xs leading-snug text-ink/55">{hover.ev.description}</p>
+              <p className="mt-1.5 line-clamp-3 text-xs leading-snug text-ink/70">{hover.ev.description}</p>
             )}
           </div>
         );

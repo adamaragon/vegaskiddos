@@ -100,7 +100,7 @@ export function ThisWeekNearYou({ events, lang = "en" }: { events: KidEvent[]; l
           <h2 className="flex items-center gap-2 font-display text-2xl font-700 sm:text-3xl">
             <Star className="h-6 w-6 text-sunny" aria-hidden /> {title}
           </h2>
-          <p className="mt-0.5 text-sm text-ink/60">{t(lang, "tw_sub")}</p>
+          <p className="mt-0.5 text-sm text-ink/70">{t(lang, "tw_sub")}</p>
         </div>
         <div className="flex items-center gap-2">
           <label className="sr-only" htmlFor="tw-area">{t(lang, "tw_pick")}</label>
@@ -126,7 +126,7 @@ export function ThisWeekNearYou({ events, lang = "en" }: { events: KidEvent[]; l
       </div>
 
       {narrowedNote && (
-        <p className="mb-3 text-sm text-ink/60">{t(lang, "tw_empty_area")}</p>
+        <p className="mb-3 text-sm text-ink/70">{t(lang, "tw_empty_area")}</p>
       )}
 
       {/* Horizontal scroll strip; cards snap into place. */}
@@ -143,7 +143,7 @@ export function ThisWeekNearYou({ events, lang = "en" }: { events: KidEvent[]; l
       </div>
 
       <div className="mt-1">
-        <a href="/this-weekend" className="text-sm font-800 text-coral hover:underline">
+        <a href="/this-weekend" className="text-sm font-800 text-coral-btn hover:underline">
           {t(lang, "tw_see_all")}
         </a>
       </div>
