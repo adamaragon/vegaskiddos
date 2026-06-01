@@ -3,7 +3,7 @@ import { makeTribeAdapter } from "./sources/tribe";
 import { fetchNevadaMoms } from "./sources/nevadaMoms";
 import { fetchLibrary } from "./sources/library";
 import { fetchHendersonLibraries } from "./sources/hendersonLibraries";
-import { upsertEvents, dedupeApprovedEvents, approveAllPending } from "./airtable";
+import { upsertEvents, publishPending } from "./airtable";
 import { collapseRecurring } from "./recurring";
 
 const vegasFamilyGuide = makeTribeAdapter({
@@ -74,13 +74,14 @@ export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary
     ? { created: 0, updated: 0 }
     : await upsertEvents(collapsed);
 
-  // Auto-publish: approve everything pending (except explicitly-rejected), then
-  // collapse approved cross-source/leftover duplicates. Order matters — approve
-  // first so dedupe sees the full approved set and can merge fresh dups.
+  // Auto-publish NEW events only. publishPending() reads the approved set but
+  // only ever writes pending records — an already-approved event is never
+  // un-approved or dropped here. New events that duplicate an approved one (or
+  // each other) are rejected rather than published, so we never demote an
+  // established event or create a visible duplicate.
   let approved = 0;
   if (!dryRun) {
-    try { approved = await approveAllPending(); } catch (e) { console.error("auto-approve skipped:", e); }
-    try { await dedupeApprovedEvents(); } catch (e) { console.error("dedupe skipped:", e); }
+    try { approved = (await publishPending()).approved; } catch (e) { console.error("publish skipped:", e); }
   }
 
   return {
