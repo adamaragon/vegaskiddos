@@ -17,6 +17,8 @@
     "ensure-art-field": "node tools/ensure-art-field.mjs",
     "check-links": "node tools/check-links.mjs",
     "fb-post": "node tools/fb-post.mjs",
+    "fb-repair": "node tools/fb-repair-posts.mjs repair",
+    "fb-repair-audit": "node tools/fb-repair-posts.mjs audit",
     "gen-art": "node tools/gen-event-art.mjs",
     "ensure-reminders-table": "node tools/ensure-reminders-table.mjs",
     "send-reminders": "node tools/send-reminders.mjs"

@@ -20,7 +20,7 @@ on:
         description: "daily = post now · roundup = weekend list · schedule = queue a batch · verify = check token"
         type: choice
         default: schedule
-        options: [schedule, daily, roundup, verify]
+        options: [schedule, daily, roundup, verify, repair-audit, repair]
       count:
         description: "How many posts to queue (schedule mode only)"
         default: "14"
@@ -48,4 +48,8 @@ jobs:
           DRY=""
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then DRY="--dry-run"; fi
           echo "Running fb-post: mode=$MODE count=$COUNT $DRY"
-          node tools/fb-post.mjs "$MODE" "$COUNT" $DRY
+          case "$MODE" in
+            repair-audit) node tools/fb-repair-posts.mjs audit ;;
+            repair)       node tools/fb-repair-posts.mjs repair ;;
+            *)            node tools/fb-post.mjs "$MODE" "$COUNT" $DRY ;;
+          esac
