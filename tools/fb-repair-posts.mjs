@@ -112,7 +112,10 @@ async function scrapeOg(eventUrl) {
   const url = `${GRAPH}/?id=${encodeURIComponent(eventUrl)}&scrape=true&access_token=${encodeURIComponent(PAGE_TOKEN)}`;
   const r = await fetch(url, { method: "POST" });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(`OG scrape ${r.status}: ${JSON.stringify(data).slice(0, 200)}`);
+  if (!r.ok) {
+    console.warn(`    OG scrape skipped (${r.status}): ${JSON.stringify(data).slice(0, 120)}`);
+    return null;
+  }
   return data;
 }
 
@@ -290,6 +293,7 @@ async function runRepair(needsRepair) {
     }
 
     await scrapeOg(eventUrl);
+    await new Promise((r) => setTimeout(r, 1500));
     await graphDelete(post.id);
     await clearFbPostedAt(eventId);
 
@@ -343,6 +347,7 @@ async function runRestoreTiming(published) {
     }
 
     await scrapeOg(eventUrl);
+    await new Promise((r) => setTimeout(r, 1500));
     await graphDelete(post.id);
     const { message, url } = eventPost(rec);
     const newId = await publish(message, url, timing);
