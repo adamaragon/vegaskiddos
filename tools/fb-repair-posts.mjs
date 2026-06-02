@@ -256,9 +256,14 @@ async function runRepair(needsRepair) {
     await clearFbPostedAt(eventId);
 
     const { message, url } = eventPost(rec);
-    const whenUnix = post.scheduled_publish_time
-      ? Math.floor(new Date(post.scheduled_publish_time).getTime() / 1000)
-      : undefined;
+    const rawWhen = post.scheduled_publish_time;
+    const whenMs =
+      rawWhen == null
+        ? null
+        : typeof rawWhen === "number" || /^\d+$/.test(String(rawWhen))
+          ? Number(rawWhen) * (Number(rawWhen) < 1e12 ? 1000 : 1)
+          : new Date(rawWhen).getTime();
+    const whenUnix = whenMs ? Math.floor(whenMs / 1000) : undefined;
     const useSchedule =
       whenUnix && whenUnix * 1000 > Date.now() + 15 * 60 * 1000 ? whenUnix : undefined;
 

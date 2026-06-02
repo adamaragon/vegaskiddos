@@ -27,6 +27,7 @@ in GitHub Actions using repo **secrets**.
 | `ensure-reminders-table.mjs` | `ensure-reminders-table` | Creates the `Reminders` table (push/email subscriptions). Idempotent. |
 | `send-digest.mjs` | — | Weekly email digest (Resend), per-subscriber language. Preview-writes HTML if no `RESEND_API_KEY`. Runs Thu via `weekly-digest.yml`. |
 | `fb-post.mjs` | `fb-post` | Facebook Page posting. Modes: `daily` \| `roundup` \| `schedule [n]` \| `verify`. `--dry-run`, `--force`. Crons in `fb-post.yml` (self-pause until `RESUME_AFTER`). |
+| `fb-repair-posts.mjs` | `fb-repair` / `fb-repair-audit` | Find event link posts with missing or generic OG previews; `repair` deletes, refreshes FB cache, and reposts. GH workflow modes `repair` / `repair-audit`. |
 | `gen-event-art.mjs` | `gen-art` | AI event artwork (OpenAI) → `ArtImage` attachment. Modes: `sample [n]` \| `batch [--limit n]`, `--dry-run`. Run via `gen-art.yml`. |
 | `make-social.mjs` | — | Renders the Facebook cover/profile brand graphics (Puppeteer) → `assets/social/`. |
 | `check-links.mjs` | `check-links` | Report-only dead-link checker for event source URLs. `--json`; exits 2 if dead links found. |
