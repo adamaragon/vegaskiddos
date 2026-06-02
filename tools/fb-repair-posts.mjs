@@ -5,6 +5,7 @@
 //   node tools/fb-repair-posts.mjs audit          # list suspects
 //   node tools/fb-repair-posts.mjs repair         # delete + clear + repost
 //   node tools/fb-repair-posts.mjs repair --dry-run
+//   node tools/fb-repair-posts.mjs restore-timing   # fix posts wrongly published "now"
 //
 // Env: AIRTABLE_TOKEN, AIRTABLE_BASE_ID, FB_PAGE_ID, FB_PAGE_TOKEN
 import fs from "node:fs";
@@ -27,6 +28,16 @@ const HASHTAGS = "#LasVegas #VegasKids #ThingsToDoInVegas #FamilyFun #VegasFamil
 // Site-wide fallback when an event has no scraped image — link shares using only
 // this look "blank" or generic compared to event-specific art.
 const GENERIC_OG_PATHS = ["/opengraph-image", "/opengraph-image.png", "opengraph-image"];
+
+// Original intended times from the 2026-06-02 generic-preview repair batch (audit log).
+const RESTORE_TIMINGS = {
+  recUjmVWcD4OBfoNI: { backdateUnix: Math.floor(Date.parse("2026-05-30T18:00:17Z") / 1000) },
+  recEuGZdIQLCWnIz3: { scheduleUnix: 1780509600 },
+  recaHegR5okFroONJ: { scheduleUnix: 1780682400 },
+  recB83NcOPm0S86oP: { scheduleUnix: 1780855200 },
+  reccx2liq77KbuINs: { scheduleUnix: 1781114400 },
+  recffsrk6BB0dKukU: { scheduleUnix: 1781200800 },
+};
 
 const mode = (process.argv[2] || "audit").toLowerCase();
 const DRY = process.argv.includes("--dry-run");
@@ -196,12 +207,39 @@ async function stampPosted(id, when = new Date()) {
   if (!r.ok) console.error("warn: could not set FBPostedAt:", r.status, (await r.text()).slice(0, 150));
 }
 
-async function publish(message, link, whenUnix) {
+function parseTimeToUnix(raw) {
+  if (raw == null) return undefined;
+  if (typeof raw === "number" || /^\d+$/.test(String(raw))) {
+    const n = Number(raw);
+    return n < 1e12 ? n : Math.floor(n / 1000);
+  }
+  const ms = new Date(raw).getTime();
+  return Number.isFinite(ms) ? Math.floor(ms / 1000) : undefined;
+}
+
+/** @returns {{ scheduleUnix?: number, backdateUnix?: number, granularity?: string }} */
+function timingForUnix(whenUnix) {
+  if (!whenUnix) return {};
+  if (whenUnix * 1000 > Date.now() + 15 * 60 * 1000) return { scheduleUnix: whenUnix };
+  return { backdateUnix: whenUnix, granularity: "min" };
+}
+
+function timingFromPost(post) {
+  const whenUnix =
+    parseTimeToUnix(post.scheduled_publish_time) ?? parseTimeToUnix(post.created_time);
+  return timingForUnix(whenUnix);
+}
+
+async function publish(message, link, timing = {}) {
   const params = new URLSearchParams({ message, access_token: PAGE_TOKEN });
   if (link) params.set("link", link);
-  if (whenUnix) {
+  if (timing.scheduleUnix) {
     params.set("published", "false");
-    params.set("scheduled_publish_time", String(whenUnix));
+    params.set("scheduled_publish_time", String(timing.scheduleUnix));
+  } else if (timing.backdateUnix) {
+    params.set("published", "true");
+    params.set("backdated_time", String(timing.backdateUnix));
+    params.set("backdated_time_granularity", timing.granularity || "min");
   }
   const r = await fetch(`${GRAPH}/${PAGE_ID}/feed`, { method: "POST", body: params });
   const data = await r.json().catch(() => ({}));
@@ -256,20 +294,63 @@ async function runRepair(needsRepair) {
     await clearFbPostedAt(eventId);
 
     const { message, url } = eventPost(rec);
-    const rawWhen = post.scheduled_publish_time;
-    const whenMs =
-      rawWhen == null
-        ? null
-        : typeof rawWhen === "number" || /^\d+$/.test(String(rawWhen))
-          ? Number(rawWhen) * (Number(rawWhen) < 1e12 ? 1000 : 1)
-          : new Date(rawWhen).getTime();
-    const whenUnix = whenMs ? Math.floor(whenMs / 1000) : undefined;
-    const useSchedule =
-      whenUnix && whenUnix * 1000 > Date.now() + 15 * 60 * 1000 ? whenUnix : undefined;
+    const timing = timingFromPost(post);
 
-    const newId = await publish(message, url, useSchedule);
-    await stampPosted(eventId, useSchedule ? new Date(useSchedule * 1000) : new Date());
-    console.log(`    ✅ ${useSchedule ? "rescheduled" : "reposted"}: ${newId}`);
+    const newId = await publish(message, url, timing);
+    const stampWhen = timing.scheduleUnix
+      ? new Date(timing.scheduleUnix * 1000)
+      : timing.backdateUnix
+        ? new Date(timing.backdateUnix * 1000)
+        : new Date();
+    await stampPosted(eventId, stampWhen);
+    const label = timing.scheduleUnix ? "rescheduled" : timing.backdateUnix ? "backdated" : "reposted";
+    console.log(`    ✅ ${label}: ${newId}`);
+  }
+}
+
+/** Re-post the 2026-06-02 repair batch at original schedule/backdate times. */
+async function runRestoreTiming(published) {
+  const repairCutoff = Date.parse("2026-06-02T21:00:00Z");
+  const targets = published
+    .map((post) => ({ post, eventId: eventIdFromPost(post) }))
+    .filter(({ post, eventId }) => eventId && RESTORE_TIMINGS[eventId])
+    .filter(({ post }) => Date.parse(post.created_time) >= repairCutoff);
+
+  if (!targets.length) {
+    console.log("restore-timing: no recent repair posts found for the known event set.");
+    return;
+  }
+
+  console.log(`${DRY ? "(DRY RUN) " : ""}Restoring timing on ${targets.length} post(s)…\n`);
+
+  for (const { post, eventId } of targets) {
+    const rec = await airtableGetEvent(eventId);
+    if (!rec) {
+      console.warn(`  skip ${eventId}: not in Airtable`);
+      continue;
+    }
+    const timing = RESTORE_TIMINGS[eventId];
+    const eventUrl = `${SITE}/event/${eventId}`;
+    const whenLabel = timing.scheduleUnix
+      ? new Date(timing.scheduleUnix * 1000).toISOString()
+      : new Date(timing.backdateUnix * 1000).toISOString();
+
+    console.log(`→ ${rec.fields.Title} → ${whenLabel}`);
+
+    if (DRY) {
+      console.log(`    would: delete ${post.id}, repost with ${JSON.stringify(timing)}`);
+      continue;
+    }
+
+    await scrapeOg(eventUrl);
+    await graphDelete(post.id);
+    const { message, url } = eventPost(rec);
+    const newId = await publish(message, url, timing);
+    await stampPosted(
+      eventId,
+      new Date((timing.scheduleUnix || timing.backdateUnix) * 1000)
+    );
+    console.log(`    ✅ ${timing.scheduleUnix ? "scheduled" : "backdated"}: ${newId}`);
   }
 }
 
@@ -278,6 +359,12 @@ console.log("Fetching published + scheduled Page posts…\n");
 const published = await fetchAllPosts("published_posts");
 const scheduled = await fetchAllPosts("scheduled_posts");
 const all = [...published, ...scheduled];
+
+if (mode === "restore-timing") {
+  await runRestoreTiming(published);
+  process.exit(0);
+}
+
 const { eventPosts, needsRepair } = await classifyPosts(all);
 
 const noPreview = needsRepair.filter((x) => x.reason === "no_preview");
@@ -307,6 +394,6 @@ if (VERBOSE) {
 if (mode === "repair") {
   await runRepair(needsRepair);
 } else if (mode !== "audit") {
-  console.error(`Unknown mode "${mode}". Use: audit | repair`);
+  console.error(`Unknown mode "${mode}". Use: audit | repair | restore-timing`);
   process.exit(1);
 }

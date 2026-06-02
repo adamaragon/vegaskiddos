@@ -19,6 +19,7 @@
     "fb-post": "node tools/fb-post.mjs",
     "fb-repair": "node tools/fb-repair-posts.mjs repair",
     "fb-repair-audit": "node tools/fb-repair-posts.mjs audit",
+    "fb-restore-timing": "node tools/fb-repair-posts.mjs restore-timing",
     "gen-art": "node tools/gen-event-art.mjs",
     "ensure-reminders-table": "node tools/ensure-reminders-table.mjs",
     "send-reminders": "node tools/send-reminders.mjs"
