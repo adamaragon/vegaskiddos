@@ -24,8 +24,13 @@ const GRAPH = "https://graph.facebook.com/v21.0";
 const SITE = "https://vegaskiddos.com";
 const HASHTAGS = "#LasVegas #VegasKids #ThingsToDoInVegas #FamilyFun #VegasFamilies #KidFriendly #EventosLasVegas";
 
+// Site-wide fallback when an event has no scraped image — link shares using only
+// this look "blank" or generic compared to event-specific art.
+const GENERIC_OG_PATHS = ["/opengraph-image", "/opengraph-image.png", "opengraph-image"];
+
 const mode = (process.argv[2] || "audit").toLowerCase();
 const DRY = process.argv.includes("--dry-run");
+const VERBOSE = process.argv.includes("--verbose");
 
 if (!AT || !BASE) {
   console.error("AIRTABLE_TOKEN / AIRTABLE_BASE_ID required");
@@ -121,13 +126,29 @@ function eventIdFromPost(post) {
   return m?.[1] || null;
 }
 
-function postHasPreviewImage(post) {
-  if (post.full_picture) return true;
+function previewImageUrls(post) {
+  const urls = [];
+  if (post.full_picture) urls.push(post.full_picture);
   for (const att of post.attachments?.data || []) {
-    if (att.media?.image?.src) return true;
-    if (att.media?.source) return true;
+    if (att.media?.image?.src) urls.push(att.media.image.src);
   }
-  return false;
+  return urls;
+}
+
+function postHasPreviewImage(post) {
+  return previewImageUrls(post).length > 0;
+}
+
+function isGenericPreviewUrl(url) {
+  if (!url) return true;
+  const u = url.toLowerCase();
+  return GENERIC_OG_PATHS.some((p) => u.includes(p));
+}
+
+function postUsesOnlyGenericPreview(post) {
+  const urls = previewImageUrls(post);
+  if (!urls.length) return true;
+  return urls.every(isGenericPreviewUrl);
 }
 
 async function airtableGetEvent(recordId) {
@@ -136,6 +157,22 @@ async function airtableGetEvent(recordId) {
   });
   if (!r.ok) return null;
   return r.json();
+}
+
+/** True when the live event page has a dedicated image (not site default OG). */
+async function eventPageHasDedicatedImage(eventId, rec) {
+  const hasAirtableImage = Boolean(rec?.fields?.Image);
+  if (hasAirtableImage) return true;
+  try {
+    const html = await fetch(`${SITE}/event/${eventId}`, {
+      headers: { "User-Agent": "VegasKiddos-FB-Repair/1.0" },
+    }).then((r) => r.text());
+    const og = html.match(/property="og:image"\s+content="([^"]+)"/i)?.[1] || "";
+    if (!og) return false;
+    return !isGenericPreviewUrl(og);
+  } catch {
+    return false;
+  }
 }
 
 async function clearFbPostedAt(recordId) {
@@ -172,33 +209,42 @@ async function publish(message, link, whenUnix) {
   return data.id;
 }
 
-function classify(posts) {
+async function classifyPosts(posts) {
   const eventPosts = [];
   for (const p of posts) {
     const eid = eventIdFromPost(p);
     if (eid) eventPosts.push({ post: p, eventId: eid });
   }
-  const missingImage = eventPosts.filter(({ post }) => !postHasPreviewImage(post));
-  return { eventPosts, missingImage };
+
+  const needsRepair = [];
+  for (const item of eventPosts) {
+    const rec = await airtableGetEvent(item.eventId);
+    const noImage = !postHasPreviewImage(item.post);
+    const genericOnly = postUsesOnlyGenericPreview(item.post);
+    const shouldHaveArt = await eventPageHasDedicatedImage(item.eventId, rec);
+    const reason =
+      noImage ? "no_preview" : genericOnly && shouldHaveArt ? "generic_preview" : null;
+    if (reason) needsRepair.push({ ...item, rec, reason, preview: previewImageUrls(item.post)[0] || "(none)" });
+  }
+  return { eventPosts, needsRepair };
 }
 
-async function runRepair(missingImage) {
-  if (!missingImage.length) {
+async function runRepair(needsRepair) {
+  if (!needsRepair.length) {
     console.log("Nothing to repair.");
     return;
   }
 
-  console.log(`${DRY ? "(DRY RUN) " : ""}Repairing ${missingImage.length} post(s)…\n`);
+  console.log(`${DRY ? "(DRY RUN) " : ""}Repairing ${needsRepair.length} post(s)…\n`);
 
-  for (const { post, eventId } of missingImage) {
+  for (const { post, eventId, rec, reason } of needsRepair) {
     const eventUrl = `${SITE}/event/${eventId}`;
-    const rec = await airtableGetEvent(eventId);
     if (!rec) {
       console.warn(`  skip ${eventId}: not found in Airtable`);
       continue;
     }
 
-    console.log(`→ ${rec.fields.Title || eventId}`);
+    console.log(`→ ${rec.fields.Title || eventId} (${reason})`);
 
     if (DRY) {
       console.log(`    would: scrape OG, delete ${post.id}, clear FBPostedAt, repost`);
@@ -227,22 +273,34 @@ console.log("Fetching published + scheduled Page posts…\n");
 const published = await fetchAllPosts("published_posts");
 const scheduled = await fetchAllPosts("scheduled_posts");
 const all = [...published, ...scheduled];
-const { eventPosts, missingImage } = classify(all);
+const { eventPosts, needsRepair } = await classifyPosts(all);
+
+const noPreview = needsRepair.filter((x) => x.reason === "no_preview");
+const generic = needsRepair.filter((x) => x.reason === "generic_preview");
 
 console.log(`Total posts fetched: ${all.length} (${published.length} published, ${scheduled.length} scheduled)`);
 console.log(`Event link posts: ${eventPosts.length}`);
-console.log(`Missing preview image: ${missingImage.length}\n`);
+console.log(`Needs repair: ${needsRepair.length} (${noPreview.length} no image, ${generic.length} generic OG while event has art)\n`);
 
-for (const { post, eventId } of missingImage) {
+for (const { post, eventId, reason, preview } of needsRepair) {
   const when = post.scheduled_publish_time || post.created_time || "?";
-  console.log(`  • ${when}  ${post.id}`);
+  console.log(`  • [${reason}] ${when}  ${post.id}`);
   console.log(`    event: ${SITE}/event/${eventId}`);
+  console.log(`    preview: ${preview.slice(0, 100)}`);
   const line = (post.message || "").split("\n").find((l) => l.includes("vegaskiddos")) || (post.message || "").slice(0, 80);
   console.log(`    ${line}\n`);
 }
 
+if (VERBOSE) {
+  console.log("── sample OK posts (first 5) ──");
+  const ok = eventPosts.filter((ep) => !needsRepair.some((n) => n.post.id === ep.post.id)).slice(0, 5);
+  for (const { post } of ok) {
+    console.log(`  ${post.id}  ${previewImageUrls(post)[0]?.slice(0, 90) || "(no url)"}`);
+  }
+}
+
 if (mode === "repair") {
-  await runRepair(missingImage);
+  await runRepair(needsRepair);
 } else if (mode !== "audit") {
   console.error(`Unknown mode "${mode}". Use: audit | repair`);
   process.exit(1);
