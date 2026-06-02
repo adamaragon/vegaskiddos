@@ -1,13 +1,10 @@
 name: Daily event scrape
 
-# Daily catalog refresh. Two scrapers feed the Airtable review queue
-# (Approved=false — nothing auto-publishes):
-#   1. gov-scrape.mjs — headless browser for JS-rendered government calendars
-#      (City of Las Vegas, Clark County). Needs a real browser, hence not in
-#      the Netlify build.
-#   2. `npm run scrape` — fetch-based adapters (WP "The Events Calendar" sites,
-#      LVCCLD + Henderson library iCal feeds, Nevada Moms). Same code the admin
-#      "Run scrape" button calls, so the daily run needs no manual click.
+# Daily catalog refresh. Two scrapers upsert events; enrichers self-heal gaps:
+#   1. gov-scrape.mjs — headless browser for JS gov calendars (pending review).
+#   2. `npm run scrape` — fetch adapters; fills blank descriptions then
+#      publishPending() auto-approves new non-duplicate events (same as Netlify).
+#   3. Enrich step — descriptions (backup), geocode, infer-ages for all sources.
 # Runs daily and on demand. Each scraper is independent (always()) so one
 # failing doesn't skip the other or the enrichers.
 
@@ -36,8 +33,7 @@ jobs:
         run: node tools/gov-scrape.mjs
 
       # Fetch-based adapters (WP calendars, library iCal feeds, Nevada Moms).
-      # always() so a gov-scrape failure above doesn't skip these. Inserts to
-      # the review queue with Approved=false — never auto-publishes.
+      # always() so a gov-scrape failure above doesn't skip these.
       - name: Run fetch scraper (library + WP calendars)
         if: ${{ always() }}
         env:
@@ -57,6 +53,6 @@ jobs:
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          node tools/fill-blank-descriptions.mjs
+          npm run fill-descriptions
           node tools/geocode-events.mjs
           node tools/infer-ages.mjs

@@ -20,7 +20,7 @@ in GitHub Actions using repo **secrets**.
 |---|---|---|
 | `gov-scrape.mjs` | — | Headless-browser scraper for JS gov calendars → Airtable review queue. Auto-translates new events, then runs the three enrichers below. Runs daily via `gov-scrape.yml`. |
 | `translate-backfill.mjs` | `translate` | Backfills `TitleEs`/`DescriptionEs` (OpenAI). Idempotent — only fills empty. |
-| `fill-blank-descriptions.mjs` | `fill-descriptions` | Generates grounded bilingual descriptions for events that arrive blank (e.g. Henderson gov). `--dry`. Idempotent. |
+| `fill-blank-descriptions-cli.ts` | `fill-descriptions` | Generates grounded bilingual descriptions for events that arrive blank (e.g. Henderson gov, Nevada Moms). Logic in `lib/scrape/fill-descriptions.ts`; also runs inside `runScrape` before auto-publish. Upserts omit empty descriptions so AI text is not wiped. `--dry`. Idempotent. |
 | `geocode-events.mjs` | `geocode` | Backfills missing `Lat`/`Lng` via OSM Nominatim (metro-bounded, no key) so events map. `--dry`, `--limit n`. Idempotent. |
 | `infer-ages.mjs` | `infer-ages` | Tags missing `AgeTiers` from title+description (gpt-4o-mini). `--dry`. Idempotent. |
 | `send-reminders.mjs` | `send-reminders` | Daily: notifies subscribers about favorited events happening tomorrow via web push + email. `--dry`. Runs via `reminders.yml` (5pm PT). |

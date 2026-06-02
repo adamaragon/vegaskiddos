@@ -224,8 +224,10 @@ async function upsert(events) {
   let created = 0, updated = 0;
   for (let i = 0; i < events.length; i += 10) {
     const records = events.slice(i, i + 10).map((e) => {
-      const f = { Title: e.title, Description: e.description, Venue: e.venue, Address: e.address,
+      const f = { Title: e.title, Venue: e.venue, Address: e.address,
         Start: e.start, AgeTiers: e.ageTiers, Source: e.source, ExternalId: e.externalId, ScrapedAt: new Date().toISOString() };
+      // Keep in sync with lib/scrape/description.ts — don't clobber enrich-generated text.
+      if ((e.description || "").trim().length >= 15) f.Description = e.description;
       if (e.neighborhood) f.Neighborhood = e.neighborhood;
       if (e.priceTier) f.PriceTier = e.priceTier;
       if (e.url) f.Url = e.url;

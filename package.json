@@ -9,7 +9,7 @@
     "lint": "next lint",
     "scrape": "tsx lib/scrape/cli.ts",
     "translate": "node tools/translate-backfill.mjs",
-    "fill-descriptions": "node tools/fill-blank-descriptions.mjs",
+    "fill-descriptions": "tsx tools/fill-blank-descriptions-cli.ts",
     "geocode": "node tools/geocode-events.mjs",
     "infer-ages": "node tools/infer-ages.mjs",
     "ensure-sub-lang": "node tools/ensure-subscriber-lang.mjs",

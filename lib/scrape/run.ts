@@ -5,6 +5,7 @@ import { fetchLibrary } from "./sources/library";
 import { fetchHendersonLibraries } from "./sources/hendersonLibraries";
 import { upsertEvents, publishPending } from "./airtable";
 import { collapseRecurring } from "./recurring";
+import { fillBlankDescriptions } from "./fill-descriptions";
 
 const vegasFamilyGuide = makeTribeAdapter({
   source: "Vegas Family Guide",
@@ -34,6 +35,7 @@ export interface RunSummary {
   inserted: number; // newly created
   updated: number; // existing refreshed
   approved: number; // auto-approved this run (newly published)
+  descriptionsFilled: number;
   dryRun: boolean;
   sampleTitles: string[];
 }
@@ -74,6 +76,16 @@ export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary
     ? { created: 0, updated: 0 }
     : await upsertEvents(collapsed);
 
+  let descriptionsFilled = 0;
+  if (!dryRun) {
+    try {
+      const fill = await fillBlankDescriptions({ log: (m) => console.log(m) });
+      descriptionsFilled = fill.filled;
+    } catch (e) {
+      console.error("fill-descriptions skipped:", e);
+    }
+  }
+
   // Auto-publish NEW events only. publishPending() reads the approved set but
   // only ever writes pending records — an already-approved event is never
   // un-approved or dropped here. New events that duplicate an approved one (or
@@ -97,6 +109,7 @@ export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary
     inserted: counts.created,
     updated: counts.updated,
     approved,
+    descriptionsFilled,
     dryRun,
     sampleTitles: collapsed.filter((e) => e.recurrence).slice(0, 8).map((e) => `${e.title} (${e.recurrence})`),
   };

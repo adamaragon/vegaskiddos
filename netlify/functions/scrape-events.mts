@@ -1,9 +1,10 @@
 import type { Config } from "@netlify/functions";
 import { runScrape } from "../../lib/scrape/run";
 
-// Scheduled scraper: pulls upcoming family events from registered sources into
-// the Airtable review queue (Approved=false). Runs daily; also invokable
+// Scheduled scraper: upserts upcoming events, fills blank descriptions (OpenAI),
+// then auto-publishes new non-duplicate pending rows. Runs daily; also invokable
 // manually via GET with ?key=<SCRAPE_KEY> (add &dry=1 to preview without writing).
+// Requires AIRTABLE_* and OPENAI_API_KEY in Netlify env for description fill.
 export default async (req: Request) => {
   const url = new URL(req.url);
   const isScheduled = req.headers.get("x-nf-event") === "schedule";
