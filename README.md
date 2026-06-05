@@ -97,7 +97,11 @@ lib/
 
 ## Contributing
 
-This is a free, non-commercial community resource for Las Vegas families.
+This is a free, non-commercial community resource for Las Vegas families — no ads,
+no subscriptions, no revenue of any kind. Built personally by Adam & Michelle Aragon;
+Threesided Studios is their creative umbrella, not a commercial entity involved in
+this project.
+
 Contributions are welcome — please read the [Code of Conduct](CODE_OF_CONDUCT.md)
 before participating.
 
