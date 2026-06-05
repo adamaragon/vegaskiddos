@@ -161,7 +161,23 @@ export default async function RootLayout({
               by rickymorgue, licensed under{" "}
               <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="underline">
                 CC-BY-4.0
+              </a>.{" "}
+              <a href="https://github.com/adamaragon-neo/vegaskiddos/blob/main/CODE_OF_CONDUCT.md"
+                target="_blank" rel="noopener noreferrer" className="underline">
+                Code of Conduct
               </a>.
+            </p>
+            <p className="mt-3">
+              <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer"
+                aria-label="This site is powered by Netlify">
+                <img
+                  src="https://www.netlify.com/img/global/badges/netlify-color-accent.svg"
+                  alt="Powered by Netlify"
+                  width="114"
+                  height="51"
+                  className="mx-auto"
+                />
+              </a>
             </p>
           </div>
         </footer>

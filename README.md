@@ -94,3 +94,13 @@ lib/
 - [ ] "Near me" geolocation sort
 - [ ] Weekly email digest for subscribed parents
 - [ ] iOS app (wrap or React Native)
+
+## Contributing
+
+This is a free, non-commercial community resource for Las Vegas families.
+Contributions are welcome — please read the [Code of Conduct](CODE_OF_CONDUCT.md)
+before participating.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
