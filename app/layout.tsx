@@ -162,7 +162,7 @@ export default async function RootLayout({
               <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="underline">
                 CC-BY-4.0
               </a>.{" "}
-              <a href="https://github.com/adamaragon-neo/vegaskiddos/blob/main/CODE_OF_CONDUCT.md"
+              <a href="https://github.com/adamaragon/vegaskiddos/blob/main/CODE_OF_CONDUCT.md"
                 target="_blank" rel="noopener noreferrer" className="underline">
                 Code of Conduct
               </a>.
