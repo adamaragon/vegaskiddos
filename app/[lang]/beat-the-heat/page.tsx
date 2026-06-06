@@ -5,7 +5,7 @@ import { CollectionView } from "@/components/CollectionView";
 import { langAlternates } from "@/lib/seo";
 import type { Lang } from "@/lib/i18n";
 
-export const revalidate = 600;
+export const revalidate = 86400;
 const SLUG = "beat-the-heat";
 
 export async function generateMetadata({

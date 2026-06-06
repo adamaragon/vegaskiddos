@@ -11,7 +11,7 @@ import { Sun, Cloud, Star, Underline, Scribble } from "@/components/Doodles";
 import { t, type Lang } from "@/lib/i18n";
 import { SITE, langAlternates } from "@/lib/seo";
 
-export const revalidate = 600;
+export const revalidate = 86400;
 
 const siteLd = [
   {
