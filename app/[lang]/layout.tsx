@@ -172,18 +172,6 @@ export default async function RootLayout({
                 Code of Conduct
               </a>.
             </p>
-            <p className="mt-3">
-              <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer"
-                aria-label="This site is powered by Netlify">
-                <img
-                  src="https://www.netlify.com/img/global/badges/netlify-color-accent.svg"
-                  alt="Powered by Netlify"
-                  width="114"
-                  height="51"
-                  className="mx-auto"
-                />
-              </a>
-            </p>
           </div>
         </footer>
       </body>
