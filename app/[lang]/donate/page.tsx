@@ -190,9 +190,9 @@ export default async function DonatePage({
 
       {/* Guilt-trip intro */}
       <Reveal as="section" variant="pop" className="mt-8">
-        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-coral to-sunny p-6 text-white shadow-card sm:p-8">
+        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-coral via-coral-dark to-coral-btn p-6 text-white shadow-card sm:p-8">
           <Cloud className="pointer-events-none absolute -right-3 -top-3 h-16 w-16 text-white/15" />
-          <div className="relative space-y-3 text-base leading-relaxed sm:text-lg">
+          <div className="relative space-y-3 text-base leading-relaxed [text-shadow:0_1px_3px_rgb(0_0_0/0.28)] sm:text-lg">
             <p>
               {c.intro1pre}
               <span className="font-800">{c.intro1bold}</span>
@@ -283,7 +283,7 @@ export default async function DonatePage({
 
       {/* Free ways to help */}
       <Reveal as="section" variant="pop" className="mt-8">
-        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-grape to-teal p-6 text-white shadow-card sm:p-8">
+        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-grape to-teal-btn p-6 text-white shadow-card [text-shadow:0_1px_2px_rgb(0_0_0/0.25)] sm:p-8">
           <Scribble className="pointer-events-none absolute right-5 top-4 hidden h-12 w-12 text-white/15 sm:block" />
           <h2 className="font-display text-2xl font-700">{c.freeH2}</h2>
           <ul className="mt-4 space-y-2.5 text-base">
