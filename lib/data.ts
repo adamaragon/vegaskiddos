@@ -19,6 +19,13 @@ const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const AIRTABLE_BASE = process.env.AIRTABLE_BASE_ID;
 const AIRTABLE_TABLE = process.env.AIRTABLE_TABLE_NAME || "Events";
 
+// Durable image host. Event images are synced (tools/sync-images.mjs) to the R2
+// bucket served here as /event/<id>/<width>.webp, so the app references stable
+// URLs instead of Airtable's ephemeral signed URLs (which expire ~2h and break
+// in cached HTML). 1024 is the default/OG size; lib/imageLoader.ts swaps the
+// width segment per responsive <Image> request.
+const IMG_CDN = "https://img.vegaskiddos.com";
+
 export function isAirtableConfigured() {
   return Boolean(AIRTABLE_TOKEN && AIRTABLE_BASE);
 }
@@ -58,8 +65,12 @@ function mapRecord(rec: AirtableRecord): KidEvent | null {
     priceTier: (f.PriceTier as PriceTierId) || "free",
     priceText: f.PriceText ? String(f.PriceText) : undefined,
     url: f.Url ? String(f.Url) : undefined,
-    // Prefer AI-generated art (Airtable attachment) over the scraped image URL.
-    image: attachmentUrl((f as Record<string, unknown>).ArtImage) || (f.Image ? String(f.Image) : undefined),
+    // Reference the durable R2 copy (synced from ArtImage attachment or the
+    // scraped Image URL) so cached HTML never holds an expiring Airtable URL.
+    image:
+      attachmentUrl((f as Record<string, unknown>).ArtImage) || f.Image
+        ? `${IMG_CDN}/event/${rec.id}/1024.webp`
+        : undefined,
     source: String(f.Source || "Community"),
     // Preserve "unknown" — coercing a missing Indoor field to false would
     // mislabel every unflagged event as outdoor (e.g. library storytimes).
