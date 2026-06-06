@@ -4,7 +4,7 @@ import { MyList } from "@/components/MyList";
 import { langAlternates } from "@/lib/seo";
 import type { Lang } from "@/lib/i18n";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function generateMetadata({
   params,

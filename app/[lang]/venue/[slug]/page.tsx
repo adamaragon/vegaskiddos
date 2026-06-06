@@ -9,10 +9,10 @@ import { nextOccurrenceISO } from "@/lib/recurrence";
 import { SITE, breadcrumbLd, langAlternates } from "@/lib/seo";
 import type { Lang } from "@/lib/i18n";
 
-// Statically rendered per locale + cached (revalidate: 3600). Venue slugs render
+// Statically rendered per locale + cached (revalidate: 86400). Venue slugs render
 // on demand and cache on first hit (too many to prebuild), so the build stays
 // fast and the Worker serves cached HTML instead of re-rendering each request.
-export const revalidate = 3600;
+export const revalidate = 86400;
 export const dynamicParams = true;
 export function generateStaticParams() {
   return [];
