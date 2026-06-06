@@ -11,6 +11,11 @@ export function AdminEventControls({ id }: { id: string }) {
   const [done, setDone] = useState<string>("");
 
   useEffect(() => {
+    // Skip the /api/admin/me probe entirely for anonymous visitors. The login
+    // route drops a non-httpOnly `vk_admin_present` cookie; without it there is
+    // no admin session, so every public event view avoids a serverless hit.
+    // The probe still runs (and is server-validated) when the hint is present.
+    if (!/(?:^|;\s*)vk_admin_present=1(?:;|$)/.test(document.cookie)) return;
     fetch("/api/admin/me")
       .then((r) => r.json())
       .then((d) => setAdmin(Boolean(d.authed)))

@@ -39,7 +39,14 @@ export async function GET() {
       status: String(r.fields.Status || "idea"),
       featured: Boolean(r.fields.Featured),
     }));
-    return NextResponse.json({ features });
+    // Let the CDN serve repeat visitors without re-invoking this function: the
+    // feature list changes rarely, so a 60s shared cache + stale-while-revalidate
+    // keeps the public /features page off the hot path. Votes still write
+    // through POST, and a fresh value appears within the window.
+    return NextResponse.json(
+      { features },
+      { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=600" } },
+    );
   } catch (err) {
     console.error("features list error:", err);
     return NextResponse.json({ features: [] });

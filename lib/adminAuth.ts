@@ -5,6 +5,11 @@ import crypto from "crypto";
 // "<email>.<hmac(AUTH_SECRET, email)>" so it can't be forged without the secret.
 
 export const ADMIN_COOKIE = "vk_admin";
+// Non-httpOnly companion to ADMIN_COOKIE. Set/cleared alongside the real
+// session cookie purely so client UI can detect "an admin might be logged in"
+// without an API round-trip. Never trusted for authorization — the server
+// always validates the signed httpOnly ADMIN_COOKIE.
+export const ADMIN_PRESENT_COOKIE = "vk_admin_present";
 const API = "https://api.airtable.com/v0";
 
 interface Admin {

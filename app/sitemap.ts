@@ -5,9 +5,11 @@ import { venueSlug } from "@/lib/constants";
 
 const BASE = "https://vegaskiddos.com";
 
-// Regenerate hourly so newly-scraped/approved events appear in the sitemap
-// without waiting for a redeploy (it was static-at-build-time before).
-export const revalidate = 3600;
+// Regenerate daily so newly-scraped/approved events appear in the sitemap
+// without waiting for a redeploy (it was static-at-build-time before). Daily
+// is plenty for crawlers and keeps the Airtable-backed render off the hot path
+// (was hourly — more function compute than the crawl cadence warrants).
+export const revalidate = 86400;
 
 // Each content URL exists in English (canonical) and Spanish (/es). Emit the
 // English URL with an `es` alternate so Google indexes both — matches the
