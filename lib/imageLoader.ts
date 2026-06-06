@@ -1,18 +1,20 @@
 // Custom next/image loader.
 //
 // Image optimization differs by host:
-//  - Netlify (current prod): NEXT_PUBLIC_IMAGE_CDN unset -> same-origin
+//  - Netlify (legacy prod): NEXT_PUBLIC_IMAGE_CDN unset -> same-origin
 //    /_next/image, which Netlify optimizes server-side.
 //  - Cloudflare Worker (OpenNext): the Worker CANNOT resize images (no sharp
-//    on workerd) — /_next/image returns the full-size original (~1.7MB).
-//    So route through an external resizing CDN by setting NEXT_PUBLIC_IMAGE_CDN
-//    to a wsrv.nl-compatible base (https://images.weserv.nl). wsrv resizes +
-//    converts to webp + caches (free). Cloudflare Image Transformations would
-//    be a paid drop-in alternative with a different URL shape.
+//    on workerd) — /_next/image returns the full-size original (~1.7MB). So
+//    route through an external optimizing CDN via NEXT_PUBLIC_IMAGE_CDN.
 //
-// No-op when NEXT_PUBLIC_IMAGE_CDN is unset, so the live Netlify site is
-// unaffected until this is enabled. NEXT_PUBLIC_ vars are inlined at build
-// time, so flipping the env var requires a rebuild + redeploy.
+// Two CDN shapes are supported, auto-detected from the host:
+//  - Bunny (https://media.vegaskiddos.com): pull-zone passthrough. Bunny pulls
+//    the origin's /_next/image and its Optimizer (WebP compression + Dynamic
+//    image API width= + Smart optimization) shrinks it. ~4KB webp. (paid)
+//  - wsrv.nl (https://images.weserv.nl): free resizer. ~3.8KB webp.
+//
+// No-op when NEXT_PUBLIC_IMAGE_CDN is unset, so legacy Netlify is unaffected.
+// NEXT_PUBLIC_ vars are inlined at build time -> flipping requires a rebuild.
 const SITE_ORIGIN = "https://vegaskiddos.com";
 
 export default function imageLoader({
@@ -32,10 +34,16 @@ export default function imageLoader({
     return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=${q}`;
   }
 
-  // wsrv.nl-compatible resizer. It needs an absolute source URL; relative
-  // srcs (local assets) are served by the site origin, so prefix them.
-  const abs = src.startsWith("http")
-    ? src
-    : `${SITE_ORIGIN}${src.startsWith("/") ? "" : "/"}${src}`;
-  return `${cdn}/?url=${encodeURIComponent(abs)}&w=${width}&q=${q}&output=webp`;
+  if (/weserv|wsrv/.test(cdn)) {
+    // wsrv.nl needs an absolute source URL; prefix relative srcs.
+    const abs = src.startsWith("http")
+      ? src
+      : `${SITE_ORIGIN}${src.startsWith("/") ? "" : "/"}${src}`;
+    return `${cdn}/?url=${encodeURIComponent(abs)}&w=${width}&q=${q}&output=webp`;
+  }
+
+  // Bunny (or any same-shape pull zone): pass through the origin's /_next/image
+  // path and let the Optimizer resize/convert. width= drives Bunny's Dynamic
+  // image API; WebP compression kicks in via the client's Accept header.
+  return `${cdn}/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=${q}&width=${width}&quality=${q}`;
 }
