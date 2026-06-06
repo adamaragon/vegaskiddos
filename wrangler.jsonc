@@ -11,5 +11,8 @@
   "services": [
     { "binding": "WORKER_SELF_REFERENCE", "service": "vegaskiddos" }
   ],
+  "r2_buckets": [
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "vegaskiddos-cache" }
+  ],
   "observability": { "enabled": true }
 }
