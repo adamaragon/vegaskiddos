@@ -1,0 +1,15 @@
+# Cloudflare local-preview env. Copy to `.dev.vars` (gitignored) and fill in
+# from your Netlify env, then run `npm run cf:preview`.
+# On the deployed Worker, set each as a secret instead:  npx wrangler secret put <NAME>
+NEXTJS_ENV=development
+AIRTABLE_TOKEN=
+AIRTABLE_BASE_ID=
+AIRTABLE_TABLE_NAME=
+ADMIN_PASSWORD=
+AUTH_SECRET=
+DIGEST_FROM=
+OPENAI_API_KEY=
+RESEND_API_KEY=
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=

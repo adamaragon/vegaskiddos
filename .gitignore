@@ -8,3 +8,9 @@ out
 next-env.d.ts
 *.tsbuildinfo
 SECRETS.local.md
+
+# Cloudflare (OpenNext) — build output + local worker state/secrets
+.open-next
+.dev.vars
+.wrangler
+cloudflare-env.d.ts
