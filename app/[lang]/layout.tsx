@@ -133,6 +133,7 @@ export default async function RootLayout({
               <ul className="mt-2 space-y-1.5 text-ink/70">
                 {[
                   ["/submit", "Add an event"],
+                  ["/donate", "Support us"],
                   ["/contact", "Contact & feedback"],
                   ["/style-guide", "Style guide"],
                   ["/admin", "Admin"],
