@@ -23,9 +23,9 @@
     "gen-art": "node tools/gen-event-art.mjs",
     "ensure-reminders-table": "node tools/ensure-reminders-table.mjs",
     "send-reminders": "node tools/send-reminders.mjs",
-    "cf:build": "opennextjs-cloudflare build",
-    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf:build": "NEXT_PUBLIC_IMAGE_CDN=https://images.weserv.nl opennextjs-cloudflare build",
+    "cf:preview": "NEXT_PUBLIC_IMAGE_CDN=https://images.weserv.nl opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "NEXT_PUBLIC_IMAGE_CDN=https://images.weserv.nl opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {

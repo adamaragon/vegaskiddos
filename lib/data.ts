@@ -81,7 +81,7 @@ function localize(events: KidEvent[], lang: Lang): KidEvent[] {
 
 // Wrapped in React cache() so multiple calls in one request (e.g. an event
 // page's generateMetadata + render, or the homepage's strip + browser) share a
-// single fetch + parse. Cross-request data is already cached via revalidate:86400.
+// single fetch + parse. Cross-request data is already cached via revalidate:3600.
 export const getEvents = cache(async (lang: Lang = "en"): Promise<KidEvent[]> => {
   if (!isAirtableConfigured()) {
     return localize([...MOCK_EVENTS].sort(byNextOccurrence), lang);
@@ -102,7 +102,7 @@ export const getEvents = cache(async (lang: Lang = "en"): Promise<KidEvent[]> =>
       if (offset) url.searchParams.set("offset", offset);
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
-        next: { revalidate: 86400 },
+        next: { revalidate: 3600 },
       });
       if (!res.ok) throw new Error(`Airtable ${res.status}`);
       const data = (await res.json()) as { records: AirtableRecord[]; offset?: string };

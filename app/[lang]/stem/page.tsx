@@ -5,7 +5,7 @@ import { CollectionView } from "@/components/CollectionView";
 import { langAlternates } from "@/lib/seo";
 import type { Lang } from "@/lib/i18n";
 
-export const revalidate = 86400;
+export const revalidate = 3600;
 const SLUG = "stem";
 
 export async function generateMetadata({
