@@ -1,53 +1,46 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 // ── Locale routing ──────────────────────────────────────────────────────────
-// The URL is the source of truth for language, so search engines get real,
-// crawlable Spanish pages instead of a cookie-gated variant:
+// Language now lives in the route as the [lang] segment, so every page renders
+// statically (no headers() in the render path). The public URL scheme is
+// unchanged — English at the root, Spanish under /es:
 //
-//   /about      → English  (canonical tree)
-//   /es/about   → Spanish  (rewritten internally to /about, lang forced to es)
+//   /about      → English  (rewritten internally to /en/about; URL stays /about)
+//   /es/about   → Spanish  (maps natively to the [lang]=es tree, no rewrite)
 //
 // How it works:
-//  • /es/* requests are *rewritten* (not redirected) to the un-prefixed path
-//    with an `x-vk-lang: es` request header. getLang() reads that header, so
-//    every server component renders Spanish — no route-tree duplication.
-//  • On the English tree, a visitor who previously chose Spanish (vk_lang=es
-//    cookie) is *redirected* to the /es equivalent. That keeps them in Spanish
-//    when they click plain English internal <Link>s, without having to make
-//    every link locale-aware. Crawlers send no cookie, so they stay on the
-//    canonical English tree and discover /es via hreflang + the sitemap.
-//  • `x-vk-path` carries the un-prefixed path so the layout can build the
-//    reciprocal hreflang/canonical URLs.
+//  • /es/* already matches app/[lang]/* with lang=es, so it passes through
+//    untouched (we only refresh the preference cookie).
+//  • Un-prefixed English paths are *rewritten* to /en/* so they hit the
+//    [lang]=en tree, while the address bar keeps the canonical root URL.
+//  • /en/* is internal-only: if a visitor (or a stale link) hits it directly,
+//    redirect to the canonical un-prefixed URL to avoid duplicate content.
+//  • A visitor who previously chose Spanish (vk_lang=es cookie) is redirected
+//    from the English tree to the /es equivalent, so plain internal <Link>s
+//    keep them in Spanish. Crawlers send no cookie → they stay on the canonical
+//    English tree and discover /es via hreflang + the sitemap.
 
 const COOKIE = "vk_lang";
-
-function withLangHeaders(req: NextRequest, lang: "en" | "es", path: string) {
-  const headers = new Headers(req.headers);
-  headers.set("x-vk-lang", lang);
-  headers.set("x-vk-path", path);
-  return headers;
-}
+const COOKIE_OPTS = { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" as const };
 
 export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
-  const isEs = pathname === "/es" || pathname.startsWith("/es/");
 
-  if (isEs) {
-    // Strip the /es prefix for the underlying page; "/es" → "/".
-    const path = pathname === "/es" ? "/" : pathname.slice(3);
+  // /en/* is an internal rewrite target, never a public URL → canonicalize.
+  if (pathname === "/en" || pathname.startsWith("/en/")) {
     const url = req.nextUrl.clone();
-    url.pathname = path;
-    const res = NextResponse.rewrite(url, {
-      request: { headers: withLangHeaders(req, "es", path) },
-    });
-    // Keep the preference cookie in sync so client components + future visits
-    // resolve to Spanish.
-    res.cookies.set(COOKIE, "es", { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+    url.pathname = pathname === "/en" ? "/" : pathname.slice(3);
+    return NextResponse.redirect(url);
+  }
+
+  // Spanish tree: already maps to [lang]=es. Just keep the preference cookie.
+  if (pathname === "/es" || pathname.startsWith("/es/")) {
+    const res = NextResponse.next();
+    res.cookies.set(COOKIE, "es", COOKIE_OPTS);
     return res;
   }
 
-  // English tree. If the visitor previously chose Spanish, send them to /es so
-  // plain English internal links keep them in their language.
+  // English tree. Returning Spanish visitors are bounced to the /es equivalent.
   if (req.cookies.get(COOKIE)?.value === "es") {
     const url = req.nextUrl.clone();
     url.pathname = pathname === "/" ? "/es" : `/es${pathname}`;
@@ -55,13 +48,17 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next({
-    request: { headers: withLangHeaders(req, "en", pathname) },
-  });
+  // Rewrite the un-prefixed English path onto the [lang]=en tree, URL unchanged.
+  const url = req.nextUrl.clone();
+  url.pathname = pathname === "/" ? "/en" : `/en${pathname}`;
+  return NextResponse.rewrite(url);
 }
 
 export const config = {
-  // Run on page routes only — skip API routes, Next internals, and any file
-  // with an extension (sitemap.xml, robots.txt, icons, og image, etc.).
-  matcher: ["/((?!api|_next/static|_next/image|.*\\.[\\w]+$).*)"],
+  // Run on page routes only — skip API routes, Next internals, root metadata
+  // routes (sitemap/robots/manifest/opengraph-image/icon), and any file with an
+  // extension. These live outside the [lang] tree and must not be rewritten.
+  matcher: [
+    "/((?!api|_next/static|_next/image|opengraph-image|icon|apple-icon|manifest|sitemap|robots|.*\\.[\\w]+$).*)",
+  ],
 };

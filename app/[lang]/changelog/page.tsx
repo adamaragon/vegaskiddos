@@ -1,10 +1,18 @@
+import type { Metadata } from "next";
 import { CHANGELOG, type ChangeTag } from "@/lib/changelog";
 import { Reveal } from "@/components/Reveal";
 import { Sun, Star, Squiggle } from "@/components/Doodles";
-import { getLang } from "@/lib/lang-server";
-import { t } from "@/lib/i18n";
+import { t, type Lang } from "@/lib/i18n";
+import { langAlternates } from "@/lib/seo";
 
-export const metadata = { title: "What's New — Vegas Kiddos" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = (await params) as { lang: Lang };
+  return { title: "What's New — Vegas Kiddos", alternates: langAlternates(lang, "/changelog") };
+}
 
 const TAG_STYLE: Record<ChangeTag, string> = {
   Launch: "bg-coral-btn text-white",
@@ -20,8 +28,12 @@ function fmt(d: string, locale: string) {
   });
 }
 
-export default async function ChangelogPage() {
-  const lang = await getLang();
+export default async function ChangelogPage({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang } = (await params) as { lang: Lang };
   const locale = lang === "es" ? "es-US" : "en-US";
   return (
     <div className="relative mx-auto max-w-2xl px-4 py-10">

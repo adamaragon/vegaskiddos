@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getEvents } from "@/lib/data";
 import { EventBrowser } from "@/components/EventBrowser";
 import { ThisWeekNearYou } from "@/components/ThisWeekNearYou";
@@ -7,12 +8,11 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { SubscribeBox } from "@/components/SubscribeBox";
 import { JsonLd } from "@/components/JsonLd";
 import { Sun, Cloud, Star, Underline, Scribble } from "@/components/Doodles";
-import { getLang } from "@/lib/lang-server";
-import { t } from "@/lib/i18n";
+import { t, type Lang } from "@/lib/i18n";
+import { SITE, langAlternates } from "@/lib/seo";
 
 export const revalidate = 600;
 
-const SITE = "https://vegaskiddos.com";
 const siteLd = [
   {
     "@context": "https://schema.org",
@@ -32,8 +32,21 @@ const siteLd = [
   },
 ];
 
-export default async function HomePage() {
-  const lang = await getLang();
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = (await params) as { lang: Lang };
+  return { alternates: langAlternates(lang, "/") };
+}
+
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang } = (await params) as { lang: Lang };
   const events = await getEvents(lang);
 
   return (

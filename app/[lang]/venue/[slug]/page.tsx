@@ -6,13 +6,17 @@ import { venueSlug } from "@/lib/constants";
 import { EventCard } from "@/components/EventCard";
 import { JsonLd } from "@/components/JsonLd";
 import { nextOccurrenceISO } from "@/lib/recurrence";
-import { getLang } from "@/lib/lang-server";
+import { SITE, breadcrumbLd, langAlternates } from "@/lib/seo";
 import type { Lang } from "@/lib/i18n";
-import { SITE, breadcrumbLd } from "@/lib/seo";
 
-// Dynamic so the vk_lang cookie can switch venue pages to Spanish; the
-// Airtable fetch stays cached (revalidate: 600).
-export const dynamic = "force-dynamic";
+// Statically rendered per locale + cached (revalidate: 600). Venue slugs render
+// on demand and cache on first hit (too many to prebuild), so the build stays
+// fast and the Worker serves cached HTML instead of re-rendering each request.
+export const revalidate = 600;
+export const dynamicParams = true;
+export function generateStaticParams() {
+  return [];
+}
 
 async function venueEvents(slug: string, lang: Lang = "en") {
   const events = await getEvents(lang);
@@ -22,19 +26,19 @@ async function venueEvents(slug: string, lang: Lang = "en") {
   return { name: list[0]?.venue || "", list };
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params;
-  const { name } = await venueEvents(slug);
+export async function generateMetadata({ params }: { params: Promise<{ lang: string; slug: string }> }): Promise<Metadata> {
+  const { lang, slug } = (await params) as { lang: Lang; slug: string };
+  const { name } = await venueEvents(slug, lang);
   if (!name) return { title: "Venue — Vegas Kiddos" };
   return {
     title: `${name} — Kids events | Vegas Kiddos`,
     description: `Upcoming kid-friendly events at ${name} in Las Vegas.`,
+    alternates: langAlternates(lang, `/venue/${slug}`),
   };
 }
 
-export default async function VenuePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const lang = await getLang();
+export default async function VenuePage({ params }: { params: Promise<{ lang: string; slug: string }> }) {
+  const { lang, slug } = (await params) as { lang: Lang; slug: string };
   const { name, list } = await venueEvents(slug, lang);
   if (!name) notFound();
 

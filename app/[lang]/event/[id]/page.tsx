@@ -8,26 +8,29 @@ import { formatWhen, EventCard } from "@/components/EventCard";
 import { ShareButtons } from "@/components/ShareButtons";
 import { TrackedLink } from "@/components/TrackedLink";
 import { JsonLd } from "@/components/JsonLd";
-import { breadcrumbLd } from "@/lib/seo";
+import { breadcrumbLd, langAlternates } from "@/lib/seo";
 import { nextOccurrenceISO } from "@/lib/recurrence";
 import { AdminEventControls } from "@/components/AdminEventControls";
-import { getLang } from "@/lib/lang-server";
-import { t, ageLabel, priceLabel, hoodLabel } from "@/lib/i18n";
+import { t, ageLabel, priceLabel, hoodLabel, type Lang } from "@/lib/i18n";
 
-// Rendered dynamically so the vk_lang cookie can switch the page to Spanish.
-// The Airtable fetch underneath is still cached (revalidate: 600), so pages
-// stay fast and crawlers get fully server-rendered HTML.
-export const dynamic = "force-dynamic";
+// Statically rendered per locale + cached (revalidate: 600). Event ids render
+// on demand and cache on first hit (there are ~hundreds), so the build stays
+// fast and the Worker serves cached HTML instead of re-rendering each request.
+export const revalidate = 600;
+export const dynamicParams = true;
+export function generateStaticParams() {
+  return [];
+}
 
 const SITE = "https://vegaskiddos.com";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ lang: string; id: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
-  const event = await getEvent(id);
+  const { lang, id } = (await params) as { lang: Lang; id: string };
+  const event = await getEvent(id, lang);
   if (!event) return { title: "Event not found — Vegas Kiddos" };
   const hood = neighborhood(event.neighborhood);
   const desc =
@@ -45,16 +48,16 @@ export async function generateMetadata({
       images: [event.image || `${SITE}/opengraph-image`],
     },
     twitter: { card: "summary_large_image", title, description: desc },
+    alternates: langAlternates(lang, `/event/${id}`),
   };
 }
 
 export default async function EventPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ lang: string; id: string }>;
 }) {
-  const { id } = await params;
-  const lang = await getLang();
+  const { lang, id } = (await params) as { lang: Lang; id: string };
   const event = await getEvent(id, lang);
   if (!event) notFound();
 
