@@ -7,14 +7,19 @@ import webpush from "web-push";
 
 export const runtime = "nodejs";
 
-const PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY;
-const PRIVATE = process.env.VAPID_PRIVATE_KEY;
-if (PUBLIC && PRIVATE) {
-  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:hello@vegaskiddos.com", PUBLIC, PRIVATE);
+// Configure web-push lazily, inside the handler. Doing this at module scope ran
+// setVapidDetails() during `next build` page-data collection, which throws when
+// the build env's VAPID keys are absent/malformed and fails the whole build.
+function configureWebpush(): boolean {
+  const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY;
+  const priv = process.env.VAPID_PRIVATE_KEY;
+  if (!pub || !priv) return false;
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:hello@vegaskiddos.com", pub, priv);
+  return true;
 }
 
 export async function POST(req: Request) {
-  if (!PUBLIC || !PRIVATE) return NextResponse.json({ error: "Push not configured." }, { status: 503 });
+  if (!configureWebpush()) return NextResponse.json({ error: "Push not configured." }, { status: 503 });
   const b = (await req.json().catch(() => ({}))) as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
   if (!b.endpoint || !b.keys?.p256dh || !b.keys?.auth) {
     return NextResponse.json({ error: "Missing subscription." }, { status: 400 });
