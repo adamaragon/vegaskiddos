@@ -22,6 +22,7 @@ export const STRINGS = {
   nav_about: { en: "About", es: "Acerca de" },
   nav_add: { en: "+ Add an event", es: "+ Añadir evento" },
   nav_add_short: { en: "+ Add", es: "+ Añadir" },
+  nav_donate: { en: "Donate", es: "Donar" },
   // hero
   hero_title: { en: "Kid-safe fun, all over Las Vegas.", es: "Diversión segura para niños, por todo Las Vegas." },
   hero_sub: {

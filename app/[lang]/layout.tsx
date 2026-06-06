@@ -105,6 +105,14 @@ export default async function RootLayout({
               </p>
               <p className="mt-2 text-sm text-ink/70">{t(lang, "foot_tagline")}</p>
               <div className="mt-3"><LangToggle lang={lang} /></div>
+              <div className="mt-4">
+                <Link
+                  href="/donate"
+                  className="hover-pop inline-flex items-center gap-1.5 rounded-full bg-sunny px-4 py-2 font-800 text-ink shadow-pop ring-1 ring-coral/30 transition hover:bg-sunny-dark"
+                >
+                  🧃 {t(lang, "nav_donate")}
+                </Link>
+              </div>
             </div>
             <nav className="text-sm">
               <p className="font-display font-600 text-ink/80">{t(lang, "foot_explore")}</p>
@@ -133,7 +141,6 @@ export default async function RootLayout({
               <ul className="mt-2 space-y-1.5 text-ink/70">
                 {[
                   ["/submit", "Add an event"],
-                  ["/donate", "Support us"],
                   ["/contact", "Contact & feedback"],
                   ["/style-guide", "Style guide"],
                   ["/admin", "Admin"],

@@ -41,6 +41,14 @@ export function Header({ lang = "en" }: { lang?: Lang }) {
           </Link>
           <LangToggle lang={lang} />
           <Link
+            href="/donate"
+            aria-label={t(lang, "nav_donate")}
+            className="hover-pop whitespace-nowrap rounded-full bg-sunny px-3 py-2 text-ink shadow-pop ring-1 ring-coral/30 transition hover:bg-sunny-dark sm:px-4"
+          >
+            <span className="sm:hidden">🧃</span>
+            <span className="hidden font-800 sm:inline">🧃 {t(lang, "nav_donate")}</span>
+          </Link>
+          <Link
             href="/submit"
             className="whitespace-nowrap rounded-full bg-coral-btn px-4 py-2 text-white shadow-pop transition hover:bg-coral-dark"
           >
