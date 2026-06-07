@@ -11,6 +11,7 @@ import {
   neighborhoodFromZip,
   stripHtml,
 } from "../classify";
+import { fetchJsonRetry } from "../http";
 
 interface TribeEvent {
   global_id: string;
@@ -54,19 +55,22 @@ export function makeTribeAdapter(opts: {
 
     for (let page = 1; page <= pages; page++) {
       const url = `${opts.apiBase}?per_page=${perPage}&page=${page}&start_date=${today}`;
+      let data: { events?: TribeEvent[] } | "PAST_END";
       try {
-        const res = await fetch(url, {
-          headers: { "User-Agent": "VegasKiddos/1.0 (+https://vegaskiddos.com)" },
-        });
-        if (!res.ok) {
-          if (res.status === 400) break; // past last page
-          errors.push(`page ${page}: HTTP ${res.status}`);
-          continue;
-        }
-        const data = (await res.json()) as { events?: TribeEvent[] };
-        const batch = data.events || [];
-        if (!batch.length) break;
+        data = await fetchJsonRetry<{ events?: TribeEvent[] }>(
+          url,
+          { headers: { "User-Agent": "VegasKiddos/1.0 (+https://vegaskiddos.com)" } },
+          { retries: 3, pastEndStatus: 400 }, // Tribe returns 400 past the last page
+        );
+      } catch (err) {
+        errors.push(`page ${page}: ${(err as Error).message}`);
+        continue;
+      }
+      if (data === "PAST_END") break;
+      const batch = data.events || [];
+      if (!batch.length) break;
 
+      {
         for (const e of batch) {
           const title = stripHtml(e.title);
           if (/cancell|postpone|sold out/i.test(title)) continue;
@@ -99,8 +103,6 @@ export function makeTribeAdapter(opts: {
             source: opts.source,
           });
         }
-      } catch (err) {
-        errors.push(`page ${page}: ${(err as Error).message}`);
       }
     }
     return { source: opts.source, events, errors };

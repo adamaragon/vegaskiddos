@@ -11,6 +11,7 @@
 
 import type { ScrapedEvent, SourceResult } from "../types";
 import { classifyAges, isKidRelevant, neighborhoodFromZip, stripHtml } from "../classify";
+import { fetchJsonRetry } from "../http";
 
 const SOURCE = "Nevada Moms";
 const AJAX = "https://nvmoms.com/wp-admin/admin-ajax.php";
@@ -102,16 +103,22 @@ export async function fetchNevadaMoms(opts?: { days?: number }): Promise<SourceR
         "atts[show_only_one_occurrence]": "1",
         mec_start_date: start,
       });
-      const res = await fetch(AJAX, {
-        method: "POST",
-        headers: { "User-Agent": UA, "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      });
-      if (!res.ok) {
-        errors.push(`HTTP ${res.status} @ ${start}`);
+      let result: { html?: string } | "PAST_END";
+      try {
+        result = await fetchJsonRetry<{ html?: string }>(
+          AJAX,
+          {
+            method: "POST",
+            headers: { "User-Agent": UA, "Content-Type": "application/x-www-form-urlencoded" },
+            body,
+          },
+          { retries: 3 },
+        );
+      } catch (err) {
+        errors.push(`${(err as Error).message} @ ${start}`);
         continue;
       }
-      const json = (await res.json()) as { html?: string };
+      const json = result === "PAST_END" ? {} : result;
       for (const art of parseArticles(json.html || "")) {
         if (seen.has(art.id)) continue;
         seen.add(art.id);
