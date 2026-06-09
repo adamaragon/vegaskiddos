@@ -51,15 +51,17 @@ function rand(seed: number) {
   };
 }
 
-function RainDrops({ count = 28, intensity = 1 }: { count?: number; intensity?: number }) {
+function RainDrops({ count = 40, intensity = 1 }: { count?: number; intensity?: number }) {
   const drops = useMemo(() => {
     const r = rand(7 + count);
+    // Bias drops toward the right ~85% so the fading edge stays sparse instead
+    // of wasting particles in the masked-out region.
     return Array.from({ length: count }).map(() => ({
-      left: r() * 100,
+      left: 15 + r() * 85,
       delay: r() * 1.6,
       duration: 0.6 + r() * 0.5,
-      height: 12 + r() * 16,
-      opacity: 0.35 + r() * 0.4 * intensity,
+      height: 14 + r() * 18,
+      opacity: 0.45 + r() * 0.4 * intensity,
     }));
   }, [count, intensity]);
   return (
@@ -80,14 +82,14 @@ function RainDrops({ count = 28, intensity = 1 }: { count?: number; intensity?: 
   );
 }
 
-function SnowFlakes({ count = 20 }: { count?: number }) {
+function SnowFlakes({ count = 30 }: { count?: number }) {
   const flakes = useMemo(() => {
     const r = rand(13 + count);
     return Array.from({ length: count }).map(() => ({
-      left: r() * 100,
+      left: 10 + r() * 90,
       delay: r() * 6,
       duration: 5 + r() * 5,
-      size: 4 + r() * 5,
+      size: 5 + r() * 6,
     }));
   }, [count]);
   return (
@@ -136,17 +138,18 @@ function WindWisps() {
   );
 }
 
-// Right-half mask so all effects fade into the corner instead of running edge-
-// to-edge across the title. mask-image creates a smooth horizontal falloff.
+// Particles run full-strength across the right ~half of the banner, then taper
+// off so the title on the far left stays readable. mask-image gives a smooth
+// horizontal falloff — full visibility 0-55% from the right, fading out by
+// 95% so only the leftmost title margin is clean.
 function RightFade({ children }: { children: React.ReactNode }) {
+  const mask =
+    "linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0.65) 78%, rgba(0,0,0,0.2) 92%, rgba(0,0,0,0) 100%)";
   return (
     <div
       aria-hidden
       className="pointer-events-none absolute inset-0 overflow-hidden"
-      style={{
-        maskImage: "linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.35) 70%, rgba(0,0,0,0) 100%)",
-        WebkitMaskImage: "linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.35) 70%, rgba(0,0,0,0) 100%)",
-      }}
+      style={{ maskImage: mask, WebkitMaskImage: mask }}
     >
       {children}
     </div>
@@ -157,7 +160,7 @@ function moodEffects(mood: Mood) {
   if (mood === "storm") {
     return (
       <RightFade>
-        <RainDrops count={36} intensity={1.2} />
+        <RainDrops count={52} intensity={1.3} />
         <div
           className="wx-flash absolute inset-0 bg-white"
           style={{ animation: "wx-flash 8s ease-in-out infinite" }}

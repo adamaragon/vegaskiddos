@@ -159,7 +159,7 @@ export function WeatherPill() {
       {/* Larger spinning decorative doodle, tucked under the pill. Changes
           glyph by mood so the hero still has a hand-drawn flourish. */}
       <Doodle
-        className={`pointer-events-none absolute right-6 top-28 z-10 h-24 w-24 opacity-45 sm:h-28 sm:w-28 ${HOT_MOODS.includes(w.mood) ? "animate-spin-slow" : "animate-float"}`}
+        className={`pointer-events-none absolute right-6 top-20 z-10 h-24 w-24 opacity-45 sm:h-28 sm:w-28 ${HOT_MOODS.includes(w.mood) ? "animate-spin-slow" : "animate-float"}`}
         color="#FFFFFF"
       />
     </>
