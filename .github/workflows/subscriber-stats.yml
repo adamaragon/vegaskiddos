@@ -1,0 +1,24 @@
+name: Weekly subscriber stats
+
+# Emails Adam a subscriber snapshot every Monday morning.
+
+on:
+  schedule:
+    - cron: "0 15 * * 1" # Mondays 08:00 PT
+  workflow_dispatch: {}
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Send subscriber stats
+        env:
+          AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_FROM: ${{ secrets.DIGEST_FROM }}
+          STATS_TO: adam@threesided.com
+        run: node tools/subscriber-stats.mjs
