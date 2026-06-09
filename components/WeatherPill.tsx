@@ -101,6 +101,20 @@ export function WeatherPill() {
     return () => { cancelled = true; };
   }, []);
 
+  // Publish the active mood to <html> so sibling components (e.g. the hero
+  // canvas dino) can adapt via CSS — drop-shadow halo against cool moods
+  // where the warm-toned model washes out.
+  useEffect(() => {
+    if (!w) return;
+    const root = document.documentElement;
+    const prev = root.dataset.wx;
+    root.dataset.wx = w.mood;
+    return () => {
+      if (prev) root.dataset.wx = prev;
+      else delete root.dataset.wx;
+    };
+  }, [w]);
+
   // SSR + initial paint: fall back to the original decorative sun so the hero
   // never looks empty while we wait for the fetch.
   if (!w) {

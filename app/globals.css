@@ -161,6 +161,35 @@ body {
   }
 }
 
+/* Hero dino halo. The warm-toned Three.js model washes out against the cool
+   mood overlays (rainy/storm/snow/cold/etc), so paint a soft warm rim glow
+   around his silhouette via drop-shadow — applied to the canvas element so
+   it traces the actual alpha edge. Skipped for warm/neutral moods where the
+   coral hero already lights him fine. */
+.hero-canvas {
+  transition: filter 0.7s ease;
+}
+[data-wx="cloudy"] .hero-canvas,
+[data-wx="fog"] .hero-canvas,
+[data-wx="chilly"] .hero-canvas,
+[data-wx="cold"] .hero-canvas,
+[data-wx="rainy"] .hero-canvas,
+[data-wx="snow"] .hero-canvas {
+  filter:
+    drop-shadow(0 0 12px rgba(255,220,160,0.55))
+    drop-shadow(0 0 5px rgba(255,220,160,0.45))
+    saturate(1.15);
+}
+[data-wx="storm"] .hero-canvas {
+  /* Storm bg is darker (grape-ink) — push the glow a touch brighter so the
+     dino reads as lit rather than absorbed. */
+  filter:
+    drop-shadow(0 0 16px rgba(255,235,180,0.7))
+    drop-shadow(0 0 7px rgba(255,235,180,0.55))
+    saturate(1.2)
+    contrast(1.05);
+}
+
 /* Scroll reveal (toggled by Reveal.tsx) */
 .reveal {
   opacity: 0;

@@ -166,5 +166,5 @@ export function HeroCanvas() {
     };
   }, []);
 
-  return <div ref={mountRef} className="absolute inset-0 -z-0" aria-hidden />;
+  return <div ref={mountRef} className="hero-canvas absolute inset-0 -z-0" aria-hidden />;
 }
