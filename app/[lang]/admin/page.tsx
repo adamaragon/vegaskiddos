@@ -51,7 +51,7 @@ export default function AdminPage() {
     const res = await fetch("/api/admin/subscribers");
     if (res.status === 401) { setAuthed(false); setSubLoading(false); return; }
     setAuthed(true);
-    setSubStats(await res.json());
+    if (res.ok) setSubStats(await res.json());
     setSubLoading(false);
   }, []);
 
@@ -192,16 +192,18 @@ export default function AdminPage() {
           {subStats && (
             <>
               <div className="grid grid-cols-3 gap-3 mb-4">
-                {[
-                  { label: "Active", value: subStats.total, color: "text-teal-btn" },
-                  { label: "This week", value: subStats.newThisWeek, color: "text-coral-btn" },
-                  { label: "This month", value: subStats.newThisMonth, color: "text-grape" },
-                ].map(({ label, value, color }) => (
-                  <div key={label} className="rounded-blob border border-ink/10 bg-white p-4 text-center shadow-card">
-                    <div className={`font-display text-4xl font-800 ${color}`}>{value}</div>
-                    <div className="mt-1 text-xs font-700 text-ink/60">{label}</div>
-                  </div>
-                ))}
+                <div className="rounded-blob border border-ink/10 bg-white p-4 text-center shadow-card">
+                  <div className="font-display text-4xl font-800 text-teal-btn">{subStats.total}</div>
+                  <div className="mt-1 text-xs font-700 text-ink/70">Active</div>
+                </div>
+                <div className="rounded-blob border border-ink/10 bg-white p-4 text-center shadow-card">
+                  <div className="font-display text-4xl font-800 text-coral-btn">{subStats.newThisWeek}</div>
+                  <div className="mt-1 text-xs font-700 text-ink/70">This week</div>
+                </div>
+                <div className="rounded-blob border border-ink/10 bg-white p-4 text-center shadow-card">
+                  <div className="font-display text-4xl font-800 text-grape">{subStats.newThisMonth}</div>
+                  <div className="mt-1 text-xs font-700 text-ink/70">This month</div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
@@ -237,13 +239,13 @@ export default function AdminPage() {
                 <div className="px-4 py-3 border-b border-ink/10">
                   <h3 className="text-xs font-700 text-ink/50 uppercase tracking-wider">Recent signups</h3>
                 </div>
-                <div className="divide-y divide-ink/5">
+                <div className="divide-y divide-ink/10">
                   {subStats.recent.map((s, i) => (
                     <div key={i} className="flex items-center gap-3 px-4 py-2.5 text-sm">
                       <span className="flex-1 truncate font-600 text-ink">{s.email}</span>
                       <span className="text-xs text-ink/50 capitalize hidden sm:inline">{s.neighborhood || "any"}</span>
                       <span className="text-xs font-800 text-grape shrink-0">{s.lang.toUpperCase()}</span>
-                      <span className="text-xs text-ink/40 shrink-0">
+                      <span className="text-xs text-ink/50 shrink-0">
                         {s.subscribedAt
                           ? new Date(s.subscribedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Los_Angeles" })
                           : "—"}
