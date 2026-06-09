@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEvent, getEvents } from "@/lib/data";
@@ -136,27 +137,66 @@ export default async function EventPage({
       </div>
 
       <div className="mt-4 overflow-hidden rounded-blob border border-ink/10 bg-white shadow-card">
-        <div className="bg-gradient-to-br from-teal to-grape p-8 text-white">
-          <p className="text-sm font-700 uppercase tracking-wide text-white/80">
-            {event.recurrence ? `${t(lang, "ev_next")} ` : ""}{formatWhen(whenStart)}
-            {event.end && !event.recurrence ? ` – ${formatWhen(event.end).split(", ").pop()}` : ""}
-          </p>
-          {event.recurrence && (
-            <span className="mt-2 inline-block rounded-full bg-white/25 px-3 py-1 text-sm font-800">
-              {t(lang, "ev_repeats")} {event.recurrence}
-            </span>
-          )}
-          <h1 className="mt-2 font-display text-3xl font-700 sm:text-4xl">
-            {event.title}
-          </h1>
-          <p className="mt-2 text-white/90">
-            📍 {event.venue ? (
-              <Link href={`/venue/${venueSlug(event.venue)}`} className="underline decoration-white/40 underline-offset-2 hover:decoration-white">
-                {event.venue}
-              </Link>
-            ) : "Las Vegas"}
-          </p>
-        </div>
+        {event.image ? (
+          // Hero treatment when we have the event art: full-bleed image with a
+          // dark-bottom gradient scrim so the title sits on top of its own
+          // palette. The aspect matches the generated 1536×1024 art so nothing
+          // gets cropped on the card.
+          <div className="relative aspect-[3/2] w-full overflow-hidden bg-sand">
+            <Image
+              src={event.image}
+              alt={event.venue ? `${event.title} — ${event.venue}` : event.title}
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 768px"
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/30 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 text-white">
+              <p className="text-sm font-700 uppercase tracking-wide text-white/90">
+                {event.recurrence ? `${t(lang, "ev_next")} ` : ""}{formatWhen(whenStart)}
+                {event.end && !event.recurrence ? ` – ${formatWhen(event.end).split(", ").pop()}` : ""}
+              </p>
+              {event.recurrence && (
+                <span className="mt-2 inline-block rounded-full bg-white/25 px-3 py-1 text-sm font-800 backdrop-blur-sm">
+                  {t(lang, "ev_repeats")} {event.recurrence}
+                </span>
+              )}
+              <h1 className="mt-2 font-display text-3xl font-700 drop-shadow-md sm:text-4xl">
+                {event.title}
+              </h1>
+              <p className="mt-2 text-white/95 drop-shadow">
+                📍 {event.venue ? (
+                  <Link href={`/venue/${venueSlug(event.venue)}`} className="underline decoration-white/50 underline-offset-2 hover:decoration-white">
+                    {event.venue}
+                  </Link>
+                ) : "Las Vegas"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gradient-to-br from-teal to-grape p-8 text-white">
+            <p className="text-sm font-700 uppercase tracking-wide text-white/80">
+              {event.recurrence ? `${t(lang, "ev_next")} ` : ""}{formatWhen(whenStart)}
+              {event.end && !event.recurrence ? ` – ${formatWhen(event.end).split(", ").pop()}` : ""}
+            </p>
+            {event.recurrence && (
+              <span className="mt-2 inline-block rounded-full bg-white/25 px-3 py-1 text-sm font-800">
+                {t(lang, "ev_repeats")} {event.recurrence}
+              </span>
+            )}
+            <h1 className="mt-2 font-display text-3xl font-700 sm:text-4xl">
+              {event.title}
+            </h1>
+            <p className="mt-2 text-white/90">
+              📍 {event.venue ? (
+                <Link href={`/venue/${venueSlug(event.venue)}`} className="underline decoration-white/40 underline-offset-2 hover:decoration-white">
+                  {event.venue}
+                </Link>
+              ) : "Las Vegas"}
+            </p>
+          </div>
+        )}
 
         <div className="p-6 sm:p-8">
           <div className="flex flex-wrap gap-2">

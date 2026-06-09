@@ -7,7 +7,8 @@
 //   node tools/gen-event-art.mjs batch [--limit n]  → generate + upload
 //   add --dry-run to list the selection + prompts only
 //
-// Env: OPENAI_API_KEY, AIRTABLE_TOKEN, AIRTABLE_BASE_ID, [GEN_QUALITY].
+// Env: OPENAI_API_KEY, AIRTABLE_TOKEN, AIRTABLE_BASE_ID, [GEN_QUALITY], [GEN_SIZE].
+// gpt-image-1 sizes: 1024x1024 | 1536x1024 (landscape) | 1024x1536 — no true 16:9.
 import fs from "node:fs";
 
 try {
@@ -20,6 +21,7 @@ try {
 const OPENAI = process.env.OPENAI_API_KEY;
 const AT = process.env.AIRTABLE_TOKEN, BASE = process.env.AIRTABLE_BASE_ID;
 const QUALITY = process.env.GEN_QUALITY || "medium";
+const SIZE = process.env.GEN_SIZE || "1536x1024";
 if (!AT || !BASE) { console.error("AIRTABLE_TOKEN / AIRTABLE_BASE_ID required"); process.exit(1); }
 
 const mode = (process.argv[2] || "sample").toLowerCase();
@@ -66,45 +68,88 @@ function subjectFor(text) {
 }
 
 // Deterministic per-event variation so events that share a subject (e.g. many
-// storytimes) still get visibly different art.
-const VARIANTS = {
-  layout: [
-    "a single centered scene",
-    "a playful flat-lay arrangement of elements",
-    "a rounded badge / emblem composition",
-    "a wide horizontal banner scene",
-    "an isometric mini-diorama",
-    "a cluster of elements bursting from one corner",
-  ],
-  dominant: ["coral red", "teal", "sunny yellow", "grape purple"],
-  accent: [
-    "a tiny saguaro cactus in a corner",
-    "a smiling sun peeking in",
-    "a couple of soft rounded clouds",
-    "scattered confetti dots",
-    "a sprinkle of little stars",
-    "small rolling desert dunes",
-  ],
-  mood: ["bold and graphic", "soft and rounded", "geometric and modern", "whimsical and hand-drawn"],
-};
+// storytimes) still get visibly different art. Each axis is sampled with a
+// distinct hash salt so two events rarely share more than one trait.
+
+// Color palettes. All stay family-friendly and harmonious; first one is the
+// brand classic so the look stays recognizable. The rest are coherent themes
+// rather than random brand-color mixes — gives each event its own little world.
+const PALETTES = [
+  "the Vegas Kiddos brand palette of coral red, teal, sunny yellow, and grape purple on warm sand",
+  "a desert-sunset palette of peach, dusty coral, marigold gold, and soft lavender",
+  "a soft pastel palette of mint, blush pink, cream, baby blue, and lilac",
+  "a crayon-bright palette of primary red, royal blue, banana yellow, and leaf green",
+  "an ocean-and-sand palette of sea green, sky blue, sandy cream, and soft coral",
+  "a jungle-pop palette of emerald green, lime, marigold, and sunset orange",
+  "a watermelon palette of bright pink, mint green, kiwi, and warm cream",
+  "a storybook muted palette of slate blue, dusty rose, mustard, and ivory",
+  "a sherbet palette of strawberry pink, orange creamsicle, lemon, and pistachio",
+  "a desert-monsoon palette of teal, plum, sage, and soft terracotta",
+];
+
+// Art styles — all rounded and kid-friendly; style mostly affects texture and
+// edge quality, not subject matter, so the brand "playful" feeling stays.
+const STYLES = [
+  "Flat vector children's illustration with crisp clean shapes",
+  "Cut-paper collage illustration with subtle visible paper textures and slightly imperfect edges",
+  "Soft gouache children's-book illustration with gentle brush texture and slightly painterly edges",
+  "Crayon-textured kids'-book illustration with soft waxy edges and a hint of grain",
+  "Bold rounded geometric illustration with simple stacked shapes, very minimal",
+  "Storybook watercolor illustration with soft washy edges and tiny ink outlines",
+  "Risograph-inspired children's illustration with two-tone grainy textures and slight color offsets",
+];
+
+const LAYOUTS = [
+  "a single centered scene",
+  "a playful flat-lay arrangement of elements",
+  "a rounded badge / emblem composition",
+  "a wide horizontal banner scene",
+  "an isometric mini-diorama",
+  "a cluster of elements bursting from one corner",
+  "an off-center asymmetric composition with negative space",
+  "a scattered confetti-like arrangement of small motifs",
+];
+
+const ACCENTS = [
+  "a tiny saguaro cactus in a corner",
+  "a smiling sun peeking in",
+  "a couple of soft rounded clouds",
+  "scattered confetti dots",
+  "a sprinkle of little stars",
+  "small rolling desert dunes",
+  "a few tiny floating hearts",
+  "a small rainbow arc",
+  "a couple of tiny paper airplanes",
+  "a sprinkle of leafy doodles",
+];
+
+const BACKGROUNDS = [
+  "a clean warm-sand background",
+  "a soft pastel gradient background that matches the palette",
+  "a subtle polka-dot patterned background in two tones of the palette",
+  "a clean cream background with a faint half-circle of color rising from the bottom",
+  "a clean background with a few oversized soft-blurred color blobs behind the subject",
+];
+
 const hashStr = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; };
 const pickV = (arr, h, salt) => arr[(h + salt) % arr.length];
 
 function promptFor(f, id = "") {
   const subject = subjectFor(`${f.Title} ${f.Description || ""}`);
   const h = hashStr(id || f.Title || "");
-  const layout = pickV(VARIANTS.layout, h, 1);
-  const dominant = pickV(VARIANTS.dominant, h, 2);
-  const accent = pickV(VARIANTS.accent, h, 3);
-  const mood = pickV(VARIANTS.mood, h, 4);
-  return `Flat vector children's illustration of ${subject}, composed as ${layout}. Style: ${mood}, simple rounded shapes, clean warm-sand background. Use the brand palette (coral red, teal, sunny yellow, grape purple) with ${dominant} as the dominant accent. Include ${accent}. Friendly and playful, designed as a thumbnail for a kids' events website. Absolutely no text, no letters, no words, and no real human faces, no photorealism. Comfortable margins.`;
+  const style = pickV(STYLES, h, 1);
+  const palette = pickV(PALETTES, h, 2);
+  const layout = pickV(LAYOUTS, h, 3);
+  const accent = pickV(ACCENTS, h, 4);
+  const background = pickV(BACKGROUNDS, h, 5);
+  return `${style} of ${subject}, composed as ${layout}. Use ${palette}. Background: ${background}. Include ${accent}. Wide horizontal banner — keep the main subject centered so it crops cleanly for link previews and card thumbnails. Friendly, playful, child-appropriate. Absolutely no text, no letters, no words, no real human faces, no photorealism. Comfortable side margins.`;
 }
 
 async function generate(prompt) {
   const r = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: { Authorization: `Bearer ${OPENAI}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "gpt-image-1", prompt, size: "1536x1024", quality: QUALITY, n: 1 }),
+    body: JSON.stringify({ model: "gpt-image-1", prompt, size: SIZE, quality: QUALITY, n: 1 }),
   });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(`OpenAI ${r.status}: ${JSON.stringify(data).slice(0, 300)}`);
@@ -135,7 +180,7 @@ try {
   throw e;
 }
 
-console.log(`${recs.length} approved event(s) with no image yet. Mode: ${mode}, quality: ${QUALITY}${DRY ? " (dry-run)" : ""}.`);
+console.log(`${recs.length} approved event(s) with no image yet. Mode: ${mode}, size: ${SIZE}, quality: ${QUALITY}${DRY ? " (dry-run)" : ""}.`);
 
 if (DRY) {
   for (const r of recs.slice(0, 40)) console.log(`  • ${r.fields.Title}\n      ${promptFor(r.fields, r.id).slice(0, 110)}…`);

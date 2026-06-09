@@ -14,3 +14,7 @@ SECRETS.local.md
 .dev.vars
 .wrangler
 cloudflare-env.d.ts
+
+# Art generator sample output (preview before batch upload)
+art-samples
+art-samples-*
