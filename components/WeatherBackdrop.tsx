@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { Cloud } from "@/components/Doodles";
 
 // Mood-specific animated overlays for the hero banner. All effects fade into
 // the right half of the banner so the title on the left stays fully readable.
@@ -111,6 +112,39 @@ function SnowFlakes({ count = 30 }: { count?: number }) {
   );
 }
 
+function CloudPuffs({ count = 5, dense = false }: { count?: number; dense?: boolean }) {
+  const puffs = useMemo(() => {
+    const r = rand(41 + count + (dense ? 1 : 0));
+    return Array.from({ length: count }).map(() => ({
+      top: 5 + r() * 75,             // spread across the banner height
+      delay: r() * 18,                // stagger so they don't enter together
+      duration: 18 + r() * 14,        // slow drift, 18-32s
+      widthPx: 60 + r() * 90,         // 60-150px wide cloud
+      opacity: (dense ? 0.6 : 0.45) + r() * 0.25,
+    }));
+  }, [count, dense]);
+  return (
+    <>
+      {puffs.map((p, i) => (
+        <div
+          key={i}
+          className="wx-drift pointer-events-none absolute"
+          style={{
+            top: `${p.top}%`,
+            opacity: p.opacity,
+            animation: `wx-drift ${p.duration}s linear ${p.delay}s infinite`,
+          }}
+        >
+          <Cloud
+            color="#FFFFFF"
+            style={{ width: `${p.widthPx}px`, height: "auto" }}
+          />
+        </div>
+      ))}
+    </>
+  );
+}
+
 function WindWisps() {
   const wisps = useMemo(() => {
     const r = rand(29);
@@ -199,17 +233,20 @@ function moodEffects(mood: Mood) {
       </RightFade>
     );
   }
-  if (mood === "cloudy" || mood === "fog") {
+  if (mood === "fog") {
+    // Tangible cloud bank: lots of overlapping puffs at varying sizes and
+    // depths so the banner looks soft-buried in cloud rather than just dim.
     return (
       <RightFade>
-        <div
-          className="wx-fog absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse at 80% 40%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 40%, transparent 70%)",
-            animation: "wx-fog 8s ease-in-out infinite",
-          }}
-        />
+        <CloudPuffs count={7} dense />
+      </RightFade>
+    );
+  }
+  if (mood === "cloudy") {
+    // Lighter scattering — a few cloud shapes lazily drifting through.
+    return (
+      <RightFade>
+        <CloudPuffs count={4} />
       </RightFade>
     );
   }
