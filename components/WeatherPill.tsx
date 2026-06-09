@@ -117,7 +117,7 @@ export function WeatherPill() {
   const showIndoorHint = INDOOR_LINK_MOODS.includes(w.mood);
   const pillBody = (
     <>
-      <span className="text-2xl leading-none sm:text-3xl" aria-hidden>{w.emoji}</span>
+      <span className="text-base leading-none sm:text-lg" aria-hidden>{w.emoji}</span>
       <span className="leading-none">{label} · {w.tempF}°F</span>
       {showIndoorHint && (
         <span className="hidden font-700 text-ink/60 sm:inline">· {tr("wx_indoor_hint")}</span>
@@ -129,7 +129,7 @@ export function WeatherPill() {
   // (bright sun, dark storm, snow). The ring keeps the edge crisp on the
   // colorful hero gradient.
   const pillBase =
-    "inline-flex items-center gap-2.5 rounded-full bg-white/85 px-5 py-3 text-lg font-800 text-ink shadow-pop ring-1 ring-ink/10 backdrop-blur-md sm:gap-3 sm:px-6 sm:py-3.5 sm:text-xl";
+    "inline-flex items-center gap-2 rounded-full bg-white/85 px-3.5 py-2 text-base font-800 text-ink shadow-pop ring-1 ring-ink/10 backdrop-blur-md sm:px-4 sm:py-2.5 sm:text-lg";
 
   return (
     <>
