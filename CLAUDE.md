@@ -5,26 +5,40 @@ filterable by age, price, and neighborhood. By Adam & Michelle Aragon under
 Threesided Studios.
 
 - **Live:** https://vegaskiddos.com · **Repo:** GitHub `adamaragon/vegaskiddos` (private)
-- **Netlify:** site `vegaskiddos`, project id `d5375712-aa44-44a4-be14-947b942d26e7`
+- **Host: Cloudflare Workers** (OpenNext). Worker name `vegaskiddos`,
+  account `Adam@threesided.com's Account`. Worker URL:
+  `https://vegaskiddos.threesided.workers.dev`. The R2 bucket
+  `vegaskiddos-cache` backs the Next incremental cache; `img.vegaskiddos.com`
+  is a separate R2 bucket (`vegaskiddos-media`) for synced event images.
+  **NOT Netlify** — site moved off Netlify; pushing to `main` does NOT auto-
+  deploy. Old Netlify site id `d5375712-aa44-44a4-be14-947b942d26e7` referenced
+  in `tools/send-digest.mjs` and a couple of workflows is historical; the
+  Cloudflare R2 sync is what actually moves images to production.
 - **Dev port:** **3100** (`next dev -p 3100`) — port 3000 is dndcards
 - **Full handoff / deep context:** `_Claude/Projects/VegasKiddos.md` in the
   Obsidian vault (`~/Dropbox/Apps/Obsidian/Obsidian Vault/`). Read it first.
 
 ## ⚠️ Working rules (read before doing anything)
 
-1. **Deploy ONLY on explicit request.** Pushing to `main` triggers a Netlify CD
-   build, and the site is near its data caps. → Commit locally, build/preview
-   locally, **hold `git push` until Adam says "deploy."**
+1. **Deploy ONLY on explicit request.** Deploys are manual via
+   `npm run cf:deploy` (OpenNext build → `wrangler deploy`). Needs
+   `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` env vars (token in
+   vault `Logins & Passwords/Hermes-Keys.md ## Cloudflare`). Pushing to
+   `main` does NOT deploy on its own — no Cloudflare GH Actions workflow
+   exists yet. → Commit + push freely; hold `npm run cf:deploy` until Adam
+   says "deploy."
 2. **After each batch, give Adam a localhost:3100 preview link** to review before
-   deploying. Don't run `next build` while the dev server is up (they fight over
-   `.next`); use `npx tsc --noEmit` to typecheck during a preview.
+   deploying. Don't run `next build` (or `npm run cf:deploy`) while the dev
+   server is up — they fight over `.next` → 500s. Use `npx tsc --noEmit` to
+   typecheck during a preview. Kill the dev server before any deploy build.
 3. **Never add `Co-Authored-By: Claude`** (or any AI attribution) to commits/PRs.
 4. **Autopilot:** execute multi-step tasks end-to-end; only pause for genuinely
    destructive actions (mass deletes, force-push, branch deletion).
 5. **Show files/SQL inline** in chat; don't make Adam hunt for paths.
 6. **Airtable, not Supabase** (Adam runs enough Supabase projects).
-7. Sandbox blocks `gh`/`netlify` TLS, `git push`, localhost `listen`, and external
-   API hosts (airtable/openai/resend) — run those with the sandbox disabled.
+7. Sandbox blocks `gh` TLS, `git push`, `wrangler`, localhost `listen`, and
+   external API hosts (airtable/openai/resend/cloudflare) — run those with
+   the sandbox disabled.
 
 ## Stack
 
@@ -32,7 +46,7 @@ Next.js 15 (App Router, React 19) · Tailwind v3 (desert-sunset theme: coral
 `#FF6B5E` / sunny `#FFC93C` / teal `#23C4B5` / grape `#7B5EA7` / ink `#2D2A32`;
 fonts Fredoka + Nunito) · plain Leaflet + markercluster (no react-leaflet —
 React 19 peer issues) · Three.js hero · **Airtable as DB + admin panel** ·
-Netlify host · Node 22.
+**Cloudflare Workers host (OpenNext)** · Node 22.
 
 ## Data
 
@@ -53,9 +67,37 @@ heading, description, emoji, predicate) and create `app/<slug>/page.tsx` mirrori
 an existing one (e.g. `app/beat-the-heat/page.tsx`). `/es` versions and hreflang
 come for free via `middleware.ts`.
 
-## Deploy gotchas
+## Deploy (Cloudflare Workers via OpenNext)
 
-- Confirm `netlify status` shows **vegaskiddos** before any CLI deploy (a stray
-  `~/.netlify/state.json` can point at dndcards).
-- Verify deploys: `curl vegaskiddos.com/sitemap.xml | grep -c /event/`
-  (hundreds, not 12 — 12 means it fell back to seed data on an Airtable 401).
+```bash
+# One-time per shell: export CF creds (token in vault Hermes-Keys.md)
+export CLOUDFLARE_API_TOKEN=<token>
+export CLOUDFLARE_ACCOUNT_ID=7f5f54b5b6d1f046e6025bfcc4053982
+
+# Stop the dev server first (they fight over .next), then:
+npm run cf:deploy
+```
+
+This runs `opennextjs-cloudflare build` → `opennextjs-cloudflare deploy`
+(uses `wrangler.jsonc` → Worker `vegaskiddos` → `vegaskiddos.com`). Worker
+secrets (AIRTABLE_TOKEN, AUTH_SECRET, RESEND_API_KEY, etc.) live in CF
+dashboard, not in this repo — already set on the production Worker.
+
+Verify the deploy:
+```bash
+curl -s https://vegaskiddos.com/ | grep -o "WeatherPill\|hero-canvas" | sort -u
+curl -s https://vegaskiddos.com/sitemap.xml | grep -c /event/   # hundreds, not 12
+```
+(12 means it fell back to seed data on an Airtable 401.)
+
+Cache: production HTML is `s-maxage=55120, stale-while-revalidate=2592000`,
+so repeat visitors may see stale HTML for a bit after a deploy. New visitors
+or hard reloads get the fresh deploy immediately.
+
+## Other gotchas
+
+- No auto-deploy on `git push`. If you want one, add a `.github/workflows/
+  cf-deploy.yml` that runs `npm run cf:deploy` with the existing
+  `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` GH secrets.
+- `tools/send-digest.mjs` and a couple of workflow comments still reference
+  Netlify env vars — these are historical, the actual host is Cloudflare.
