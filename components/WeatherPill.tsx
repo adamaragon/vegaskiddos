@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Sun, Cloud, RainCloud, StormCloud, Snowflake, WindSwirl } from "@/components/Doodles";
+import { WeatherBackdrop } from "@/components/WeatherBackdrop";
 import { useLang } from "@/lib/lang-client";
 import { t, type StringKey } from "@/lib/i18n";
 
@@ -89,39 +90,49 @@ export function WeatherPill() {
   const showIndoorHint = INDOOR_LINK_MOODS.includes(w.mood);
   const pillBody = (
     <>
-      <span className="text-base" aria-hidden>{w.emoji}</span>
-      <span>{label} · {w.tempF}°F</span>
+      <span className="text-xl leading-none sm:text-2xl" aria-hidden>{w.emoji}</span>
+      <span className="leading-none">{label} · {w.tempF}°F</span>
       {showIndoorHint && (
-        <span className="hidden text-white/75 sm:inline">· {tr("wx_indoor_hint")}</span>
+        <span className="hidden font-700 text-white/80 sm:inline">· {tr("wx_indoor_hint")}</span>
       )}
     </>
   );
 
+  const pillBase =
+    "inline-flex items-center gap-2 rounded-full bg-white/25 px-4 py-2.5 text-base font-800 text-white shadow-pop backdrop-blur-md ring-1 ring-white/40 sm:px-5 sm:py-3 sm:text-lg";
+
   return (
     <>
-      {/* Big spinning decorative weather doodle — changes glyph by mood. */}
-      <Doodle
-        className={`pointer-events-none absolute right-6 top-6 h-24 w-24 opacity-30 ${HOT_MOODS.includes(w.mood) ? "animate-spin-slow" : "animate-float"}`}
-        color="#FFFFFF"
-      />
-      {/* Foreground pill with the label + temp. Linked to /beat-the-heat when
-          it's a day families would want to pivot indoors. */}
+      {/* Mood-specific animated backdrop faded into the right side of the
+          banner. Renders no element for "nice" — the gradient is enough. */}
+      <WeatherBackdrop mood={w.mood} />
+
+      {/* Foreground pill nestled in the top-right corner. Linked to
+          /beat-the-heat when it's a day families would want to pivot indoors. */}
       {showIndoorHint ? (
         <Link
           href="/beat-the-heat"
-          className="hover-pop absolute right-6 top-32 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/25 px-3 py-1.5 text-sm font-700 text-white shadow-pop backdrop-blur-sm"
+          className={`hover-pop absolute right-5 top-5 z-20 ${pillBase}`}
           aria-label={`${label} ${w.tempF}°F — see indoor events`}
         >
           {pillBody}
         </Link>
       ) : (
         <div
-          className="absolute right-6 top-32 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/25 px-3 py-1.5 text-sm font-700 text-white shadow-pop backdrop-blur-sm"
+          className={`absolute right-5 top-5 z-20 ${pillBase}`}
           aria-label={`${label} ${w.tempF}°F`}
         >
           {pillBody}
         </div>
       )}
+
+      {/* Smaller spinning decorative doodle, tucked under the pill. Changes
+          glyph by mood so the hero still has a hand-drawn flourish without
+          competing with the pill for attention. */}
+      <Doodle
+        className={`pointer-events-none absolute right-8 top-24 z-10 h-16 w-16 opacity-40 ${HOT_MOODS.includes(w.mood) ? "animate-spin-slow" : "animate-float"}`}
+        color="#FFFFFF"
+      />
     </>
   );
 }
