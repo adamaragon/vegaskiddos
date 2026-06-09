@@ -115,12 +115,13 @@ export function WeatherPill() {
     };
   }, [w]);
 
-  // SSR + initial paint: fall back to the original decorative sun so the hero
-  // never looks empty while we wait for the fetch.
+  // SSR + initial paint: render the sun doodle in the same slot it'll occupy
+  // once weather loads, so the only thing that changes on hydration is the
+  // glyph (no jump in size/position).
   if (!w) {
     return (
       <Sun
-        className="pointer-events-none absolute right-6 top-6 h-24 w-24 animate-spin-slow opacity-30"
+        className="pointer-events-none absolute right-6 top-20 z-10 h-24 w-24 animate-spin-slow opacity-45 sm:h-28 sm:w-28"
         color="#FFFFFF"
       />
     );

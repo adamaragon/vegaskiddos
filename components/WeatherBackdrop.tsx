@@ -212,16 +212,40 @@ function moodEffects(mood: Mood) {
     return <RightFade><WindWisps /></RightFade>;
   }
   if (mood === "very_hot" || mood === "hot") {
+    const rayStrength = mood === "very_hot" ? 0.55 : 0.4;
     return (
       <RightFade>
+        {/* Conic-gradient sun rays radiating from the top-right corner,
+            slowly rotating + pulsing so they shimmer. */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `conic-gradient(from 0deg at 85% 15%,
+              rgba(255,230,140,${rayStrength}) 0deg,
+              transparent 7deg,
+              rgba(255,210,110,${rayStrength * 0.7}) 14deg,
+              transparent 22deg,
+              rgba(255,225,140,${rayStrength * 0.85}) 30deg,
+              transparent 40deg,
+              rgba(255,200,100,${rayStrength * 0.6}) 50deg,
+              transparent 62deg,
+              rgba(255,235,150,${rayStrength * 0.9}) 75deg,
+              transparent 88deg,
+              rgba(255,210,110,${rayStrength * 0.5}) 100deg,
+              transparent 360deg)`,
+            animation: "wx-ray-spin 60s linear infinite, wx-ray-pulse 5s ease-in-out infinite",
+          }}
+        />
+        {/* Tight warm glow at the sun anchor point. */}
         <div
           className="wx-rays absolute inset-0"
           style={{
             background:
-              "radial-gradient(closest-side at 80% 25%, rgba(255,220,120,0.55) 0%, rgba(255,180,90,0.22) 35%, transparent 70%)",
+              "radial-gradient(closest-side at 85% 15%, rgba(255,240,170,0.7) 0%, rgba(255,200,110,0.35) 25%, transparent 55%)",
             animation: "wx-rays 6s ease-in-out infinite",
           }}
         />
+        {/* Subtle horizontal shimmer stripes. */}
         <div
           className="wx-shimmer absolute inset-0"
           style={{

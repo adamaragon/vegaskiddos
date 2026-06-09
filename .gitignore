@@ -18,3 +18,6 @@ cloudflare-env.d.ts
 # Art generator sample output (preview before batch upload)
 art-samples
 art-samples-*
+
+# Claude Code workspace state (per-machine)
+.claude/
