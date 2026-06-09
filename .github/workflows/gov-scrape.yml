@@ -60,6 +60,20 @@ jobs:
           node tools/geocode-events.mjs
           node tools/infer-ages.mjs
 
+      # Auto-generate AI event art for any approved events missing an image of
+      # any kind. Runs at low quality (~$0.011/image) and only touches events
+      # with neither ArtImage nor Image set, so this is cheap once the catalog
+      # is backfilled — typical daily cost is a few cents. The sync step below
+      # then picks up the new ArtImage attachments and pushes them to R2.
+      - name: Generate art for new approved events
+        if: ${{ always() }}
+        env:
+          AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEN_QUALITY: low
+        run: node tools/gen-event-art.mjs batch || true
+
       # Durable images: sync each approved event's image to R2 as responsive
       # WebP (img.vegaskiddos.com/event/<id>/<w>.webp). The manifest skips
       # unchanged images, so daily runs only process new/changed events.

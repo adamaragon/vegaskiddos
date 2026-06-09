@@ -73,6 +73,62 @@ export function Cloud({ className, style, color = "#23C4B5" }: DoodleProps) {
   );
 }
 
+// Weather variants — share the same hand-drawn crayon styling so they slot into
+// the hero in place of <Sun /> when conditions change.
+
+export function RainCloud({ className, style, color = "#FFFFFF" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} style={style} aria-hidden>
+      <path d="M22 50 C8 50 8 30 22 30 C24 16 48 14 52 28 C58 16 82 18 80 32 C96 30 98 50 80 50 Z" {...base(color)} />
+      <line x1="32" y1="64" x2="28" y2="80" {...base(color)} />
+      <line x1="50" y1="64" x2="46" y2="84" {...base(color)} />
+      <line x1="68" y1="64" x2="64" y2="80" {...base(color)} />
+    </svg>
+  );
+}
+
+export function StormCloud({ className, style, color = "#FFFFFF" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} style={style} aria-hidden>
+      <path d="M22 46 C8 46 8 26 22 26 C24 12 48 10 52 24 C58 12 82 14 80 28 C96 26 98 46 80 46 Z" {...base(color)} />
+      <path d="M50 50 L40 72 L52 72 L42 92" {...base(color)} strokeWidth={6} />
+    </svg>
+  );
+}
+
+export function Snowflake({ className, style, color = "#FFFFFF" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} style={style} aria-hidden>
+      {Array.from({ length: 6 }).map((_, i) => {
+        const a = (i * Math.PI) / 3;
+        const x = 50 + Math.cos(a) * 38;
+        const y = 50 + Math.sin(a) * 38;
+        const bx = 50 + Math.cos(a + 0.45) * 22;
+        const by = 50 + Math.sin(a + 0.45) * 22;
+        const cx = 50 + Math.cos(a - 0.45) * 22;
+        const cy = 50 + Math.sin(a - 0.45) * 22;
+        return (
+          <g key={i}>
+            <line x1={50} y1={50} x2={x} y2={y} {...base(color)} />
+            <line x1={bx} y1={by} x2={x - (x-bx)*0.4} y2={y - (y-by)*0.4} {...base(color)} strokeWidth={3} />
+            <line x1={cx} y1={cy} x2={x - (x-cx)*0.4} y2={y - (y-cy)*0.4} {...base(color)} strokeWidth={3} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+export function WindSwirl({ className, style, color = "#FFFFFF" }: DoodleProps) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} style={style} aria-hidden>
+      <path d="M10 35 C30 25 50 35 70 30 C82 27 86 18 80 14" {...base(color)} />
+      <path d="M10 58 C35 48 60 58 80 52 C94 48 96 36 88 32" {...base(color)} />
+      <path d="M10 80 C28 72 46 80 62 76 C72 73 75 65 70 62" {...base(color)} />
+    </svg>
+  );
+}
+
 export function Squiggle({ className, style, color = "#7B5EA7" }: DoodleProps) {
   return (
     <svg viewBox="0 0 200 30" className={className} style={style} aria-hidden>

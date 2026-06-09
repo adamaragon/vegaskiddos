@@ -7,7 +7,8 @@ import { HeroCanvas } from "@/components/HeroCanvas";
 import { ShareButtons } from "@/components/ShareButtons";
 import { SubscribeBox } from "@/components/SubscribeBox";
 import { JsonLd } from "@/components/JsonLd";
-import { Sun, Cloud, Star, Underline, Scribble } from "@/components/Doodles";
+import { Cloud, Star, Underline, Scribble } from "@/components/Doodles";
+import { WeatherPill } from "@/components/WeatherPill";
 import { t, type Lang } from "@/lib/i18n";
 import { SITE, langAlternates } from "@/lib/seo";
 
@@ -55,7 +56,7 @@ export default async function HomePage({
       {/* Hero with Three.js backdrop */}
       <section className="relative isolate overflow-hidden rounded-blob bg-gradient-to-br from-coral via-coral to-sunny p-8 text-white shadow-card sm:p-12">
         <HeroCanvas />
-        <Sun className="pointer-events-none absolute right-6 top-6 h-24 w-24 animate-spin-slow opacity-30" color="#FFFFFF" />
+        <WeatherPill />
         <Cloud className="pointer-events-none absolute bottom-4 left-8 hidden h-16 w-24 animate-float opacity-30 sm:block" color="#FFFFFF" />
         <div className="relative z-10">
           <h1 className="font-display text-4xl font-700 leading-tight drop-shadow-sm sm:text-5xl">

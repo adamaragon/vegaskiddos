@@ -188,6 +188,20 @@ export const STRINGS = {
   },
   ft_success_badge: { en: "Success!", es: "¡Listo!" },
 
+  // ── Weather pill (homepage hero) ──
+  wx_very_hot: { en: "Very Hot", es: "Muy Caluroso" },
+  wx_hot: { en: "Hot", es: "Caluroso" },
+  wx_nice: { en: "Nice", es: "Agradable" },
+  wx_chilly: { en: "Chilly", es: "Fresco" },
+  wx_cold: { en: "Cold", es: "Frío" },
+  wx_rainy: { en: "Rainy", es: "Lluvioso" },
+  wx_snow: { en: "Snowy", es: "Nevado" },
+  wx_storm: { en: "Storm", es: "Tormenta" },
+  wx_windy: { en: "Windy", es: "Ventoso" },
+  wx_fog: { en: "Foggy", es: "Brumoso" },
+  wx_cloudy: { en: "Cloudy", es: "Nublado" },
+  wx_indoor_hint: { en: "indoor day?", es: "¿día bajo techo?" },
+
   // ── Changelog page ──
   cl_h: { en: "What's New", es: "Novedades" },
   cl_intro: {
