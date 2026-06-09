@@ -181,6 +181,12 @@ export const STRINGS = {
   ft_status_planned: { en: "planned", es: "planeado" },
   ft_status_building: { en: "building", es: "en desarrollo" },
   ft_status_shipped: { en: "shipped", es: "lanzado" },
+  ft_shipped_h: { en: "Success! 🎉", es: "¡Listo! 🎉" },
+  ft_shipped_intro: {
+    en: "Ideas your votes helped us build — already live on the site.",
+    es: "Ideas que sus votos ayudaron a construir — ya están en vivo.",
+  },
+  ft_success_badge: { en: "Success!", es: "¡Listo!" },
 
   // ── Changelog page ──
   cl_h: { en: "What's New", es: "Novedades" },

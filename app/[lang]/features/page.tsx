@@ -77,6 +77,9 @@ export default function FeaturesPage() {
     setSubmitting(false);
   }
 
+  const shipped = features.filter((f) => f.status === "shipped");
+  const active = features.filter((f) => f.status !== "shipped");
+
   return (
     <div className="relative mx-auto max-w-2xl px-4 py-10">
       <Star className="pointer-events-none absolute -right-4 top-8 h-16 w-16 animate-bob opacity-70" />
@@ -104,10 +107,10 @@ export default function FeaturesPage() {
       <div className="mt-8 space-y-3">
         {loading ? (
           <p className="text-ink/70">{tr("ft_loading")}</p>
-        ) : features.length === 0 ? (
+        ) : active.length === 0 ? (
           <p className="text-ink/70">{tr("ft_empty")}</p>
         ) : (
-          features.map((f) => {
+          active.map((f) => {
             const myVote = voted[f.id] || 0;
             return (
               <div key={f.id}
@@ -138,6 +141,30 @@ export default function FeaturesPage() {
           })
         )}
       </div>
+
+      {shipped.length > 0 && (
+        <section className="mt-12">
+          <h2 className="font-display text-2xl font-700 sm:text-3xl">{tr("ft_shipped_h")}</h2>
+          <p className="mt-1 text-sm text-ink/70">{tr("ft_shipped_intro")}</p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {shipped.map((f) => (
+              <div key={f.id}
+                className="rounded-blob border border-teal/30 bg-gradient-to-br from-teal/5 to-sunny/10 p-4 shadow-card">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="rounded-full bg-teal-btn px-2.5 py-0.5 text-xs font-800 text-white">
+                    ✓ {tr("ft_success_badge")}
+                  </span>
+                  <span className="font-display text-sm font-700 text-teal-btn tabular-nums">
+                    {f.votes} ▲
+                  </span>
+                </div>
+                <h3 className="mt-2 font-display text-lg font-600 leading-tight">{f.title}</h3>
+                {f.description && <p className="mt-1 text-sm text-ink/70">{f.description}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="mt-10 flex items-center justify-center gap-2 text-ink/70">
         <Arrow className="h-8 w-12" />
