@@ -10,6 +10,36 @@ type Mood = "very_hot" | "hot" | "nice" | "chilly" | "cold" | "rainy" | "snow" |
 
 interface Props { mood: Mood; seed?: number }
 
+// Full-banner mood wash. Sits between the hero's coral-sunny gradient and the
+// right-side particle effects, so the brand color still hints through (60-80%
+// opacity range) but the dominant tone matches the weather. Null = leave the
+// hot/sunny default exposed.
+//
+// Colors drawn from the brand palette: teal #23C4B5 / dark #0FA89A,
+// grape #7B5EA7 / dark #664A8F, sunny #FFC93C / dark #F2B705,
+// coral #FF6B5E / dark #E8503F, ink #2D2A32.
+const MOOD_OVERLAY: Record<Mood, string | null> = {
+  nice: null,
+  hot: null,
+  very_hot: null,
+  windy:
+    "linear-gradient(135deg, rgba(242,183,5,0.55) 0%, rgba(232,80,63,0.45) 100%)",
+  cloudy:
+    "linear-gradient(135deg, rgba(123,94,167,0.55) 0%, rgba(35,196,181,0.55) 100%)",
+  fog:
+    "linear-gradient(135deg, rgba(255,255,255,0.55) 0%, rgba(123,94,167,0.45) 100%)",
+  chilly:
+    "linear-gradient(135deg, rgba(35,196,181,0.65) 0%, rgba(123,94,167,0.55) 100%)",
+  cold:
+    "linear-gradient(135deg, rgba(15,168,154,0.75) 0%, rgba(102,74,143,0.7) 100%)",
+  rainy:
+    "linear-gradient(135deg, rgba(15,168,154,0.78) 0%, rgba(102,74,143,0.78) 100%)",
+  storm:
+    "linear-gradient(135deg, rgba(102,74,143,0.85) 0%, rgba(45,42,50,0.85) 100%)",
+  snow:
+    "linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(35,196,181,0.45) 100%)",
+};
+
 // Deterministic pseudo-random so we don't trip React hydration. Each backdrop
 // generates a fresh seed once per mount and never re-rolls — particles stay
 // put after mount, only their CSS animation moves them.
@@ -123,7 +153,7 @@ function RightFade({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function WeatherBackdrop({ mood }: Props) {
+function moodEffects(mood: Mood) {
   if (mood === "storm") {
     return (
       <RightFade>
@@ -145,7 +175,6 @@ export function WeatherBackdrop({ mood }: Props) {
     return <RightFade><WindWisps /></RightFade>;
   }
   if (mood === "very_hot" || mood === "hot") {
-    // Warm radial glow on the right side + slow shimmer. No falling particles.
     return (
       <RightFade>
         <div
@@ -174,27 +203,31 @@ export function WeatherBackdrop({ mood }: Props) {
           className="wx-fog absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse at 80% 40%, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 40%, transparent 70%)",
+              "radial-gradient(ellipse at 80% 40%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 40%, transparent 70%)",
             animation: "wx-fog 8s ease-in-out infinite",
           }}
         />
       </RightFade>
     );
   }
-  if (mood === "chilly" || mood === "cold") {
-    // Faint cool tint, no particles unless it's actually snowing.
-    return (
-      <RightFade>
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(closest-side at 80% 30%, rgba(180,220,255,0.3) 0%, transparent 65%)",
-          }}
-        />
-      </RightFade>
-    );
-  }
-  // "nice" — no effect needed, the gradient already feels great.
+  // chilly / cold / nice — overlay alone carries the mood, no extra particles.
   return null;
+}
+
+export function WeatherBackdrop({ mood }: Props) {
+  const overlay = MOOD_OVERLAY[mood];
+  const effects = moodEffects(mood);
+  if (!overlay && !effects) return null;
+  return (
+    <>
+      {overlay && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{ background: overlay }}
+        />
+      )}
+      {effects}
+    </>
+  );
 }
