@@ -23,6 +23,23 @@ interface Weather {
   Doodle: typeof Sun;
 }
 
+// Test-mode fixtures: each mood mapped to a (temp, code, wind) tuple chosen so
+// classify() returns that exact mood. Exercised via `?wx=<mood>` on the URL —
+// e.g. /?wx=rainy /?wx=storm /?wx=very_hot. Skipped in real use.
+const MOCK_INPUTS: Record<Mood, [number, number, number]> = {
+  very_hot: [108, 0, 5],
+  hot: [95, 0, 5],
+  nice: [75, 0, 5],
+  chilly: [55, 0, 5],
+  cold: [38, 0, 5],
+  rainy: [65, 63, 5],
+  snow: [32, 73, 5],
+  storm: [70, 95, 5],
+  windy: [78, 1, 30],
+  fog: [50, 45, 5],
+  cloudy: [68, 3, 5],
+};
+
 // Weather code reference: https://open-meteo.com/en/docs (WMO codes).
 function classify(tempF: number, code: number, windMph: number): Weather {
   if (code >= 95) return { tempF, mood: "storm", emoji: "⛈️", labelKey: "wx_storm", Doodle: StormCloud };
@@ -58,6 +75,16 @@ export function WeatherPill() {
 
   useEffect(() => {
     let cancelled = false;
+
+    // Dev override: `?wx=rainy` (or any mood) forces a specific weather state
+    // for testing without waiting for the real conditions to match.
+    const override = new URLSearchParams(window.location.search).get("wx");
+    if (override && override in MOCK_INPUTS) {
+      const [tF, code, wind] = MOCK_INPUTS[override as Mood];
+      setW(classify(tF, code, wind));
+      return;
+    }
+
     fetch(
       "https://api.open-meteo.com/v1/forecast?latitude=36.17&longitude=-115.14" +
       "&current=temperature_2m,weather_code,wind_speed_10m" +
@@ -90,16 +117,19 @@ export function WeatherPill() {
   const showIndoorHint = INDOOR_LINK_MOODS.includes(w.mood);
   const pillBody = (
     <>
-      <span className="text-xl leading-none sm:text-2xl" aria-hidden>{w.emoji}</span>
+      <span className="text-2xl leading-none sm:text-3xl" aria-hidden>{w.emoji}</span>
       <span className="leading-none">{label} · {w.tempF}°F</span>
       {showIndoorHint && (
-        <span className="hidden font-700 text-white/80 sm:inline">· {tr("wx_indoor_hint")}</span>
+        <span className="hidden font-700 text-ink/60 sm:inline">· {tr("wx_indoor_hint")}</span>
       )}
     </>
   );
 
+  // Dark text on a frosted-white pill is the most legible across every mood
+  // (bright sun, dark storm, snow). The ring keeps the edge crisp on the
+  // colorful hero gradient.
   const pillBase =
-    "inline-flex items-center gap-2 rounded-full bg-white/25 px-4 py-2.5 text-base font-800 text-white shadow-pop backdrop-blur-md ring-1 ring-white/40 sm:px-5 sm:py-3 sm:text-lg";
+    "inline-flex items-center gap-2.5 rounded-full bg-white/85 px-5 py-3 text-lg font-800 text-ink shadow-pop ring-1 ring-ink/10 backdrop-blur-md sm:gap-3 sm:px-6 sm:py-3.5 sm:text-xl";
 
   return (
     <>
@@ -126,11 +156,10 @@ export function WeatherPill() {
         </div>
       )}
 
-      {/* Smaller spinning decorative doodle, tucked under the pill. Changes
-          glyph by mood so the hero still has a hand-drawn flourish without
-          competing with the pill for attention. */}
+      {/* Larger spinning decorative doodle, tucked under the pill. Changes
+          glyph by mood so the hero still has a hand-drawn flourish. */}
       <Doodle
-        className={`pointer-events-none absolute right-8 top-24 z-10 h-16 w-16 opacity-40 ${HOT_MOODS.includes(w.mood) ? "animate-spin-slow" : "animate-float"}`}
+        className={`pointer-events-none absolute right-6 top-28 z-10 h-24 w-24 opacity-45 sm:h-28 sm:w-28 ${HOT_MOODS.includes(w.mood) ? "animate-spin-slow" : "animate-float"}`}
         color="#FFFFFF"
       />
     </>
