@@ -79,21 +79,21 @@ export default async function HomePage({
 
       {/* Weekly digest signup */}
       <Reveal as="section" variant="pop" className="mt-8">
-        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-grape to-teal px-6 py-5 text-white shadow-card sm:px-8 sm:py-6">
+        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-grape to-teal px-4 py-4 text-white shadow-card sm:px-4 sm:py-5">
           {/* Decorative doodles fill the negative space */}
           <Star className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rotate-12 text-white/10" />
           <Cloud className="pointer-events-none absolute -bottom-2 left-1/4 hidden h-14 w-14 text-white/10 lg:block" />
-          <div className="relative grid items-center gap-8 lg:grid-cols-5 lg:items-start">
+          <div className="relative grid items-center gap-8 lg:grid-cols-5">
             <div className="text-center lg:col-span-3 lg:text-left">
-              <h2 className="font-display text-3xl font-800 leading-tight sm:text-4xl">{t(lang, "nl_title")}</h2>
-              <p className="mt-3 text-lg text-white/90 sm:text-xl">{t(lang, "nl_sub")}</p>
-              <ul className="mx-auto mt-5 inline-flex flex-col gap-2.5 text-left text-[25px] font-600 text-white/95 lg:mx-0">
+              <h2 className="font-display text-2xl font-800 leading-tight sm:text-3xl">{t(lang, "nl_title")}</h2>
+              <p className="mt-3 text-base text-white/90 sm:text-lg">{t(lang, "nl_sub")}</p>
+              <ul className="mx-auto mt-5 inline-flex flex-col gap-2.5 text-left text-[19px] font-600 text-white/95 lg:mx-0">
                 <li className="flex items-center gap-2"><span aria-hidden>✅</span>{t(lang, "nl_perk_curated")}</li>
                 <li className="flex items-center gap-2"><span aria-hidden>📍</span>{t(lang, "nl_perk_local")}</li>
                 <li className="flex items-center gap-2"><span aria-hidden>🎉</span>{t(lang, "nl_perk_free")}</li>
               </ul>
             </div>
-            <div className="w-full rounded-3xl bg-white/12 p-6 backdrop-blur-sm sm:p-7 sm:pl-9 lg:col-span-2 lg:-mt-4">
+            <div className="w-full rounded-3xl bg-white/12 p-5 sm:p-6 lg:col-span-2 lg:mt-3">
               <SubscribeBox lang={lang} stacked />
               <p className="mt-3 text-center text-sm text-white/70">{t(lang, "nl_note")}</p>
             </div>

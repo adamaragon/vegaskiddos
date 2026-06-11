@@ -35,10 +35,10 @@ export function SubscribeBox({ compact = false, stacked = false, lang = "en" }: 
   }
 
   // Stacked = full-width vertical fields, for a square card that fills a column.
-  const field = stacked ? "w-full py-3 text-base" : compact ? "py-2 text-sm" : "py-2.5";
+  const field = stacked ? "w-full py-2.5 text-sm" : compact ? "py-2 text-sm" : "py-2.5";
 
   return (
-    <form onSubmit={submit} className={stacked ? "flex flex-col gap-3" : "flex flex-wrap items-center gap-2"}>
+    <form onSubmit={submit} className={stacked ? "flex flex-col gap-2.5" : "flex flex-wrap items-center gap-2"}>
       <input
         name="email"
         type="email"
@@ -60,7 +60,7 @@ export function SubscribeBox({ compact = false, stacked = false, lang = "en" }: 
       <button
         type="submit"
         disabled={status === "sending"}
-        className={`hover-pop rounded-full bg-coral-btn font-800 text-white shadow-pop disabled:opacity-50 ${stacked ? "w-full py-3 text-base" : compact ? "px-4 py-2 text-sm" : "px-5 py-2.5"}`}
+        className={`hover-pop rounded-full bg-coral-btn font-800 text-white shadow-pop disabled:opacity-50 ${stacked ? "w-full py-2.5 text-sm" : compact ? "px-4 py-2 text-sm" : "px-5 py-2.5"}`}
       >
         {status === "sending" ? "…" : tr("nl_button")}
       </button>
