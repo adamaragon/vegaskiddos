@@ -79,7 +79,7 @@ export default async function HomePage({
 
       {/* Weekly digest signup */}
       <Reveal as="section" variant="pop" className="mt-8">
-        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-grape to-teal px-4 py-4 text-white shadow-card sm:px-4 sm:py-5">
+        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-grape to-teal px-8 py-4 text-white shadow-card sm:px-12 sm:py-5">
           {/* Decorative doodles fill the negative space */}
           <Star className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rotate-12 text-white/10" />
           <Cloud className="pointer-events-none absolute -bottom-2 left-1/4 hidden h-14 w-14 text-white/10 lg:block" />
