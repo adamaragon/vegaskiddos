@@ -22,7 +22,7 @@ async function venueEvents(slug: string, lang: Lang = "en") {
   const events = await getEvents(lang);
   const list = events
     .filter((e) => venueSlug(e.venue) === slug)
-    .sort((a, b) => nextOccurrenceISO(a.start, a.recurrence).localeCompare(nextOccurrenceISO(b.start, b.recurrence)));
+    .sort((a, b) => nextOccurrenceISO(a.start, a.recurrence, a.canceledDates).localeCompare(nextOccurrenceISO(b.start, b.recurrence, b.canceledDates)));
   return { name: list[0]?.venue || "", list };
 }
 
@@ -67,7 +67,7 @@ export default async function VenuePage({ params }: { params: Promise<{ lang: st
       </p>
       <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((e, i) => (
-          <EventCard key={e.id} event={e} index={i} />
+          <EventCard key={e.id} event={e} index={i} lang={lang} />
         ))}
       </div>
     </div>

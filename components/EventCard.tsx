@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { KidEvent } from "@/lib/types";
 import { ageTier, priceTier, neighborhood } from "@/lib/constants";
 import { nextOccurrenceISO } from "@/lib/recurrence";
+import { t, type Lang } from "@/lib/i18n";
 import { EventThumb } from "./EventThumb";
 import { FavButton } from "./FavButton";
 
@@ -25,20 +26,33 @@ export function formatWhen(iso: string) {
   });
 }
 
-export function EventCard({ event, index = 0, distanceMi }: { event: KidEvent; index?: number; distanceMi?: number }) {
+export function EventCard({ event, index = 0, distanceMi, lang = "en" }: { event: KidEvent; index?: number; distanceMi?: number; lang?: Lang }) {
   const price = priceTier(event.priceTier);
   const hood = neighborhood(event.neighborhood);
-  const when = nextOccurrenceISO(event.start, event.recurrence);
+  const when = nextOccurrenceISO(event.start, event.recurrence, event.canceledDates);
   // Stagger the dramatic entrance within each loaded batch.
   const delay = (index % 30) * 45;
   return (
     <Link
       href={`/event/${event.id}`}
       style={{ animationDelay: `${delay}ms` }}
-      className="animate-card-in group flex h-full flex-col overflow-hidden rounded-blob border border-ink/10 bg-white shadow-card transition-shadow hover:-translate-y-1 hover:shadow-lg"
+      className={`animate-card-in group flex h-full flex-col overflow-hidden rounded-blob border bg-white shadow-card transition-shadow hover:-translate-y-1 hover:shadow-lg ${event.canceled ? "border-coral-dark/40" : "border-ink/10"}`}
     >
       <div className="relative">
-        <EventThumb event={event} />
+        <div className={event.canceled ? "grayscale-[55%]" : ""}>
+          <EventThumb event={event} />
+        </div>
+        {/* Big diagonal "CANCELED" sash across the thumbnail + dimming scrim. */}
+        {event.canceled && (
+          <>
+            <div className="pointer-events-none absolute inset-0 bg-ink/45" aria-hidden />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
+              <span className="w-[160%] rotate-[-10deg] bg-coral-btn py-1 text-center font-display text-sm font-extrabold uppercase tracking-[0.25em] text-white shadow-lg ring-1 ring-white/40">
+                {t(lang, "cancel_badge")}
+              </span>
+            </div>
+          </>
+        )}
         <FavButton id={event.id} className="absolute right-2 top-2" />
         {typeof distanceMi === "number" && (
           <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-800 text-ink/70 shadow-pop backdrop-blur">

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { KidEvent } from "@/lib/types";
 import type { Collection } from "@/lib/collections";
+import type { Lang } from "@/lib/i18n";
 import { EventCard } from "./EventCard";
 import { JsonLd } from "./JsonLd";
 import { SITE, breadcrumbLd } from "@/lib/seo";
 
-export function CollectionView({ meta, events }: { meta: Collection; events: KidEvent[] }) {
+export function CollectionView({ meta, events, lang = "en" }: { meta: Collection; events: KidEvent[]; lang?: Lang }) {
   const ld = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -41,7 +42,7 @@ export function CollectionView({ meta, events }: { meta: Collection; events: Kid
       ) : (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {events.map((e, i) => (
-            <EventCard key={e.id} event={e} index={i} />
+            <EventCard key={e.id} event={e} index={i} lang={lang} />
           ))}
         </div>
       )}

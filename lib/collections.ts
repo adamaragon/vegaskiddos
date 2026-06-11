@@ -49,7 +49,7 @@ export const COLLECTIONS: Collection[] = [
     description: "Kid & family events happening today across the Las Vegas valley.",
     emoji: "📆",
     predicate: (e, now) => {
-      const t = new Date(nextOccurrenceISO(e.start, e.recurrence)).getTime();
+      const t = new Date(nextOccurrenceISO(e.start, e.recurrence, e.canceledDates)).getTime();
       const s = dayStart(now);
       return t >= s && t < s + 86400000;
     },
@@ -61,7 +61,7 @@ export const COLLECTIONS: Collection[] = [
     description: "What to do with the kids in Las Vegas this weekend — the full Saturday & Sunday lineup.",
     emoji: "🎉",
     predicate: (e, now) => {
-      const t = new Date(nextOccurrenceISO(e.start, e.recurrence)).getTime();
+      const t = new Date(nextOccurrenceISO(e.start, e.recurrence, e.canceledDates)).getTime();
       const dow = now.getDay();
       const sat = dayStart(now) + ((6 - dow + 7) % 7) * 86400000;
       return t >= Math.max(sat, dayStart(now)) && t < sat + 2 * 86400000;

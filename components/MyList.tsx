@@ -60,7 +60,7 @@ export function MyList({ events, lang = "en" }: { events: KidEvent[]; lang?: "en
       )}
       <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {mine.map((e, i) => (
-          <EventCard key={e.id} event={e} index={i} />
+          <EventCard key={e.id} event={e} index={i} lang={lang} />
         ))}
       </div>
     </div>

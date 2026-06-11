@@ -67,6 +67,13 @@ export function makeCommunicoAdapter(opts: {
         const blob = `${title} ${desc}`;
         if (!isKidRelevant(blob)) continue; // drop adult programming (ESL, tax help, book clubs)
 
+        // A cancelled occurrence is KEPT (not dropped) and flagged, so the
+        // collapser records just that date as cancelled — rather than dropping it
+        // silently (which would make a series look like it skipped a week, or
+        // leave a one-time cancelled event showing as live). iCal STATUS:CANCELLED
+        // is the RFC-5545 signal; a "Cancelled"/"Postponed" title is a fallback.
+        const canceled = /cancel/i.test(ve.STATUS || "") || /\bcancell?ed\b|\bpostponed\b/i.test(title);
+
         events.push({
           externalId: ve.UID || ve.URL || `${source}:${title}:${ve.DTSTART}`,
           title,
@@ -83,6 +90,7 @@ export function makeCommunicoAdapter(opts: {
           priceText: "Free",
           url: ve.URL || undefined,
           source,
+          canceled,
         });
       }
     } catch (err) {

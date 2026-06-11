@@ -10,7 +10,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { TrackedLink } from "@/components/TrackedLink";
 import { JsonLd } from "@/components/JsonLd";
 import { breadcrumbLd, langAlternates } from "@/lib/seo";
-import { nextOccurrenceISO } from "@/lib/recurrence";
+import { nextOccurrenceISO, laDateKey } from "@/lib/recurrence";
 import { AdminEventControls } from "@/components/AdminEventControls";
 import { t, ageLabel, priceLabel, hoodLabel, type Lang } from "@/lib/i18n";
 
@@ -76,7 +76,15 @@ export default async function EventPage({
     event.address || event.venue
   )}`;
 
-  const whenStart = nextOccurrenceISO(event.start, event.recurrence);
+  const whenStart = nextOccurrenceISO(event.start, event.recurrence, event.canceledDates);
+  // Upcoming individually-cancelled occurrences of a recurring series (the series
+  // itself keeps running) — shown as a heads-up note.
+  const todayKey = laDateKey(new Date());
+  const upcomingCanceled = (event.canceledDates || []).filter((d) => d >= todayKey).sort();
+  const fmtCancelDay = (key: string) =>
+    new Date(`${key}T12:00:00-07:00`).toLocaleDateString(lang === "es" ? "es-US" : "en-US", {
+      weekday: "short", month: "short", day: "numeric", timeZone: "America/Los_Angeles",
+    });
 
   // "Add to Google Calendar" — a feature no LV competitor offers per event.
   const gcalFmt = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -98,7 +106,9 @@ export default async function EventPage({
     description: event.description,
     startDate: event.start,
     ...(event.end ? { endDate: event.end } : {}),
-    eventStatus: "https://schema.org/EventScheduled",
+    eventStatus: event.canceled
+      ? "https://schema.org/EventCancelled"
+      : "https://schema.org/EventScheduled",
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     location: {
       "@type": "Place",
@@ -136,7 +146,35 @@ export default async function EventPage({
         <AdminEventControls id={event.id} />
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-blob border border-ink/10 bg-white shadow-card">
+      {event.canceled && (
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border-2 border-coral-dark/30 bg-coral/10 p-4 sm:p-5">
+          <span className="text-2xl leading-none" aria-hidden>🚫</span>
+          <div>
+            <p className="font-display text-lg font-extrabold uppercase tracking-wide text-coral-dark">
+              {t(lang, "cancel_banner")}
+            </p>
+            <p className="mt-1 text-sm text-ink/75">{t(lang, "cancel_note")}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Recurring series with specific cancelled occurrences — the series still
+          runs; just these dates are off. */}
+      {!event.canceled && upcomingCanceled.length > 0 && (
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border-2 border-sunny-dark/30 bg-sunny/15 p-4 sm:p-5">
+          <span className="text-2xl leading-none" aria-hidden>⚠️</span>
+          <div>
+            <p className="text-sm font-bold text-ink/80">{t(lang, "cancel_dates_note")}</p>
+            <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm font-bold text-coral-dark">
+              {upcomingCanceled.map((d) => (
+                <li key={d}>🚫 {fmtCancelDay(d)}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      <div className={`mt-4 overflow-hidden rounded-blob border bg-white shadow-card ${event.canceled ? "border-coral-dark/30" : "border-ink/10"}`}>
         {event.image ? (
           // Hero treatment when we have the event art: full-bleed image with a
           // dark-bottom gradient scrim so the title sits on top of its own
@@ -149,7 +187,7 @@ export default async function EventPage({
               fill
               priority
               sizes="(max-width: 768px) 100vw, 768px"
-              className="object-cover"
+              className={`object-cover ${event.canceled ? "grayscale-[60%]" : ""}`}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/30 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 text-white">
@@ -175,7 +213,7 @@ export default async function EventPage({
             </div>
           </div>
         ) : (
-          <div className="bg-gradient-to-br from-teal to-grape p-8 text-white">
+          <div className={`bg-gradient-to-br p-8 text-white ${event.canceled ? "from-ink/70 to-ink/50 grayscale" : "from-teal to-grape"}`}>
             <p className="text-sm font-700 uppercase tracking-wide text-white/80">
               {event.recurrence ? `${t(lang, "ev_next")} ` : ""}{formatWhen(whenStart)}
               {event.end && !event.recurrence ? ` – ${formatWhen(event.end).split(", ").pop()}` : ""}
@@ -289,7 +327,7 @@ export default async function EventPage({
         <section className="mt-10">
           <h2 className="font-display text-2xl font-700">{t(lang, "ev_more_at")} {event.venue}</h2>
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {moreAtVenue.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
+            {moreAtVenue.map((e, i) => <EventCard key={e.id} event={e} index={i} lang={lang} />)}
           </div>
         </section>
       )}
@@ -298,7 +336,7 @@ export default async function EventPage({
         <section className="mt-10">
           <h2 className="font-display text-2xl font-700">{t(lang, "ev_more_in")} {hoodName}</h2>
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {moreNearby.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
+            {moreNearby.map((e, i) => <EventCard key={e.id} event={e} index={i} lang={lang} />)}
           </div>
         </section>
       )}

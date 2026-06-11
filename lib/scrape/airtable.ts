@@ -36,6 +36,17 @@ function toFields(e: ScrapedEvent) {
   if (e.recurrence) f.Recurrence = e.recurrence;
   if (typeof e.lat === "number") f.Lat = e.lat;
   if (typeof e.lng === "number") f.Lng = e.lng;
+  // Cancellations. For a recurring SERIES, keep CanceledDates in sync with the
+  // feed every run (writing "" clears reappeared occurrences → auto un-cancel),
+  // and never set the whole-series Canceled flag — one cancelled instance must
+  // not remove the series. For a one-time event, only ever SET Canceled (don't
+  // write false), so the scraper can't clobber a manual/sweep cancellation.
+  if (e.recurrence) {
+    f.CanceledDates = (e.canceledDates || []).join(", ");
+  } else if (e.canceled) {
+    f.Canceled = true;
+    f.CanceledReason = "source marked this instance cancelled";
+  }
   return f;
 }
 

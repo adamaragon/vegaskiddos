@@ -478,6 +478,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
                   key={e.id}
                   event={e}
                   index={i}
+                  lang={lang}
                   distanceMi={coords && e.lat && e.lng ? milesBetween(coords, { lat: e.lat, lng: e.lng }) : undefined}
                 />
               ))}
@@ -492,7 +493,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
             )}
           </>
         ) : view === "calendar" ? (
-          <CalendarView events={filtered} />
+          <CalendarView events={filtered} lang={lang} />
         ) : (
           <MapView events={filtered} />
         )}

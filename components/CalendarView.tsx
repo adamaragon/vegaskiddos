@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import type { KidEvent } from "@/lib/types";
+import type { Lang } from "@/lib/i18n";
 import { priceTier } from "@/lib/constants";
 import { recursOnDay } from "@/lib/recurrence";
 import { EventCard } from "./EventCard";
@@ -41,7 +42,7 @@ function keyOf(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
-export function CalendarView({ events }: { events: KidEvent[] }) {
+export function CalendarView({ events, lang = "en" }: { events: KidEvent[]; lang?: Lang }) {
   // One-time events grouped by day; recurring events handled separately so they
   // appear on every matching day in the month.
   const { byDay, recurring } = useMemo(() => {
@@ -62,7 +63,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
   const eventsForDay = useCallback(
     (y: number, m: number, d: number): KidEvent[] => {
       const oneTime = byDay.get(keyOf(y, m, d)) ?? [];
-      const rec = recurring.filter((e) => recursOnDay(e.start, e.recurrence, y, m, d));
+      const rec = recurring.filter((e) => recursOnDay(e.start, e.recurrence, y, m, d, e.canceledDates));
       return [...oneTime, ...rec];
     },
     [byDay, recurring]
@@ -221,7 +222,7 @@ export function CalendarView({ events }: { events: KidEvent[] }) {
         ) : (
           <div className="mt-3 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {selectedEvents.map((e, i) => (
-              <EventCard key={e.id} event={e} index={i} />
+              <EventCard key={e.id} event={e} index={i} lang={lang} />
             ))}
           </div>
         )}

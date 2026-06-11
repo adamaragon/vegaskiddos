@@ -7,8 +7,8 @@ import type { Lang } from "./i18n";
 
 // Sort by the next real occurrence (recurring series use their computed next date).
 function byNextOccurrence(a: KidEvent, b: KidEvent) {
-  return nextOccurrenceISO(a.start, a.recurrence).localeCompare(
-    nextOccurrenceISO(b.start, b.recurrence)
+  return nextOccurrenceISO(a.start, a.recurrence, a.canceledDates).localeCompare(
+    nextOccurrenceISO(b.start, b.recurrence, b.canceledDates)
   );
 }
 
@@ -76,6 +76,16 @@ function mapRecord(rec: AirtableRecord): KidEvent | null {
     // mislabel every unflagged event as outdoor (e.g. library storytimes).
     indoor: f.Indoor == null ? undefined : Boolean(f.Indoor),
     recurrence: f.Recurrence ? String(f.Recurrence) : undefined,
+    // Cancelled events stay visible (still Approved) but render a banner — the
+    // cancellation sweep sets this when a source pulls an event we'd listed.
+    canceled: f.Canceled == null ? undefined : Boolean(f.Canceled),
+    canceledReason: f.CanceledReason ? String(f.CanceledReason) : undefined,
+    // For a recurring series: specific cancelled occurrences. Stored as a
+    // comma/newline-separated list of "YYYY-MM-DD"; the recurrence helpers skip
+    // these so one cancelled date never takes down the whole series.
+    canceledDates: f.CanceledDates
+      ? String(f.CanceledDates).split(/[\s,]+/).map((s) => s.trim()).filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
+      : undefined,
   };
 }
 

@@ -30,5 +30,5 @@ export default async function Page({
   const { lang } = (await params) as { lang: Lang };
   const c = await getCollection(SLUG, lang);
   if (!c) notFound();
-  return <CollectionView meta={c.meta} events={c.events} />;
+  return <CollectionView meta={c.meta} events={c.events} lang={lang} />;
 }

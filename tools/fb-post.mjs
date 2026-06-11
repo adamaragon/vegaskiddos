@@ -38,19 +38,32 @@ const IMG_CDN = "https://img.vegaskiddos.com";
 // programming and branch-closure notices. Skip them when choosing what to post
 // so the Page never highlights "Adult Perler Bead Crafternight" or "CLOSED FOR
 // THANKSGIVING". Deliberately narrow: "Young Adult" (teen) is NOT excluded.
-const SKIP_TITLE = /(?<!young\s)\badults?\b|^closed\b|\bclosed for\b/i;
-const postableTitle = (t) => t && !SKIP_TITLE.test(String(t));
+// Positive match (not a lookbehind, which only consumed one space): skip a
+// standalone "Adult"/"Adults" unless it's "Young Adult(s)" (teen content), and
+// any closure notice. Handles odd spacing like "Young  Adult".
+const CLOSURE_RE = /^closed\b|\bclosed for\b/i;
+const ADULT_RE = /\badults?\b/i;
+const YOUNG_ADULT_RE = /\byoung[\s-]+adults?\b/i;
+function postableTitle(t) {
+  if (!t) return false;
+  const s = String(t);
+  if (CLOSURE_RE.test(s)) return false;
+  if (ADULT_RE.test(s) && !YOUNG_ADULT_RE.test(s)) return false;
+  return true;
+}
 
 const _imgOkCache = new Map();
 async function ogImageOk(recId) {
   if (_imgOkCache.has(recId)) return _imgOkCache.get(recId);
-  let ok = false;
   try {
-    const r = await fetch(`${IMG_CDN}/event/${recId}/1024.webp`, { method: "HEAD" });
-    ok = r.ok;
-  } catch { ok = false; }
-  _imgOkCache.set(recId, ok);
-  return ok;
+    const r = await fetch(`${IMG_CDN}/event/${recId}/1024.webp`, { method: "HEAD", signal: AbortSignal.timeout(10000) });
+    _imgOkCache.set(recId, r.ok); // cache only a definitive answer (200 vs 404)
+    return r.ok;
+  } catch {
+    // Transient/network error → fail OPEN (don't permanently exclude a good event
+    // over a blip; the image is checked again at FB publish time). Don't cache.
+    return true;
+  }
 }
 
 // UTC instant for a given America/Los_Angeles wall-clock date + hour. Handles
@@ -172,7 +185,9 @@ async function unpostedEvents() {
   try {
     const formula = "AND({Approved}=1, {FBPostedAt}=BLANK())";
     const recs = await airtableAll("Events", `&filterByFormula=${encodeURIComponent(formula)}&sort%5B0%5D%5Bfield%5D=Start&sort%5B0%5D%5Bdirection%5D=asc`);
-    return recs.filter((r) => r.fields.Title);
+    // Never social-post a cancelled event (filtered in JS so this still works if
+    // the Canceled field doesn't exist yet — Airtable just omits it).
+    return recs.filter((r) => r.fields.Title && !r.fields.Canceled);
   } catch (e) {
     if (/FBPostedAt/.test(String(e)) || /INVALID_FILTER/.test(String(e))) {
       console.error("Missing 'FBPostedAt' field on Events — run `npm run ensure-fb-fields` first.");
@@ -228,8 +243,13 @@ async function runSchedule() {
   const DEFAULT_TIMES = [9, 13, 17, 11, 15, 19];
   const times = (argVal("--times") || process.env.FB_TIMES || "")
     .split(",").map((s) => parseInt(s.trim(), 10)).filter((n) => n >= 0 && n <= 23);
-  const hours = (times.length ? times : DEFAULT_TIMES).slice(0, perDay);
-  while (hours.length < perDay) hours.push(DEFAULT_TIMES[hours.length % DEFAULT_TIMES.length]);
+  // `perDay` DISTINCT PT hours: requested first, defaults to pad, never repeating
+  // (two posts at the same instant would collide / stack on the feed).
+  const hours = [];
+  for (const h of [...(times.length ? times : DEFAULT_TIMES), ...DEFAULT_TIMES]) {
+    if (hours.length >= perDay) break;
+    if (!hours.includes(h)) hours.push(h);
+  }
   hours.sort((a, b) => a - b);
 
   // Legacy: `schedule 14` (a bare count, no --per-day/--days) → 14 posts, 1/day.
@@ -239,15 +259,20 @@ async function runSchedule() {
   const candidates = await unpostedEvents();
   if (!candidates.length) { console.log("schedule: no un-posted events available."); return; }
 
-  // Start day in PT.
+  // Start day in PT — defaults to today. A well-formed --start is honored only if
+  // it's in range AND not in the past; otherwise we clamp to today, so a stale
+  // FB_START or a past date can't collapse the batch to a handful of posts.
+  const ptToday = (() => {
+    const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", year: "numeric", month: "numeric", day: "numeric" }).formatToParts(new Date());
+    const m = {}; for (const x of p) m[x.type] = x.value;
+    return { y: +m.year, mo: +m.month, d: +m.day };
+  })();
+  let startY = ptToday.y, startMo = ptToday.mo, startD = ptToday.d;
   const startStr = argVal("--start") || process.env.FB_START;
-  let startY, startMo, startD;
-  if (startStr && /^\d{4}-\d{2}-\d{2}$/.test(startStr)) {
-    [startY, startMo, startD] = startStr.split("-").map(Number);
-  } else {
-    const ptNow = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", year: "numeric", month: "numeric", day: "numeric" }).formatToParts(new Date());
-    const m = {}; for (const p of ptNow) m[p.type] = p.value;
-    startY = +m.year; startMo = +m.month; startD = +m.day;
+  const sm = startStr && /^\d{4}-\d{2}-\d{2}$/.test(startStr) ? startStr.split("-").map(Number) : null;
+  if (sm && sm[1] >= 1 && sm[1] <= 12 && sm[2] >= 1 && sm[2] <= 31 &&
+      ptToUtc(sm[0], sm[1], sm[2], 0).getTime() >= ptToUtc(ptToday.y, ptToday.mo, ptToday.d, 0).getTime()) {
+    [startY, startMo, startD] = sm;
   }
 
   // Build chronological slots: for each day, each chosen PT hour, >15min out.
@@ -308,7 +333,7 @@ async function runRoundup() {
   const formula = "AND({Approved}=1, OR(NOT({Recurrence}=BLANK()), AND(IS_AFTER({Start}, DATEADD(NOW(),-1,'days')), IS_BEFORE({Start}, DATEADD(NOW(),4,'days')))))";
   const events = (await airtableAll("Events", `&filterByFormula=${encodeURIComponent(formula)}`))
     .map((r) => r.fields)
-    .filter((f) => f.Title && f.Start)
+    .filter((f) => f.Title && f.Start && !f.Canceled && postableTitle(f.Title))
     .sort((a, b) => String(a.Start).localeCompare(String(b.Start)))
     .slice(0, 6);
   if (!events.length) { console.log("roundup: no events this weekend — nothing to post."); return; }

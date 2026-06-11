@@ -25,15 +25,20 @@ runSweep({ apply })
     console.log(`Scanned ${s.scanned} approved upcoming one-time event(s).`);
 
     if (s.high.length) {
-      console.log(`\n⛔ HIGH confidence — cancelled (${apply ? `removed ${s.removed}` : "would remove"}):`);
+      console.log(`\n⛔ HIGH confidence — cancelled (${apply ? `marked ${s.marked}` : "would mark"} with a banner; stays visible, never social-posted):`);
       for (const c of s.high) console.log(`  • ${c.title}  [${c.source}]  ${c.start.slice(0, 10)}\n      ${c.reason}\n      ${c.url || "(no url)"}`);
     } else {
       console.log("\n✅ No HIGH-confidence cancellations found.");
     }
 
     if (s.medium.length) {
-      console.log(`\n⚠️  MEDIUM — vanished from feed but unconfirmed (review manually, NOT removed):`);
+      console.log(`\n⚠️  MEDIUM — vanished from feed but unconfirmed (review manually, NOT marked):`);
       for (const c of s.medium) console.log(`  • ${c.title}  [${c.source}]  ${c.start.slice(0, 10)}\n      ${c.reason}\n      ${c.url || "(no url)"}`);
+    }
+
+    if (s.unmarked.length) {
+      console.log(`\n🔄 Reappeared in feed — un-cancelled (${apply ? "banner cleared" : "would clear"}):`);
+      for (const u of s.unmarked) console.log(`  • ${u.title}`);
     }
 
     console.log("");

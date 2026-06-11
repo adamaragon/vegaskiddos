@@ -41,7 +41,7 @@ export function ThisWeekNearYou({ events, lang = "en" }: { events: KidEvent[]; l
   const thisWeek = useMemo(() => {
     const now = Date.now();
     return events
-      .map((e) => ({ e, occ: Date.parse(nextOccurrenceISO(e.start, e.recurrence)) }))
+      .map((e) => ({ e, occ: Date.parse(nextOccurrenceISO(e.start, e.recurrence, e.canceledDates)) }))
       .filter((x) => !Number.isNaN(x.occ) && x.occ >= now - 6 * 3_600_000 && x.occ <= now + WEEK_MS)
       .sort((a, b) => a.occ - b.occ);
   }, [events]);
@@ -136,6 +136,7 @@ export function ThisWeekNearYou({ events, lang = "en" }: { events: KidEvent[]; l
             <EventCard
               event={e}
               index={i}
+              lang={lang}
               distanceMi={coords && e.lat ? milesBetween(coords, { lat: e.lat, lng: e.lng }) : undefined}
             />
           </div>

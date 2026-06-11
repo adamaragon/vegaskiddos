@@ -21,4 +21,7 @@ export interface KidEvent {
   source: string; // where it came from (Library, Eventbrite, Community, ...)
   indoor?: boolean;
   recurrence?: string; // e.g. "Weekly on Tuesdays"; empty/undefined = one-time
+  canceled?: boolean; // whole one-time event cancelled; still shown, with a banner
+  canceledReason?: string; // why the sweep marked it (audit / tooltip)
+  canceledDates?: string[]; // for a recurring series: individual cancelled occurrences ("YYYY-MM-DD" LA days)
 }

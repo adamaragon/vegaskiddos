@@ -52,7 +52,15 @@ jobs:
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
         run: |
-          MODE="${{ github.event.inputs.mode || 'schedule' }}"
+          # Trigger → mode. CRON fires the recurring posts: the Friday 16:00 UTC
+          # cron does the weekend roundup, every other cron does a daily highlight.
+          # `schedule` (batch-queue ~90 posts) is ONLY ever a manual choice — never
+          # a cron default, or every cron would queue a whole batch.
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            if [ "${{ github.event.schedule }}" = "0 16 * * 5" ]; then MODE=roundup; else MODE=daily; fi
+          else
+            MODE="${{ github.event.inputs.mode }}"; MODE="${MODE:-schedule}"
+          fi
           PER_DAY="${{ github.event.inputs.per_day || '3' }}"
           DAYS="${{ github.event.inputs.days || '30' }}"
           TIMES="${{ github.event.inputs.times || '9,13,17' }}"

@@ -241,6 +241,18 @@ export const STRINGS = {
   cc_accept: { en: "Accept", es: "Aceptar" },
   cc_decline: { en: "Decline", es: "Rechazar" },
   cc_settings: { en: "Cookie settings", es: "Preferencias de cookies" },
+
+  // ── Cancelled-event banner ──
+  cancel_badge: { en: "Canceled", es: "Cancelado" },
+  cancel_banner: { en: "This event has been canceled", es: "Este evento ha sido cancelado" },
+  cancel_note: {
+    en: "The source pulled this event after we listed it, so don't head out — and always confirm details with the venue.",
+    es: "La fuente retiró este evento después de publicarlo, así que no vayas — y confirma siempre los detalles con el lugar.",
+  },
+  cancel_dates_note: {
+    en: "Heads up — these upcoming sessions are canceled (the rest of the series still runs):",
+    es: "Aviso — estas próximas sesiones están canceladas (el resto de la serie continúa):",
+  },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;
