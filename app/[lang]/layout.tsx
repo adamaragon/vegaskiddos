@@ -15,6 +15,9 @@ import Link from "next/link";
 // Privacy-friendly, cookieless analytics (Plausible). Site-specific script.
 const PLAUSIBLE_SRC = "https://plausible.io/js/pa-pzyYa6yNV14PH2tAZYFUG.js";
 
+// Google Analytics 4.
+const GA_ID = "G-QDXDVLCLGC";
+
 export const viewport: Viewport = {
   themeColor: "#FF6B5E",
 };
@@ -92,6 +95,13 @@ export default async function RootLayout({
         <Script defer src={PLAUSIBLE_SRC} strategy="afterInteractive" />
         <Script id="plausible-init" strategy="afterInteractive">
           {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
+        </Script>
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga4-init" strategy="afterInteractive">
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
         </Script>
         <PWARegister />
         <CrayonDefs />
