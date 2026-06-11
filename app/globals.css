@@ -67,6 +67,14 @@ body {
 .animate-card-in {
   animation: card-in 0.7s cubic-bezier(.18,.89,.32,1.28) both;
 }
+/* Gentle slide-up for the cookie consent banner */
+@keyframes consent-rise {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-consent-rise {
+  animation: consent-rise 0.45s cubic-bezier(.18,.89,.32,1.28) both;
+}
 
 .animate-wiggle { animation: wiggle 3s ease-in-out infinite; }
 .animate-float { animation: float-y 4s ease-in-out infinite; }
@@ -244,7 +252,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-wiggle, .animate-float, .animate-bob, .animate-spin-slow,
   .hover-wobble:hover, .hover-shake:hover, .reveal-pop.is-visible,
-  .animate-card-in { animation: none !important; }
+  .animate-card-in, .animate-consent-rise { animation: none !important; }
   /* Keep the glow + halo as a static state, drop the motion. */
   .select-pop { animation: none !important; filter: brightness(1.1);
     box-shadow: 0 0 13px 2px var(--halo, transparent), inset 0 0 12px 0 rgba(255,255,255,0.45); }

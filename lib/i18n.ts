@@ -231,6 +231,16 @@ export const STRINGS = {
     es: "Nada en tu zona esta semana — esto es lo que hay por todo el valle.",
   },
   tw_see_all: { en: "See all events →", es: "Ver todos los eventos →" },
+
+  // ── Cookie consent banner ──
+  cc_title: { en: "Cookies 🍪", es: "Cookies 🍪" },
+  cc_msg: {
+    en: "We use a couple of cookies to see how families use the site — never for ads, never sold. The site works just the same if you say no.",
+    es: "Usamos un par de cookies para ver cómo las familias usan el sitio — nunca para anuncios, nunca se venden. El sitio funciona igual si dices que no.",
+  },
+  cc_accept: { en: "Accept", es: "Aceptar" },
+  cc_decline: { en: "Decline", es: "Rechazar" },
+  cc_settings: { en: "Cookie settings", es: "Preferencias de cookies" },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

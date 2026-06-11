@@ -6,6 +6,8 @@ import { Header } from "@/components/Header";
 import { CrayonDefs, Heart } from "@/components/Doodles";
 import { PWARegister } from "@/components/PWARegister";
 import { LangToggle } from "@/components/LangToggle";
+import { ConsentBanner } from "@/components/ConsentBanner";
+import { CookieSettingsLink } from "@/components/CookieSettingsLink";
 import { t, type Lang } from "@/lib/i18n";
 import { SITE } from "@/lib/seo";
 import type { Viewport } from "next";
@@ -101,9 +103,10 @@ export default async function RootLayout({
           strategy="afterInteractive"
         />
         <Script id="ga4-init" strategy="afterInteractive">
-          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});gtag('js',new Date());gtag('config','${GA_ID}');`}
         </Script>
         <PWARegister />
+        <ConsentBanner lang={lang} />
         <CrayonDefs />
         <Header lang={lang} />
         <main>{children}</main>
@@ -159,6 +162,9 @@ export default async function RootLayout({
                     <Link href={href} className="hover:text-coral">{label}</Link>
                   </li>
                 ))}
+                <li>
+                  <CookieSettingsLink label={t(lang, "cc_settings")} />
+                </li>
               </ul>
             </nav>
           </div>
