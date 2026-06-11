@@ -14,13 +14,18 @@ import { nextOccurrenceISO, laDateKey } from "@/lib/recurrence";
 import { AdminEventControls } from "@/components/AdminEventControls";
 import { t, ageLabel, priceLabel, hoodLabel, type Lang } from "@/lib/i18n";
 
-// Statically rendered per locale + cached (revalidate: 86400). Event ids render
-// on demand and cache on first hit (there are ~hundreds), so the build stays
-// fast and the Worker serves cached HTML instead of re-rendering each request.
+// Prebuild every event page per locale so they ship as static HTML and the
+// Worker serves them from the edge / R2-backed ISR cache (revalidate: 86400)
+// instead of re-rendering on every request. Returning [] here made the route
+// compile as dynamic — every hit was a full SSR (no-store), which was both the
+// LCP cold-start tail and the CPU cost. With real params it's static/ISR, so
+// prebuilt pages AND on-demand ones (dynamicParams) cache. New events added
+// between deploys fall back to on-demand rendering, then cache on first hit.
 export const revalidate = 86400;
 export const dynamicParams = true;
-export function generateStaticParams() {
-  return [];
+export async function generateStaticParams() {
+  const events = await getEvents("en");
+  return events.map((e) => ({ id: e.id }));
 }
 
 const SITE = "https://vegaskiddos.com";
