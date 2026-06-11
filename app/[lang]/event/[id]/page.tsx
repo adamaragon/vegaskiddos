@@ -268,7 +268,7 @@ export default async function EventPage({
                   key={aid}
                   className="rounded-full border-2 border-teal/40 px-3 py-1 text-sm font-700 text-teal-btn"
                 >
-                  {a.emoji} {L.label} <span className="opacity-60">{L.sublabel}</span>
+                  {a.emoji} {L.label} <span className="text-ink/70">{L.sublabel}</span>
                 </span>
               );
             })}
