@@ -45,6 +45,20 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm run scrape
 
+      # Cancellation sweep: re-fetch every feed and auto-remove approved,
+      # upcoming, one-time events that have VANISHED from their source feed AND
+      # whose own URL confirms it (404/410 or "cancelled"/"postponed" text).
+      # High-confidence only — vanished-but-unconfirmed cases are logged for
+      # review, not removed. Runs before enrich/art so a cancelled event doesn't
+      # get descriptions or art generated for it. A source that errored or
+      # returned zero is skipped entirely (a feed hiccup never mass-cancels).
+      - name: Sweep for cancellations
+        if: ${{ always() }}
+        env:
+          AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+        run: npm run sweep -- --apply || true
+
       # Self-heal incomplete events from every source (gov, library, Netlify
       # scraper): fill blank descriptions, geocode missing coordinates, and tag
       # missing age groups. All idempotent — they only touch non-rejected events

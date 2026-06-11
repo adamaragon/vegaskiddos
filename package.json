@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "scrape": "tsx lib/scrape/cli.ts",
+    "sweep": "tsx lib/scrape/sweep-cli.ts",
     "translate": "node tools/translate-backfill.mjs",
     "fill-descriptions": "tsx tools/fill-blank-descriptions-cli.ts",
     "geocode": "node tools/geocode-events.mjs",

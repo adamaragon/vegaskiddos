@@ -50,6 +50,13 @@ const SOURCES: (() => Promise<SourceResult>)[] = [
   () => fetchHendersonLibraries({ days: 45 }),
 ];
 
+// Fetch every source's CURRENT feed without upserting — used by the cancellation
+// sweep to detect approved events that have vanished from their source (a strong
+// "removed/cancelled" signal). Returns raw per-instance events (pre-collapse).
+export async function fetchAllSources(): Promise<SourceResult[]> {
+  return Promise.all(SOURCES.map((s) => s()));
+}
+
 export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary> {
   const dryRun = opts?.dryRun ?? false;
   const results = await Promise.all(SOURCES.map((s) => s()));

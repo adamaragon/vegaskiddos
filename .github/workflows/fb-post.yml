@@ -21,9 +21,18 @@ on:
         type: choice
         default: schedule
         options: [schedule, daily, roundup, verify, repair-audit, repair, restore-timing]
-      count:
-        description: "How many posts to queue (schedule mode only)"
-        default: "14"
+      per_day:
+        description: "Posts per day (schedule mode)"
+        default: "3"
+      days:
+        description: "Number of days to fill (schedule mode)"
+        default: "30"
+      times:
+        description: "PT hours for the daily slots, comma-separated (schedule mode)"
+        default: "9,13,17"
+      start:
+        description: "First day YYYY-MM-DD, PT (schedule mode; blank = today)"
+        default: ""
       dry_run:
         description: "Compose only, do not post"
         type: boolean
@@ -44,13 +53,17 @@ jobs:
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
         run: |
           MODE="${{ github.event.inputs.mode || 'schedule' }}"
-          COUNT="${{ github.event.inputs.count || '14' }}"
+          PER_DAY="${{ github.event.inputs.per_day || '3' }}"
+          DAYS="${{ github.event.inputs.days || '30' }}"
+          TIMES="${{ github.event.inputs.times || '9,13,17' }}"
+          START="${{ github.event.inputs.start }}"
           DRY=""
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then DRY="--dry-run"; fi
-          echo "Running fb-post: mode=$MODE count=$COUNT $DRY"
+          echo "Running fb-post: mode=$MODE per_day=$PER_DAY days=$DAYS times=$TIMES start=${START:-today} $DRY"
           case "$MODE" in
             repair-audit) node tools/fb-repair-posts.mjs audit ;;
             repair)       node tools/fb-repair-posts.mjs repair ;;
             restore-timing) node tools/fb-repair-posts.mjs restore-timing ;;
-            *)            node tools/fb-post.mjs "$MODE" "$COUNT" $DRY ;;
+            schedule)     node tools/fb-post.mjs schedule --per-day "$PER_DAY" --days "$DAYS" --times "$TIMES" ${START:+--start "$START"} $DRY ;;
+            *)            node tools/fb-post.mjs "$MODE" $DRY ;;
           esac

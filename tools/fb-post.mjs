@@ -27,6 +27,47 @@ if (!AT || !BASE) { console.error("AIRTABLE_TOKEN / AIRTABLE_BASE_ID required");
 const PAGE_ID = (process.env.FB_PAGE_ID || "").trim(), PAGE_TOKEN = (process.env.FB_PAGE_TOKEN || "").trim();
 const SITE = "https://vegaskiddos.com";
 const GRAPH = "https://graph.facebook.com/v21.0";
+const IMG_CDN = "https://img.vegaskiddos.com";
+
+// Pre-post image guard: a Facebook link post renders the event page's OG image,
+// which is the durable R2 copy at img.vegaskiddos.com/event/<id>/1024.webp. If
+// that 404s (e.g. a scraped image that never synced), the post shows an empty
+// grey box — so we skip such events when choosing what to post/schedule. Result
+// is memoized per id so a candidate is only checked once per run.
+// Some auto-approved library entries aren't kid events worth promoting — adult
+// programming and branch-closure notices. Skip them when choosing what to post
+// so the Page never highlights "Adult Perler Bead Crafternight" or "CLOSED FOR
+// THANKSGIVING". Deliberately narrow: "Young Adult" (teen) is NOT excluded.
+const SKIP_TITLE = /(?<!young\s)\badults?\b|^closed\b|\bclosed for\b/i;
+const postableTitle = (t) => t && !SKIP_TITLE.test(String(t));
+
+const _imgOkCache = new Map();
+async function ogImageOk(recId) {
+  if (_imgOkCache.has(recId)) return _imgOkCache.get(recId);
+  let ok = false;
+  try {
+    const r = await fetch(`${IMG_CDN}/event/${recId}/1024.webp`, { method: "HEAD" });
+    ok = r.ok;
+  } catch { ok = false; }
+  _imgOkCache.set(recId, ok);
+  return ok;
+}
+
+// UTC instant for a given America/Los_Angeles wall-clock date + hour. Handles
+// PST/PDT correctly (one Intl round-trip), so "9am PT" lands at the right UTC
+// time year-round without a date library.
+function ptToUtc(y, mo /*1-12*/, d, hour) {
+  const utcGuess = Date.UTC(y, mo - 1, d, hour, 0, 0);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles", hour12: false,
+    year: "numeric", month: "numeric", day: "numeric",
+    hour: "numeric", minute: "numeric", second: "numeric",
+  }).formatToParts(new Date(utcGuess));
+  const m = {};
+  for (const p of parts) m[p.type] = p.value;
+  const asUtc = Date.UTC(+m.year, +m.month - 1, +m.day, +m.hour % 24, +m.minute, +m.second);
+  return new Date(utcGuess - (asUtc - utcGuess));
+}
 
 const mode = (process.argv[2] || "daily").toLowerCase();
 const DRY = process.argv.includes("--dry-run") || !PAGE_ID || !PAGE_TOKEN;
@@ -151,8 +192,14 @@ function preview(label, message, link) {
 // ── daily: one upcoming highlight, deduped via FBPostedAt ───────────────────
 async function runDaily() {
   if (pausedUntilResume("daily")) return;
-  const rec = (await unpostedEvents()).find((r) => r.fields.Start);
-  if (!rec) { console.log("daily: no un-posted upcoming events — nothing to post."); return; }
+  // First un-posted upcoming event whose OG image actually resolves (no grey box).
+  let rec = null;
+  for (const r of await unpostedEvents()) {
+    if (!r.fields.Start) continue;
+    if (!postableTitle(r.fields.Title)) continue;
+    if (await ogImageOk(r.id)) { rec = r; break; }
+  }
+  if (!rec) { console.log("daily: no un-posted upcoming events with a working image — nothing to post."); return; }
   const { message, url } = eventPost(rec);
   preview("DAILY HIGHLIGHT", message, url);
   if (DRY) return;
@@ -161,45 +208,90 @@ async function runDaily() {
   await stampPosted(rec.id);
 }
 
-// ── schedule: queue N daily highlights with Facebook (publishes server-side
-// even after our token expires). Default 14 posts, one/day at ~11am PT. ──────
+// ── schedule: queue highlights with Facebook (publishes server-side even after
+// our token expires). Supports several posts/day across many days at chosen PT
+// times. Flags (all optional):
+//   --per-day N     posts per day            (default 1)
+//   --days D        number of days to fill   (default 14)
+//   --times h,h,h   PT hours, one per slot   (default "9,13,17" → trimmed to per-day)
+//   --start Y-M-D   first day (PT)           (default: today)
+//   positional N    legacy: total post count (1/day) when no --per-day/--days
+// Each event is used once, titles don't repeat within the batch, and only
+// events whose OG image resolves are eligible (so no post ships a grey box). ──
+function argVal(flag) {
+  const i = process.argv.indexOf(flag);
+  return i >= 0 ? process.argv[i + 1] : undefined;
+}
 async function runSchedule() {
-  const count = Math.max(1, Math.min(60, parseInt(process.argv[3] || process.env.FB_SCHEDULE_COUNT || "14", 10)));
+  const perDay = Math.max(1, Math.min(6, parseInt(argVal("--per-day") || process.env.FB_PER_DAY || "1", 10)));
+  const days = Math.max(1, Math.min(60, parseInt(argVal("--days") || process.env.FB_DAYS || "14", 10)));
+  const DEFAULT_TIMES = [9, 13, 17, 11, 15, 19];
+  const times = (argVal("--times") || process.env.FB_TIMES || "")
+    .split(",").map((s) => parseInt(s.trim(), 10)).filter((n) => n >= 0 && n <= 23);
+  const hours = (times.length ? times : DEFAULT_TIMES).slice(0, perDay);
+  while (hours.length < perDay) hours.push(DEFAULT_TIMES[hours.length % DEFAULT_TIMES.length]);
+  hours.sort((a, b) => a - b);
+
+  // Legacy: `schedule 14` (a bare count, no --per-day/--days) → 14 posts, 1/day.
+  const legacyCount = !argVal("--per-day") && !argVal("--days") && /^\d+$/.test(process.argv[3] || "")
+    ? parseInt(process.argv[3], 10) : null;
+
   const candidates = await unpostedEvents();
   if (!candidates.length) { console.log("schedule: no un-posted events available."); return; }
 
-  // Build daily 18:00 UTC (~11:00 PT) slots, starting the next one >15min out.
+  // Start day in PT.
+  const startStr = argVal("--start") || process.env.FB_START;
+  let startY, startMo, startD;
+  if (startStr && /^\d{4}-\d{2}-\d{2}$/.test(startStr)) {
+    [startY, startMo, startD] = startStr.split("-").map(Number);
+  } else {
+    const ptNow = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", year: "numeric", month: "numeric", day: "numeric" }).formatToParts(new Date());
+    const m = {}; for (const p of ptNow) m[p.type] = p.value;
+    startY = +m.year; startMo = +m.month; startD = +m.day;
+  }
+
+  // Build chronological slots: for each day, each chosen PT hour, >15min out.
   const nowMs = Date.now();
+  const dayCount = legacyCount != null ? legacyCount : days;
   const slots = [];
-  let d = new Date(); d.setUTCHours(18, 0, 0, 0);
-  while (slots.length < count) {
-    if (d.getTime() > nowMs + 15 * 60 * 1000) slots.push(new Date(d));
-    d = new Date(d.getTime() + 86400000);
+  const target = legacyCount ?? perDay * days;
+  for (let dayOffset = 0; dayOffset < dayCount + 2 && slots.length < target; dayOffset++) {
+    // ptToUtc normalizes an overflowing day (e.g. Jun 45 → Jul 15) via Date.UTC.
+    for (const h of (legacyCount != null ? [hours[0]] : hours)) {
+      const slot = ptToUtc(startY, startMo, startD + dayOffset, h);
+      if (slot.getTime() > nowMs + 15 * 60 * 1000) slots.push(slot);
+      if (slots.length >= target) break;
+    }
   }
 
   // Assign an event to each slot: recurring events are always valid; one-time
-  // events only if they're still upcoming when the post goes live.
+  // events only if still upcoming at post time; image must resolve (no grey box).
   const used = new Set();
-  const usedTitles = new Set(); // keep the batch varied — no repeated titles
+  const usedTitles = new Set();
   const plan = [];
   for (const slot of slots) {
-    const ev = candidates.find((r) => {
-      if (used.has(r.id)) return false;
+    let chosen = null;
+    for (const r of candidates) {
+      if (used.has(r.id)) continue;
       const f = r.fields;
-      if (usedTitles.has(String(f.Title || "").trim().toLowerCase())) return false;
-      return f.Recurrence || (f.Start && new Date(f.Start).getTime() > slot.getTime());
-    });
-    if (!ev) break;
-    used.add(ev.id);
-    usedTitles.add(String(ev.fields.Title || "").trim().toLowerCase());
-    plan.push({ rec: ev, slot });
+      if (!postableTitle(f.Title)) continue; // skip adult / closure entries
+      if (usedTitles.has(String(f.Title || "").trim().toLowerCase())) continue;
+      const valid = f.Recurrence || (f.Start && new Date(f.Start).getTime() > slot.getTime());
+      if (!valid) continue;
+      if (!(await ogImageOk(r.id))) continue; // skip grey-box events
+      chosen = r; break;
+    }
+    if (!chosen) continue; // no eligible event for this slot — leave it empty, try next
+    used.add(chosen.id);
+    usedTitles.add(String(chosen.fields.Title || "").trim().toLowerCase());
+    plan.push({ rec: chosen, slot });
   }
   if (!plan.length) { console.log("schedule: no events match the upcoming slots."); return; }
 
-  console.log(`Scheduling ${plan.length} post(s)${DRY ? " (DRY RUN)" : ""}:`);
+  const fmtSlot = (s) => s.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
+  console.log(`Scheduling ${plan.length} post(s)${legacyCount != null ? "" : ` — ${perDay}/day × ${days} day(s) at ${hours.map((h) => `${h}:00`).join(", ")} PT from ${startY}-${String(startMo).padStart(2, "0")}-${String(startD).padStart(2, "0")}`}${DRY ? " (DRY RUN)" : ""}:`);
   for (const { rec, slot } of plan) {
-    const when = slot.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
-    console.log(`  • ${when} PT  →  ${rec.fields.Title}`);
+    console.log(`  • ${fmtSlot(slot)} PT  →  ${rec.fields.Title}`);
     if (DRY) continue;
     const { message, url } = eventPost(rec);
     const id = await publish(message, url, Math.floor(slot.getTime() / 1000));

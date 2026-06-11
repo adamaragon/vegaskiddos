@@ -167,17 +167,32 @@ async function uploadToAirtable(recordId, b64) {
   if (!r.ok) throw new Error(`Airtable upload ${r.status}: ${(await r.text()).slice(0, 200)}`);
 }
 
-// Selection: every approved event that has no image of any kind yet.
-const formula = "AND({Approved}=1, {Image}=BLANK(), {ArtImage}=BLANK())";
+// Selection: by default every approved event with no image of any kind yet.
+// With `--ids rec1,rec2,…` instead, regenerate art for exactly those records
+// (used to repair events whose scraped Image died and never synced to R2 — the
+// new ArtImage takes precedence in sync-images.mjs, so the R2 copy resolves).
+const idsArg = (() => {
+  const i = process.argv.indexOf("--ids");
+  return i >= 0 ? (process.argv[i + 1] || "").split(",").map((s) => s.trim()).filter(Boolean) : null;
+})();
+
 let recs;
-try {
+if (idsArg && idsArg.length) {
+  const orClause = idsArg.map((id) => `RECORD_ID()='${id}'`).join(",");
+  const formula = `OR(${orClause})`;
   recs = (await airtableAll("Events", `&filterByFormula=${encodeURIComponent(formula)}`)).filter((r) => r.fields.Title);
-} catch (e) {
-  if (/ArtImage/.test(String(e)) || /INVALID_FILTER/.test(String(e))) {
-    console.error("Missing 'ArtImage' field — run `npm run ensure-art-field` first.");
-    process.exit(1);
+  console.log(`--ids: regenerating art for ${recs.length}/${idsArg.length} requested record(s).`);
+} else {
+  const formula = "AND({Approved}=1, {Image}=BLANK(), {ArtImage}=BLANK())";
+  try {
+    recs = (await airtableAll("Events", `&filterByFormula=${encodeURIComponent(formula)}`)).filter((r) => r.fields.Title);
+  } catch (e) {
+    if (/ArtImage/.test(String(e)) || /INVALID_FILTER/.test(String(e))) {
+      console.error("Missing 'ArtImage' field — run `npm run ensure-art-field` first.");
+      process.exit(1);
+    }
+    throw e;
   }
-  throw e;
 }
 
 console.log(`${recs.length} approved event(s) with no image yet. Mode: ${mode}, size: ${SIZE}, quality: ${QUALITY}${DRY ? " (dry-run)" : ""}.`);
