@@ -316,7 +316,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
     <div>
       {/* Search + filters grouped in one soft panel, set apart from the
           results grid below to cut the "floating pills" clutter. */}
-      <div className="rounded-blob border border-ink/10 bg-gradient-to-br from-white to-sand/70 p-4 shadow-sm sm:p-5">
+      <div className="rounded-blob border border-ink/10 bg-gradient-to-br from-teal/15 via-white to-grape/15 p-4 shadow-card sm:p-5">
       {/* Search (left half) + the 4 quick-picks inline (right half) */}
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
