@@ -10,10 +10,10 @@ Threesided Studios.
   `https://vegaskiddos.threesided.workers.dev`. The R2 bucket
   `vegaskiddos-cache` backs the Next incremental cache; `img.vegaskiddos.com`
   is a separate R2 bucket (`vegaskiddos-media`) for synced event images.
-  **NOT Netlify** — site moved off Netlify; pushing to `main` does NOT auto-
-  deploy. Old Netlify site id `d5375712-aa44-44a4-be14-947b942d26e7` referenced
-  in `tools/send-digest.mjs` and a couple of workflows is historical; the
-  Cloudflare R2 sync is what actually moves images to production.
+  **NOT Netlify** — the site moved fully off Netlify (all Netlify config,
+  packages, and the old scheduled scrape function have been removed); pushing
+  to `main` does NOT auto-deploy. The Cloudflare R2 sync is what actually moves
+  images to production.
 - **Dev port:** **3100** (`next dev -p 3100`) — port 3000 is dndcards
 - **Full handoff / deep context:** `_Claude/Projects/VegasKiddos.md` in the
   Obsidian vault (`~/Dropbox/Apps/Obsidian/Obsidian Vault/`). Read it first.
@@ -99,5 +99,3 @@ or hard reloads get the fresh deploy immediately.
 - No auto-deploy on `git push`. If you want one, add a `.github/workflows/
   cf-deploy.yml` that runs `npm run cf:deploy` with the existing
   `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` GH secrets.
-- `tools/send-digest.mjs` and a couple of workflow comments still reference
-  Netlify env vars — these are historical, the actual host is Cloudflare.

@@ -1,6 +1,6 @@
 // Custom next/image loader. Active only when NEXT_PUBLIC_IMAGE_CDN is set (see
-// next.config.mjs — local dev + Netlify leave it unset and use the built-in
-// optimizer instead).
+// next.config.mjs — local dev leaves it unset and uses the built-in optimizer
+// instead).
 //
 // On Cloudflare the Worker can't run sharp, so event images are pre-generated as
 // responsive WebP and stored in R2, served at
@@ -31,6 +31,6 @@ export default function imageLoader({
     return src.replace(/\/\d+\.webp$/, `/${pick}.webp`);
   }
 
-  // Fallback: built-in optimizer (Netlify Image CDN in prod, sharp in dev).
+  // Fallback: built-in optimizer (sharp in dev).
   return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=${quality || 75}`;
 }

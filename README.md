@@ -12,7 +12,7 @@ Live domain: **vegaskiddos.com**
 - **Tailwind CSS** (custom desert-sunset theme)
 - **Leaflet + OpenStreetMap** for the map (no API key needed)
 - **Airtable** as the database **and** admin panel
-- **Netlify** for hosting
+- **Cloudflare Workers** (OpenNext) for hosting
 
 ## Running locally
 
@@ -61,7 +61,7 @@ Review them in Airtable and tick `Approved` to publish. The Airtable grid view
 
 ## Data sources to wire up (scrapers / feeds)
 
-Planned ingestion (each becomes a Netlify scheduled function writing to Airtable):
+Planned ingestion (each runs as a scheduled GitHub Action writing to Airtable):
 
 - **Libraries:** LVCCLD, Henderson Libraries, North Las Vegas Library (LibCal/iCal feeds)
 - **Parks & Rec:** City of Las Vegas, City of Henderson, Clark County

@@ -3,7 +3,7 @@ name: Daily event scrape
 # Daily catalog refresh. Two scrapers upsert events; enrichers self-heal gaps:
 #   1. gov-scrape.mjs — headless browser for JS gov calendars (pending review).
 #   2. `npm run scrape` — fetch adapters; fills blank descriptions then
-#      publishPending() auto-approves new non-duplicate events (same as Netlify).
+#      publishPending() auto-approves new non-duplicate events.
 #   3. Enrich step — descriptions (backup), geocode, infer-ages for all sources.
 # Runs daily and on demand. Each scraper is independent (always()) so one
 # failing doesn't skip the other or the enrichers.
@@ -61,8 +61,8 @@ jobs:
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
         run: npm run sweep -- --apply || true
 
-      # Self-heal incomplete events from every source (gov, library, Netlify
-      # scraper): fill blank descriptions, geocode missing coordinates, and tag
+      # Self-heal incomplete events from every source (gov, library, fetch
+      # scrapers): fill blank descriptions, geocode missing coordinates, and tag
       # missing age groups. All idempotent — they only touch non-rejected events
       # still missing the field, so it's cheap once the catalog is backfilled.
       - name: Enrich events (descriptions, coordinates, age tiers)
