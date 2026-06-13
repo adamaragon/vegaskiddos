@@ -37,8 +37,16 @@ jobs:
 
       # Fetch-based adapters (WP calendars, library iCal feeds, Nevada Moms).
       # always() so a gov-scrape failure above doesn't skip these.
+      #
+      # continue-on-error: when upstream sources serve WAF/HTML challenges
+      # instead of JSON (Vegas Family Guide and Nevada Moms have done this
+      # intermittently), the script exits 1 after retries. Per-source errors
+      # are logged in the step output. We don't want one blocked source to
+      # mark the whole nightly run red and email — other sources usually
+      # succeeded, and the next day's run often recovers automatically.
       - name: Run fetch scraper (library + WP calendars)
         if: ${{ always() }}
+        continue-on-error: true
         env:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
