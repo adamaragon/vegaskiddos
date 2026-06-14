@@ -20,13 +20,15 @@ Threesided Studios.
 
 ## ⚠️ Working rules (read before doing anything)
 
-1. **Deploy ONLY on explicit request.** Deploys are manual via
-   `npm run cf:deploy` (OpenNext build → `wrangler deploy`). Needs
-   `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` env vars (token in
-   vault `Logins & Passwords/Hermes-Keys.md ## Cloudflare`). Pushing to
-   `main` does NOT deploy on its own — no Cloudflare GH Actions workflow
-   exists yet. → Commit + push freely; hold `npm run cf:deploy` until Adam
-   says "deploy."
+1. **`main` auto-deploys to Cloudflare** via `.github/workflows/deploy.yml`
+   (GitHub Actions → `npm run cf:deploy` = OpenNext build → `wrangler deploy`,
+   using the `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` GH secrets).
+   **Pushing to `main` = a live deploy.** Cloudflare has no Netlify-style
+   build-minute/data caps, so auto-deploy-on-push is fine here — the old
+   "deploy only on request" rule was Netlify-cost-driven and **no longer
+   applies** (set 2026-06-14). Manual deploy still works: `npm run cf:deploy`
+   with the CF env vars (token in vault `Logins & Passwords/Hermes-Keys.md
+   ## Cloudflare`).
 2. **After each batch, give Adam a localhost:3100 preview link** to review before
    deploying. Don't run `next build` (or `npm run cf:deploy`) while the dev
    server is up — they fight over `.next` → 500s. Use `npx tsc --noEmit` to
@@ -96,6 +98,10 @@ or hard reloads get the fresh deploy immediately.
 
 ## Other gotchas
 
-- No auto-deploy on `git push`. If you want one, add a `.github/workflows/
-  cf-deploy.yml` that runs `npm run cf:deploy` with the existing
-  `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` GH secrets.
+- `git push` to `main` auto-deploys via `.github/workflows/deploy.yml`
+  (added 2026-06-14; runs `npm run cf:deploy` on the existing CF secrets,
+  skips `**.md`/`tools/**`/`assets/**`-only pushes). **Manual step still
+  owed by Adam:** disconnect the old *native* Cloudflare Workers Build
+  git-trigger (CF dashboard → vegaskiddos → Settings → Builds) so it doesn't
+  double-fire alongside this workflow — that native build was the source of
+  the "deploy failed from GitHub" emails.
