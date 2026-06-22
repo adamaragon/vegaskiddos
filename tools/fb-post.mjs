@@ -86,12 +86,13 @@ const mode = (process.argv[2] || "daily").toLowerCase();
 const DRY = process.argv.includes("--dry-run") || !PAGE_ID || !PAGE_TOKEN;
 const FORCE = process.argv.includes("--force") || process.env.FB_FORCE === "1";
 
-// The recurring daily/roundup crons are live, but a Facebook-native scheduled
-// batch (queued 2026-06-22 while the token was valid) covers daily posting
-// through Aug 3 2026 — those posts publish server-side even after the token
-// expires (~Jul 28). To avoid doubling up, the live-posting modes no-op until
-// this resume date, then pick up on their own. Bypass with --force.
-const RESUME_AFTER = Date.parse("2026-08-04T00:00:00-07:00");
+// A Facebook-native scheduled batch (queued 2026-06-22) covers daily posting
+// through Jul 21 2026 — that's the furthest out Facebook allows scheduling
+// (~30 days), and those posts publish server-side even if the token changes.
+// The live daily/roundup crons no-op until this resume date so they don't
+// double up with the batch, then take over on Jul 22 (token valid till Jul 28;
+// the weekly verify alert nags Adam to refresh it first). Bypass with --force.
+const RESUME_AFTER = Date.parse("2026-07-22T00:00:00-07:00");
 function pausedUntilResume(label) {
   if (FORCE || Date.now() >= RESUME_AFTER) return false;
   console.log(`${label}: paused until ${new Date(RESUME_AFTER).toISOString()} — scheduled batch covers this period (use --force to override).`);
@@ -278,18 +279,26 @@ async function runSchedule() {
   }
 
   // Build chronological slots: for each day, each chosen PT hour, >15min out.
+  // Facebook rejects scheduled_publish_time more than ~30 days ahead with
+  // "(#100) ... scheduled publish time is invalid", so cap slots at 29 days out
+  // and stop cleanly instead of erroring mid-batch.
   const nowMs = Date.now();
+  const FB_MAX_AHEAD_MS = 29 * 24 * 60 * 60 * 1000;
   const dayCount = legacyCount != null ? legacyCount : days;
   const slots = [];
+  let cappedByFb = false;
   const target = legacyCount ?? perDay * days;
   for (let dayOffset = 0; dayOffset < dayCount + 2 && slots.length < target; dayOffset++) {
     // ptToUtc normalizes an overflowing day (e.g. Jun 45 → Jul 15) via Date.UTC.
     for (const h of (legacyCount != null ? [hours[0]] : hours)) {
       const slot = ptToUtc(startY, startMo, startD + dayOffset, h);
-      if (slot.getTime() > nowMs + 15 * 60 * 1000) slots.push(slot);
+      const t = slot.getTime();
+      if (t > nowMs + FB_MAX_AHEAD_MS) { cappedByFb = true; continue; }
+      if (t > nowMs + 15 * 60 * 1000) slots.push(slot);
       if (slots.length >= target) break;
     }
   }
+  if (cappedByFb) console.log(`Note: Facebook only allows scheduling ~30 days ahead — batch trimmed to ${slots.length} slot(s) within that window.`);
 
   // Assign an event to each slot: recurring events are always valid; one-time
   // events only if still upcoming at post time; image must resolve (no grey box).
@@ -317,16 +326,22 @@ async function runSchedule() {
 
   const fmtSlot = (s) => s.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
   console.log(`Scheduling ${plan.length} post(s)${legacyCount != null ? "" : ` — ${perDay}/day × ${days} day(s) at ${hours.map((h) => `${h}:00`).join(", ")} PT from ${startY}-${String(startMo).padStart(2, "0")}-${String(startD).padStart(2, "0")}`}${DRY ? " (DRY RUN)" : ""}:`);
+  let okCount = 0;
   for (const { rec, slot } of plan) {
     console.log(`  • ${fmtSlot(slot)} PT  →  ${rec.fields.Title}`);
     if (DRY) continue;
     const { message, url } = eventPost(rec);
-    const id = await publish(message, url, Math.floor(slot.getTime() / 1000));
-    await stampPosted(rec.id, slot);
-    console.log(`      ✅ scheduled: ${id}`);
+    try {
+      const id = await publish(message, url, Math.floor(slot.getTime() / 1000));
+      await stampPosted(rec.id, slot);
+      okCount++;
+      console.log(`      ✅ scheduled: ${id}`);
+    } catch (e) {
+      console.error(`      ✗ skipped (${String(e).slice(0, 140)})`);
+    }
   }
   if (DRY) console.log("\n(DRY RUN — nothing was scheduled.)");
-  else console.log(`\n✅ Queued ${plan.length} posts. Review/edit them in Meta Business Suite → Planner.`);
+  else console.log(`\n✅ Queued ${okCount} post(s). Review/edit them in Meta Business Suite → Planner.`);
 }
 
 // ── roundup: "this weekend" multi-event list (bilingual), weekly ────────────

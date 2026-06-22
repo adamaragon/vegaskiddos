@@ -8,11 +8,12 @@ name: Facebook auto-post
 
 on:
   # Daily/roundup live-posting modes self-pause (RESUME_AFTER in fb-post.mjs)
-  # until Aug 4 2026 so they don't double up with the Facebook-native scheduled
-  # batch that covers daily posts through Aug 3 — those native posts survive
-  # token expiry (~Jul 28). The weekly `verify` cron has NO resume gate: it runs
-  # every Monday and FAILS the Action (emailing Adam) once FB_PAGE_TOKEN is
-  # within 21 days of expiry, so token death can't silently stop posting again.
+  # until Jul 22 2026 so they don't double up with the Facebook-native scheduled
+  # batch that covers daily posts through Jul 21 (Facebook's ~30-day scheduling
+  # limit). The live crons then take over on Jul 22. The weekly `verify` cron has
+  # NO resume gate: it runs every Monday and FAILS the Action (emailing Adam)
+  # once FB_PAGE_TOKEN is within 21 days of expiry, so token death can't silently
+  # stop posting again.
   schedule:
     - cron: "0 18 * * 0-4,6" # 11:00 PT — daily highlight (Sun–Thu, Sat)
     - cron: "0 16 * * 5"     # 09:00 PT Fri — weekend roundup
