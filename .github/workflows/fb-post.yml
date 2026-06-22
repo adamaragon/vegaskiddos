@@ -7,13 +7,16 @@ name: Facebook auto-post
 # are set, so enabling it is just a matter of adding those two secrets.
 
 on:
-  # Crons run daily, but the daily/roundup modes self-pause (RESUME_AFTER in
-  # fb-post.mjs) until Jun 13 so they don't double up with the Facebook-native
-  # scheduled batch that covers through Jun 12. After that date they resume
-  # automatically — no manual re-enable needed.
+  # Daily/roundup live-posting modes self-pause (RESUME_AFTER in fb-post.mjs)
+  # until Aug 4 2026 so they don't double up with the Facebook-native scheduled
+  # batch that covers daily posts through Aug 3 — those native posts survive
+  # token expiry (~Jul 28). The weekly `verify` cron has NO resume gate: it runs
+  # every Monday and FAILS the Action (emailing Adam) once FB_PAGE_TOKEN is
+  # within 21 days of expiry, so token death can't silently stop posting again.
   schedule:
     - cron: "0 18 * * 0-4,6" # 11:00 PT — daily highlight (Sun–Thu, Sat)
     - cron: "0 16 * * 5"     # 09:00 PT Fri — weekend roundup
+    - cron: "0 15 * * 1"     # 08:00 PT Mon — token health check (verify)
   workflow_dispatch:
     inputs:
       mode:
@@ -57,7 +60,11 @@ jobs:
           # `schedule` (batch-queue ~90 posts) is ONLY ever a manual choice — never
           # a cron default, or every cron would queue a whole batch.
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "${{ github.event.schedule }}" = "0 16 * * 5" ]; then MODE=roundup; else MODE=daily; fi
+            case "${{ github.event.schedule }}" in
+              "0 16 * * 5") MODE=roundup ;;
+              "0 15 * * 1") MODE=verify  ;;
+              *)            MODE=daily   ;;
+            esac
           else
             MODE="${{ github.event.inputs.mode }}"; MODE="${MODE:-schedule}"
           fi

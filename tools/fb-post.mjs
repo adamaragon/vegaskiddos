@@ -87,9 +87,11 @@ const DRY = process.argv.includes("--dry-run") || !PAGE_ID || !PAGE_TOKEN;
 const FORCE = process.argv.includes("--force") || process.env.FB_FORCE === "1";
 
 // The recurring daily/roundup crons are live, but a Facebook-native scheduled
-// batch covers posting through Jun 12. To avoid doubling up, those modes no-op
-// until this resume date, then pick up on their own. Bypass with --force.
-const RESUME_AFTER = Date.parse("2026-06-13T00:00:00-07:00");
+// batch (queued 2026-06-22 while the token was valid) covers daily posting
+// through Aug 3 2026 — those posts publish server-side even after the token
+// expires (~Jul 28). To avoid doubling up, the live-posting modes no-op until
+// this resume date, then pick up on their own. Bypass with --force.
+const RESUME_AFTER = Date.parse("2026-08-04T00:00:00-07:00");
 function pausedUntilResume(label) {
   if (FORCE || Date.now() >= RESUME_AFTER) return false;
   console.log(`${label}: paused until ${new Date(RESUME_AFTER).toISOString()} — scheduled batch covers this period (use --force to override).`);
@@ -383,7 +385,7 @@ async function runVerify() {
   // verify run surfaces it before posting silently breaks.
   if (typeof exp === "number" && exp > 0) {
     const days = Math.floor((exp * 1000 - Date.now()) / 86_400_000);
-    if (days <= 10) {
+    if (days <= 21) {
       console.error(`⚠️  TOKEN EXPIRES IN ${days} DAY(S) — refresh FB_PAGE_TOKEN soon (regenerate a long-lived Page token and re-set the secret).`);
       process.exitCode = 3;
     } else {
