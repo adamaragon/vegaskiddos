@@ -11,7 +11,14 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> {
   const { lang } = (await params) as { lang: Lang };
-  return { title: "What's New — Vegas Kiddos", alternates: langAlternates(lang, "/changelog") };
+  const es = lang === "es";
+  return {
+    title: es ? "Novedades — Vegas Kiddos" : "What's New — Vegas Kiddos",
+    description: es
+      ? "Novedades de Vegas Kiddos — funciones, correcciones y mejoras recientes."
+      : "What's new on Vegas Kiddos — recent features, fixes, and improvements.",
+    alternates: langAlternates(lang, "/changelog"),
+  };
 }
 
 const TAG_STYLE: Record<ChangeTag, string> = {

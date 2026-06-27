@@ -39,7 +39,16 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> {
   const { lang } = (await params) as { lang: Lang };
-  return { alternates: langAlternates(lang, "/") };
+  const title = t(lang, "meta_title");
+  const description = t(lang, "meta_desc");
+  return {
+    title,
+    description,
+    alternates: langAlternates(lang, "/"),
+    // Fuller OG/Twitter title for the home card (layout default is bare "Vegas Kiddos").
+    openGraph: { title, description },
+    twitter: { title, description },
+  };
 }
 
 export default async function HomePage({
@@ -69,7 +78,7 @@ export default async function HomePage({
           <div className="mt-5 flex flex-wrap gap-2 text-sm font-700">
             {["👶 Baby", "🧸 Toddler", "🎨 Kids", "🛹 Tweens"].map((tag) => (
               <span key={tag}
-                className="hover-pop cursor-default rounded-full bg-white/20 px-3 py-1.5 backdrop-blur-sm">
+                className="hover-pop cursor-default rounded-full bg-white/25 px-3 py-1.5">
                 {tag}
               </span>
             ))}

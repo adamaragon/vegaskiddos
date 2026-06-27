@@ -73,7 +73,7 @@ export function ShareButtons({
         <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
           onClick={() => track("Share", { method: l.label })}
           aria-label={`Share on ${l.label}`}
-          className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink/15 bg-white text-base transition hover:scale-110 hover:border-teal">
+          className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink/15 bg-white text-base transition-colors hover:border-teal">
           {l.emoji}
         </a>
       ))}

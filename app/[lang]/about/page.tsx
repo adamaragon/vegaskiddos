@@ -8,7 +8,14 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> {
   const { lang } = (await params) as { lang: Lang };
-  return { title: "About — Vegas Kiddos", alternates: langAlternates(lang, "/about") };
+  const es = lang === "es";
+  return {
+    title: es ? "Acerca de — Vegas Kiddos" : "About — Vegas Kiddos",
+    description: es
+      ? "Por qué creamos Vegas Kiddos, quién está detrás y cómo mantenemos los eventos seguros para niños y al día."
+      : "Why we built Vegas Kiddos, who's behind it, and how we keep the listings kid-safe and current.",
+    alternates: langAlternates(lang, "/about"),
+  };
 }
 
 export default async function AboutPage({

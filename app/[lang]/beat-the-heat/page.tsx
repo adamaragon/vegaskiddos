@@ -14,7 +14,7 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> {
   const { lang } = (await params) as { lang: Lang };
-  const m = getCollectionMeta(SLUG)!;
+  const m = getCollectionMeta(SLUG, lang)!;
   return {
     title: `${m.title} | Vegas Kiddos`,
     description: m.description,

@@ -28,7 +28,7 @@ function visual(text: string): { emoji: string; gradient: string } {
   return { emoji: "🎈", gradient: "from-coral to-sunny" };
 }
 
-export function EventThumb({ event }: { event: KidEvent }) {
+export function EventThumb({ event, priority = false }: { event: KidEvent; priority?: boolean }) {
   if (event.image) {
     return (
       <div className="relative h-28 w-full overflow-hidden bg-sand">
@@ -38,6 +38,9 @@ export function EventThumb({ event }: { event: KidEvent }) {
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition group-hover:scale-105"
+          // The first card on a collection/venue page can be the LCP element;
+          // priority preloads it instead of lazy-loading the thing on screen.
+          priority={priority}
           unoptimized={false}
         />
       </div>

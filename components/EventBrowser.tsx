@@ -110,6 +110,7 @@ function Chip({
   return (
     <button
       onClick={onClick}
+      aria-pressed={active}
       className={`border-l border-ink/25 px-2.5 py-2 text-center text-xs font-700 shadow-[inset_7px_0_6px_-7px_rgba(45,42,50,0.22)] transition first:border-l-0 first:rounded-l-full first:shadow-none last:rounded-r-full sm:text-sm ${
         scroll ? "flex-none whitespace-nowrap sm:flex-1 sm:truncate" : "flex-1 truncate"
       } ${
@@ -332,13 +333,13 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
             each segment. Scrolls sideways on very narrow screens. */}
         <div className="flex flex-1 sm:justify-end">
           <div className="flex h-[52px] w-fit max-w-full items-stretch overflow-x-auto overflow-y-hidden rounded-full border-2 border-ink/15 bg-white shadow-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <button onClick={() => { if (freeWeekendOn) { setPrices(new Set()); setDateRange("any"); } else { track("Quick Pick", { pick: "free_weekend" }); setPrices(new Set(["free"])); setDateRange("weekend"); } }}
+            <button aria-pressed={freeWeekendOn} onClick={() => { if (freeWeekendOn) { setPrices(new Set()); setDateRange("any"); } else { track("Quick Pick", { pick: "free_weekend" }); setPrices(new Set(["free"])); setDateRange("weekend"); } }}
               className={`flex items-center gap-1.5 whitespace-nowrap px-4 text-base font-700 transition ${freeWeekendOn ? "select-pop halo-teal bg-teal-btn text-white" : "bg-white text-ink/70 hover:bg-teal/10"}`}>{pick(tr("qp_free_weekend"))}</button>
-            <button onClick={() => { if (freeNearOn) { setPrices(new Set()); setCoords(null); setGeoMsg(""); } else { track("Quick Pick", { pick: "free_near" }); setPrices(new Set(["free"])); useMyLocation(); } }}
+            <button aria-pressed={freeNearOn} onClick={() => { if (freeNearOn) { setPrices(new Set()); setCoords(null); setGeoMsg(""); } else { track("Quick Pick", { pick: "free_near" }); setPrices(new Set(["free"])); useMyLocation(); } }}
               className={`flex items-center gap-1.5 whitespace-nowrap border-l border-ink/25 px-4 text-base font-700 transition ${freeNearOn ? "select-pop halo-coral bg-coral-btn text-white" : "bg-white text-ink/70 hover:bg-coral/10"}`}>{pick(tr("qp_free_near"))}</button>
-            <button onClick={() => { track("Quick Pick", { pick: "today" }); setDateRange("today"); }}
+            <button aria-pressed={dateRange === "today"} onClick={() => { track("Quick Pick", { pick: "today" }); setDateRange("today"); }}
               className={`flex items-center gap-1.5 whitespace-nowrap border-l border-ink/25 px-4 text-base font-700 transition ${dateRange === "today" ? "select-pop halo-teal bg-teal-btn text-white" : "bg-white text-ink/70 hover:bg-teal/10"}`}>{pick(tr("qp_today"))}</button>
-            <button onClick={() => { if (!onlyFavs) track("Quick Pick", { pick: "my_list" }); setOnlyFavs((v) => !v); }}
+            <button aria-pressed={onlyFavs} onClick={() => { if (!onlyFavs) track("Quick Pick", { pick: "my_list" }); setOnlyFavs((v) => !v); }}
               className={`flex items-center gap-1.5 whitespace-nowrap border-l border-ink/25 px-4 text-base font-800 transition ${onlyFavs ? "select-pop halo-coral bg-coral-btn text-white" : "bg-white text-ink/70 hover:bg-coral/10"}`}>
               {pick(tr("my_list") + (favs.size ? ` (${favs.size})` : ""))}
             </button>
@@ -451,6 +452,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
             <button
               key={v}
               onClick={() => setView(v)}
+              aria-pressed={view === v}
               className={`rounded-full px-3 py-1.5 text-sm font-800 capitalize transition sm:px-4 ${
                 view === v ? "bg-teal-btn text-white" : "text-ink/70"
               }`}

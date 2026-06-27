@@ -13,9 +13,12 @@ const config: Config = {
         // `btn` shades are the deepest the brand goes while clearing WCAG AA
         // (4.5:1) against white text — used only for white-text buttons/pills.
         // DEFAULT stays bright for backgrounds, badges, tints, and accents.
-        coral: { DEFAULT: "#FF6B5E", dark: "#E8503F", btn: "#C45248" },
+        // `btnHover` is darker than `btn` so white-text buttons deepen on hover
+        // and stay above WCAG AA (4.5:1) — hovering to `dark` would lighten them
+        // below the threshold (coral.dark 3.72:1, teal.dark 2.96:1).
+        coral: { DEFAULT: "#FF6B5E", dark: "#E8503F", btn: "#C45248", btnHover: "#A23E35" },
         sunny: { DEFAULT: "#FFC93C", dark: "#F2B705" },
-        teal: { DEFAULT: "#23C4B5", dark: "#0FA89A", btn: "#178379" },
+        teal: { DEFAULT: "#23C4B5", dark: "#0FA89A", btn: "#178379", btnHover: "#106B62" },
         grape: { DEFAULT: "#7B5EA7", dark: "#664A8F" },
         ink: "#2D2A32",
       },

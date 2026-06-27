@@ -1,7 +1,21 @@
+import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
 import { Sun, Star, Heart, Cloud, Squiggle, Scribble, Arrow, Underline } from "@/components/Doodles";
+import { langAlternates } from "@/lib/seo";
+import type { Lang } from "@/lib/i18n";
 
-export const metadata = { title: "Style Guide — Vegas Kiddos" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = (await params) as { lang: Lang };
+  return {
+    title: "Style Guide — Vegas Kiddos",
+    description: "The Vegas Kiddos design system — desert-sunset palette, Fredoka + Nunito type, components, and motion.",
+    alternates: langAlternates(lang, "/style-guide"),
+  };
+}
 
 const COLORS = [
   { name: "Coral", var: "bg-coral", hex: "#FF6B5E", use: "Primary / CTAs" },
@@ -71,12 +85,12 @@ export default function StyleGuidePage() {
 
       <Section title="Buttons & chips">
         <div className="flex flex-wrap items-center gap-3 rounded-blob border border-ink/10 bg-white p-6 shadow-card">
-          <button className="hover-pop rounded-full bg-coral px-5 py-3 font-800 text-white shadow-pop">Primary</button>
-          <button className="rounded-full bg-teal px-5 py-3 font-800 text-white shadow-pop">Secondary</button>
+          <button className="hover-pop rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop">Primary</button>
+          <button className="rounded-full bg-teal-btn px-5 py-3 font-800 text-white shadow-pop">Secondary</button>
           <button className="rounded-full border-2 border-ink/15 px-4 py-2 font-700 text-ink/70">Filter chip</button>
-          <span className="rounded-full bg-teal px-3 py-1 text-xs font-800 text-white">🆓 Free</span>
+          <span className="rounded-full bg-teal-btn px-3 py-1 text-xs font-800 text-white">🆓 Free</span>
           <span className="rounded-full bg-sunny px-3 py-1 text-xs font-800 text-ink">💵 $1–10</span>
-          <span className="rounded-full bg-coral px-3 py-1 text-xs font-800 text-white">💳 $11–25</span>
+          <span className="rounded-full bg-coral-btn px-3 py-1 text-xs font-800 text-white">💳 $11–25</span>
           <span className="rounded-full bg-grape px-3 py-1 text-xs font-800 text-white">✨ $25+</span>
         </div>
       </Section>

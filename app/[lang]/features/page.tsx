@@ -116,13 +116,13 @@ export default function FeaturesPage() {
               <div key={f.id}
                 className={`flex items-center gap-4 rounded-blob border bg-white p-4 shadow-card transition ${f.featured ? "border-sunny" : "border-ink/10"}`}>
                 <div className="flex flex-col items-center">
-                  <button aria-label="Upvote" onClick={() => vote(f.id, 1)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition hover:scale-110 ${myVote === 1 ? "border-teal bg-teal-btn text-white" : "border-ink/15 text-ink/70"}`}>
+                  <button aria-label="Upvote" aria-pressed={myVote === 1} onClick={() => vote(f.id, 1)}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition-transform hover:scale-105 ${myVote === 1 ? "border-teal bg-teal-btn text-white" : "border-ink/15 text-ink/70"}`}>
                     ▲
                   </button>
                   <span className="my-1 font-display text-xl font-700 tabular-nums">{f.votes}</span>
-                  <button aria-label="Downvote" onClick={() => vote(f.id, -1)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition hover:scale-110 ${myVote === -1 ? "border-coral bg-coral-btn text-white" : "border-ink/15 text-ink/70"}`}>
+                  <button aria-label="Downvote" aria-pressed={myVote === -1} onClick={() => vote(f.id, -1)}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-lg transition-transform hover:scale-105 ${myVote === -1 ? "border-coral bg-coral-btn text-white" : "border-ink/15 text-ink/70"}`}>
                     ▼
                   </button>
                 </div>

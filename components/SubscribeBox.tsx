@@ -31,7 +31,7 @@ export function SubscribeBox({ compact = false, stacked = false, lang = "en" }: 
   }
 
   if (status === "done") {
-    return <p className={`font-700 text-teal-btn ${compact ? "text-sm" : stacked ? "text-center text-lg" : ""}`}>{tr("nl_done")}</p>;
+    return <p role="status" aria-live="polite" className={`font-700 text-teal-btn ${compact ? "text-sm" : stacked ? "text-center text-lg" : ""}`}>{tr("nl_done")}</p>;
   }
 
   // Stacked = full-width vertical fields, for a square card that fills a column.
@@ -64,7 +64,7 @@ export function SubscribeBox({ compact = false, stacked = false, lang = "en" }: 
       >
         {status === "sending" ? "…" : tr("nl_button")}
       </button>
-      {status === "error" && <span className={`text-sm font-700 text-coral-btn ${stacked ? "text-center" : "w-full"}`}>{msg}</span>}
+      {status === "error" && <span role="alert" className={`text-sm font-700 text-coral-btn ${stacked ? "text-center" : "w-full"}`}>{msg}</span>}
     </form>
   );
 }

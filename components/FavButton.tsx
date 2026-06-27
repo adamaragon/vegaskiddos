@@ -23,13 +23,14 @@ export function FavButton({ id, className = "" }: { id: string; className?: stri
     <button
       type="button"
       aria-label={fav ? "Remove from My List" : "Save to My List"}
+      aria-pressed={fav}
       title={fav ? "Saved" : "Save to My List"}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
         setFav(toggleFavorite(id));
       }}
-      className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-lg shadow-pop backdrop-blur transition hover:scale-110 ${className}`}
+      className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-lg shadow-pop transition-transform hover:scale-105 ${className}`}
     >
       <span className={fav ? "" : "grayscale"}>{fav ? "❤️" : "🤍"}</span>
     </button>

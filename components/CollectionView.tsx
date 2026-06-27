@@ -19,9 +19,10 @@ export function CollectionView({ meta, events, lang = "en" }: { meta: Collection
       name: e.title,
     })),
   };
+  const base = lang === "es" ? `${SITE}/es` : SITE;
   const crumbs = breadcrumbLd([
-    { name: "Vegas Kiddos", url: SITE },
-    { name: meta.heading, url: `${SITE}/${meta.slug}` },
+    { name: "Vegas Kiddos", url: base },
+    { name: meta.heading, url: `${base}/${meta.slug}` },
   ]);
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -42,7 +43,7 @@ export function CollectionView({ meta, events, lang = "en" }: { meta: Collection
       ) : (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {events.map((e, i) => (
-            <EventCard key={e.id} event={e} index={i} lang={lang} />
+            <EventCard key={e.id} event={e} index={i} lang={lang} priority={i === 0} />
           ))}
         </div>
       )}

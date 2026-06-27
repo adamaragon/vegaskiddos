@@ -66,6 +66,7 @@ export default function ContactPage() {
           <div className="flex flex-wrap gap-2">
             {TYPES.map((opt) => (
               <button type="button" key={opt.id} onClick={() => setType(opt.id)}
+                aria-pressed={type === opt.id}
                 className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-700 transition ${
                   type === opt.id ? "border-teal bg-teal-btn text-white" : "border-ink/15 bg-white text-ink/70"
                 }`}>
@@ -90,7 +91,7 @@ export default function ContactPage() {
             placeholder={tr("ct_msg_ph")} />
         </label>
         {status === "error" && (
-          <p className="rounded-2xl bg-coral/10 px-4 py-3 text-sm font-700 text-ink/80">
+          <p role="alert" className="rounded-2xl bg-coral/10 px-4 py-3 text-sm font-700 text-ink/80">
             {tr("ct_err")}
           </p>
         )}

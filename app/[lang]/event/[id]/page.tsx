@@ -109,8 +109,10 @@ export default async function EventPage({
     "@type": "Event",
     name: event.title,
     description: event.description,
-    startDate: event.start,
-    ...(event.end ? { endDate: event.end } : {}),
+    // Use the next occurrence (matches the visible date) so recurring series
+    // don't advertise a stale, past startDate in structured data.
+    startDate: whenStart,
+    endDate: gcalEnd,
     eventStatus: event.canceled
       ? "https://schema.org/EventCancelled"
       : "https://schema.org/EventScheduled",
@@ -118,28 +120,43 @@ export default async function EventPage({
     location: {
       "@type": "Place",
       name: event.venue,
-      address: event.address || event.venue,
+      address: {
+        "@type": "PostalAddress",
+        ...(event.address ? { streetAddress: event.address } : {}),
+        addressLocality: "Las Vegas",
+        addressRegion: "NV",
+        addressCountry: "US",
+      },
       ...(event.lat && event.lng
         ? { geo: { "@type": "GeoCoordinates", latitude: event.lat, longitude: event.lng } }
         : {}),
     },
     ...(event.image ? { image: [event.image] } : {}),
-    offers: {
-      "@type": "Offer",
-      ...(ldPrice ? { price: ldPrice } : {}),
-      priceCurrency: "USD",
-      availability: "https://schema.org/InStock",
-      url: event.url || shareUrl,
-    },
+    // Only emit Offer when we actually have a price — a currency/availability
+    // block with no price is an incomplete Offer (Rich Results warning).
+    ...(ldPrice !== undefined
+      ? {
+          offers: {
+            "@type": "Offer",
+            price: ldPrice,
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+            url: event.url || shareUrl,
+          },
+        }
+      : {}),
     organizer: { "@type": "Organization", name: "Vegas Kiddos", url: SITE },
-    inLanguage: lang,
+    inLanguage: lang === "es" ? "es-US" : "en-US",
     url: shareUrl,
     isAccessibleForFree: event.priceTier === "free",
   };
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <JsonLd data={[eventLd, breadcrumbLd([{ name: "Vegas Kiddos", url: SITE }, { name: event.title, url: shareUrl }])]} />
+      <JsonLd data={[eventLd, breadcrumbLd([
+        { name: "Vegas Kiddos", url: lang === "es" ? `${SITE}/es` : SITE },
+        { name: event.title, url: lang === "es" ? `${SITE}/es/event/${event.id}` : shareUrl },
+      ])]} />
       <Link
         href="/"
         className="text-sm font-700 text-teal-btn hover:underline"
@@ -290,7 +307,7 @@ export default async function EventPage({
               href={mapsHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full bg-teal-btn px-5 py-3 font-800 text-white shadow-pop transition hover:bg-teal-dark"
+              className="rounded-full bg-teal-btn px-5 py-3 font-800 text-white shadow-pop transition hover:bg-teal-btnHover"
             >
               {t(lang, "ev_directions")}
             </TrackedLink>
@@ -309,7 +326,7 @@ export default async function EventPage({
                 href={event.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop transition hover:bg-coral-dark"
+                className="rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop transition hover:bg-coral-btnHover"
               >
                 {t(lang, "ev_rsvp")}
               </TrackedLink>

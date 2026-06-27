@@ -52,7 +52,7 @@ function rand(seed: number) {
   };
 }
 
-function RainDrops({ count = 40, intensity = 1 }: { count?: number; intensity?: number }) {
+function RainDrops({ count = 30, intensity = 1 }: { count?: number; intensity?: number }) {
   const drops = useMemo(() => {
     const r = rand(7 + count);
     // Bias drops toward the right ~85% so the fading edge stays sparse instead
@@ -83,7 +83,7 @@ function RainDrops({ count = 40, intensity = 1 }: { count?: number; intensity?: 
   );
 }
 
-function SnowFlakes({ count = 30 }: { count?: number }) {
+function SnowFlakes({ count = 22 }: { count?: number }) {
   const flakes = useMemo(() => {
     const r = rand(13 + count);
     return Array.from({ length: count }).map(() => ({
@@ -194,7 +194,7 @@ function moodEffects(mood: Mood) {
   if (mood === "storm") {
     return (
       <RightFade>
-        <RainDrops count={52} intensity={1.3} />
+        <RainDrops count={38} intensity={1.3} />
         <div
           className="wx-flash absolute inset-0 bg-white"
           style={{ animation: "wx-flash 8s ease-in-out infinite" }}

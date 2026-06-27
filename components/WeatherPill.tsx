@@ -143,8 +143,11 @@ export function WeatherPill() {
   // Dark text on a frosted-white pill is the most legible across every mood
   // (bright sun, dark storm, snow). The ring keeps the edge crisp on the
   // colorful hero gradient.
+  // bg-white/90 (no backdrop-blur): the pill sits above the WebGL hero canvas,
+  // where backdrop-filter is an expensive per-frame paint. An opaque-enough
+  // fill reads the same without the compositing cost.
   const pillBase =
-    "inline-flex items-center gap-2 rounded-full bg-white/85 px-3.5 py-2 text-base font-800 text-ink shadow-pop ring-1 ring-ink/10 backdrop-blur-md sm:px-4 sm:py-2.5 sm:text-lg";
+    "inline-flex items-center gap-2 rounded-full bg-white/90 px-3.5 py-2 text-base font-800 text-ink shadow-pop ring-1 ring-ink/10 sm:px-4 sm:py-2.5 sm:text-lg";
 
   return (
     <>

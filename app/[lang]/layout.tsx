@@ -14,10 +14,7 @@ import type { Viewport } from "next";
 import Script from "next/script";
 import Link from "next/link";
 
-// Privacy-friendly, cookieless analytics (Plausible). Site-specific script.
-const PLAUSIBLE_SRC = "https://plausible.io/js/pa-pzyYa6yNV14PH2tAZYFUG.js";
-
-// Google Analytics 4.
+// Google Analytics 4 — the sole analytics vendor (Plausible removed 2026-06).
 const GA_ID = "G-QDXDVLCLGC";
 
 export const viewport: Viewport = {
@@ -67,11 +64,13 @@ export async function generateMetadata({
       siteName: "Vegas Kiddos",
       locale: lang === "es" ? "es_US" : "en_US",
       alternateLocale: lang === "es" ? "en_US" : "es_US",
+      images: ["/opengraph-image"],
     },
     twitter: {
       card: "summary_large_image",
       title: "Vegas Kiddos",
       description,
+      images: ["/opengraph-image"],
     },
     verification: process.env.GOOGLE_SITE_VERIFICATION
       ? { google: process.env.GOOGLE_SITE_VERIFICATION }
@@ -94,10 +93,12 @@ export default async function RootLayout({
   return (
     <html lang={lang} className={`${fredoka.variable} ${nunito.variable}`}>
       <body className="font-body min-h-screen antialiased">
-        <Script defer src={PLAUSIBLE_SRC} strategy="afterInteractive" />
-        <Script id="plausible-init" strategy="afterInteractive">
-          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
-        </Script>
+        <a
+          href="#main"
+          className="sr-only rounded-full bg-ink px-4 py-2 font-700 text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100]"
+        >
+          {lang === "es" ? "Saltar al contenido" : "Skip to content"}
+        </a>
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
           strategy="afterInteractive"
@@ -109,7 +110,7 @@ export default async function RootLayout({
         <ConsentBanner lang={lang} />
         <CrayonDefs />
         <Header lang={lang} />
-        <main>{children}</main>
+        <main id="main">{children}</main>
         <footer className="mt-16 border-t-2 border-dashed border-ink/15 bg-white/70">
           <div className="mx-auto grid max-w-5xl gap-8 px-4 py-10 sm:grid-cols-3">
             <div>

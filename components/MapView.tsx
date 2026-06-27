@@ -109,7 +109,7 @@ export function MapView({ events }: { events: KidEvent[] }) {
           `<strong style="font-size:14px">${e.title}</strong><br/>` +
             `<span style="color:#666">${e.venue}</span><br/>` +
             `<span style="display:inline-block;margin-top:4px">${price.emoji} ${price.label}</span><br/>` +
-            `<a href="/event/${e.id}" style="color:#FF6B5E;font-weight:700">View details →</a>`
+            `<a href="/event/${e.id}" style="color:#C45248;font-weight:700;text-decoration:underline">View details →</a>`
         );
         marker.on("popupopen", () => {
           const el = document.querySelector(`a[href="/event/${e.id}"]`);

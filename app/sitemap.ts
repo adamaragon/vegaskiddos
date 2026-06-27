@@ -19,9 +19,11 @@ function entry(
   opts: { changeFrequency?: MetadataRoute.Sitemap[number]["changeFrequency"]; priority?: number } = {},
 ): MetadataRoute.Sitemap[number] {
   const suffix = path === "/" ? "" : path;
+  // No lastModified: we have no reliable per-URL modified timestamp, and
+  // stamping every URL with `new Date()` on each daily regen just trains
+  // crawlers to ignore the field. Omitting it is the honest signal.
   return {
     url: `${BASE}${suffix}`,
-    lastModified: new Date(),
     changeFrequency: opts.changeFrequency,
     priority: opts.priority,
     alternates: { languages: { es: `${BASE}/es${suffix}` } },

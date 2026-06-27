@@ -26,7 +26,7 @@ export function formatWhen(iso: string) {
   });
 }
 
-export function EventCard({ event, index = 0, distanceMi, lang = "en" }: { event: KidEvent; index?: number; distanceMi?: number; lang?: Lang }) {
+export function EventCard({ event, index = 0, distanceMi, lang = "en", priority = false }: { event: KidEvent; index?: number; distanceMi?: number; lang?: Lang; priority?: boolean }) {
   const price = priceTier(event.priceTier);
   const hood = neighborhood(event.neighborhood);
   const when = nextOccurrenceISO(event.start, event.recurrence, event.canceledDates);
@@ -40,7 +40,7 @@ export function EventCard({ event, index = 0, distanceMi, lang = "en" }: { event
     >
       <div className="relative">
         <div className={event.canceled ? "grayscale-[55%]" : ""}>
-          <EventThumb event={event} />
+          <EventThumb event={event} priority={priority} />
         </div>
         {/* Big diagonal "CANCELED" sash across the thumbnail + dimming scrim. */}
         {event.canceled && (

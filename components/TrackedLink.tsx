@@ -2,7 +2,7 @@
 
 import { track } from "@/lib/track";
 
-// An external <a> that fires a Plausible goal event on click. Lets server
+// An external <a> that fires a GA4 event on click. Lets server
 // components (e.g. the event detail page) instrument outbound actions without
 // becoming client components themselves.
 export function TrackedLink({

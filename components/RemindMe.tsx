@@ -175,7 +175,7 @@ export function RemindMe({ favoriteIds, lang = "en" }: { favoriteIds: string[]; 
           </>
         )}
       </form>
-      {msg && <p className="mt-2 text-sm font-700 text-coral-btn">{msg}</p>}
+      {msg && <p role="status" aria-live="polite" className="mt-2 text-sm font-700 text-coral-btn">{msg}</p>}
     </div>
   );
 }

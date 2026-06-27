@@ -153,6 +153,8 @@ export function CalendarView({ events, lang = "en" }: { events: KidEvent[]; lang
               <button
                 key={k}
                 onClick={() => setSelected(k)}
+                aria-pressed={isSelected}
+                aria-label={`${new Date(y, m, day).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}${dayEvents.length ? `, ${dayEvents.length} ${dayEvents.length === 1 ? "event" : "events"}` : ", no events"}`}
                 className={`flex aspect-square flex-col items-center rounded-xl border-2 p-1 text-left align-top transition sm:aspect-auto sm:items-stretch ${
                   dayEvents.length ? "sm:min-h-[12.5rem]" : "sm:min-h-[5.5rem]"
                 } ${
@@ -163,7 +165,7 @@ export function CalendarView({ events, lang = "en" }: { events: KidEvent[]; lang
                     : "border-transparent hover:bg-sand"
                 }`}
               >
-                <span className={`self-center text-base font-800 sm:self-start sm:text-lg ${isToday ? "flex h-7 w-7 items-center justify-center rounded-full bg-coral text-white" : "text-ink/70"}`}>
+                <span className={`self-center text-base font-800 sm:self-start sm:text-lg ${isToday ? "flex h-7 w-7 items-center justify-center rounded-full bg-coral-btn text-white" : "text-ink/70"}`}>
                   {day}
                 </span>
 

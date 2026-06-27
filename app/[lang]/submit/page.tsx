@@ -56,7 +56,7 @@ export default function SubmitPage() {
         </p>
         <button
           onClick={() => setStatus("idle")}
-          className="mt-6 rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop hover:bg-coral-dark"
+          className="mt-6 rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop hover:bg-coral-btnHover"
         >
           Submit another
         </button>
@@ -133,6 +133,7 @@ export default function SubmitPage() {
                 type="button"
                 key={a.id}
                 onClick={() => toggleAge(a.id)}
+                aria-pressed={ages.includes(a.id)}
                 className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-700 transition ${
                   ages.includes(a.id)
                     ? "border-teal bg-teal-btn text-white"
@@ -168,7 +169,7 @@ export default function SubmitPage() {
         </Labeled>
 
         {status === "error" && (
-          <p className="rounded-2xl bg-coral/10 px-4 py-3 text-sm font-700 text-ink/80">
+          <p role="alert" className="rounded-2xl bg-coral/10 px-4 py-3 text-sm font-700 text-ink/80">
             Something went wrong. Please try again.
           </p>
         )}
@@ -176,7 +177,7 @@ export default function SubmitPage() {
         <button
           type="submit"
           disabled={status === "sending" || ages.length === 0}
-          className="w-full rounded-full bg-coral-btn px-5 py-4 font-800 text-white shadow-pop transition hover:bg-coral-dark disabled:opacity-50"
+          className="w-full rounded-full bg-coral-btn px-5 py-4 font-800 text-white shadow-pop transition hover:bg-coral-btnHover disabled:opacity-50"
         >
           {status === "sending" ? "Submitting…" : "Submit for review"}
         </button>
