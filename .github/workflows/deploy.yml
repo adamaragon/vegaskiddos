@@ -37,4 +37,11 @@ jobs:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
-        run: npm run cf:deploy
+        # opennext deploy pre-warms the R2 incremental cache via the CF R2
+        # management API, which needs the token's "Workers R2 Storage" scope.
+        # If the token lacks it, fall back to a plain `wrangler deploy` so the
+        # Worker still ships (the R2 cache then fills lazily at runtime). Once
+        # the CLOUDFLARE_API_TOKEN secret has R2 scope, the pre-warm path runs.
+        run: |
+          npm run cf:build
+          npx opennextjs-cloudflare deploy || npx wrangler deploy
