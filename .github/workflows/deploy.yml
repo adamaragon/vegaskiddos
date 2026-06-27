@@ -6,13 +6,16 @@ name: Deploy (Cloudflare Workers)
 # the flaky Cloudflare native git-build. Runtime secrets already live on the
 # Worker and persist across deploys; CI only needs build-time env below.
 
+# Push auto-deploy is DISABLED on purpose (2026-06-27). `npm run cf:deploy`
+# pre-warms the R2 incremental cache (open-next.config.ts → r2IncrementalCache),
+# which calls Cloudflare's R2 *management* API. On the runner that call dies with
+# "Premature close" because the CLOUDFLARE_API_TOKEN repo secret can't reach the
+# R2 management API (an R2-scoped token works fine off-runner — every manual
+# `npm run cf:deploy` succeeds). Until the secret is given "Workers R2 Storage"
+# scope, every push failed the deploy and emailed. Fix = update the secret, then
+# restore the `push:` block below. Meanwhile: deploy manually with
+# `npm run cf:deploy` (token in vault) or trigger this workflow by hand.
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "**.md"
-      - "tools/**"
-      - "assets/**"
   workflow_dispatch: {}
 
 concurrency:
@@ -37,10 +40,4 @@ jobs:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
-          # The OpenNext R2 cache-populate step fetches Cloudflare's R2 API; on
-          # Node 22 runners that fetch intermittently dies with "Premature close"
-          # — undici's happy-eyeballs (dual IPv4/IPv6) racing connections against
-          # the CF API. Disabling family autoselection makes the fetch reliable.
-          # (Same token + opennextjs-cloudflare deploy works fine off-runner.)
-          NODE_OPTIONS: --no-network-family-autoselection
         run: npm run cf:deploy
