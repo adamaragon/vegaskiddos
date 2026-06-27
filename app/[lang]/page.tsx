@@ -63,7 +63,10 @@ export default async function HomePage({
     <div className="mx-auto max-w-6xl px-4 py-8">
       <JsonLd data={siteLd} />
       {/* Hero with Three.js backdrop */}
-      <section className="relative isolate overflow-hidden rounded-blob bg-gradient-to-br from-coral via-coral to-sunny p-8 text-white shadow-card sm:p-12">
+      {/* Text sits over the left/center, so that region uses the AA-safe deeper
+          coral (coral-btn, 4.52:1 with white); the sunny corner stays bright for
+          the dino. Keeps the desert-sunset hue, clears WCAG AA. */}
+      <section className="relative isolate overflow-hidden rounded-blob bg-gradient-to-br from-coral-btn via-coral-btn to-sunny p-8 text-white shadow-card sm:p-12">
         <HeroCanvas />
         <WeatherPill />
         <Cloud className="pointer-events-none absolute bottom-4 left-8 hidden h-16 w-24 animate-float opacity-30 sm:block" color="#FFFFFF" />
@@ -72,7 +75,7 @@ export default async function HomePage({
             {t(lang, "hero_title")}
           </h1>
           <Underline className="-mt-1 h-5 w-64 max-w-[80%]" color="#FFFFFF" />
-          <p className="mt-3 max-w-xl text-lg text-white/90">
+          <p className="mt-3 max-w-xl text-lg text-white">
             {t(lang, "hero_sub")}
           </p>
           <div className="mt-5 flex flex-wrap gap-2 text-sm font-700">
@@ -88,7 +91,7 @@ export default async function HomePage({
 
       {/* Weekly digest signup */}
       <Reveal as="section" variant="pop" className="mt-8">
-        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-grape to-teal px-8 py-4 text-white shadow-card sm:px-12 sm:py-5">
+        <div className="relative overflow-hidden rounded-blob bg-gradient-to-br from-grape to-teal-btn px-8 py-4 text-white shadow-card sm:px-12 sm:py-5">
           {/* Decorative doodles fill the negative space */}
           <Star className="pointer-events-none absolute -right-4 -top-4 h-20 w-20 rotate-12 text-white/10" />
           <Cloud className="pointer-events-none absolute -bottom-2 left-1/4 hidden h-14 w-14 text-white/10 lg:block" />
