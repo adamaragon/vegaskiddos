@@ -98,8 +98,8 @@ export default async function HomePage({
           <div className="relative grid items-center gap-8 lg:grid-cols-5">
             <div className="text-center lg:col-span-3 lg:text-left">
               <h2 className="font-display text-2xl font-800 leading-tight sm:text-3xl">{t(lang, "nl_title")}</h2>
-              <p className="mt-3 text-base text-white/90 sm:text-lg">{t(lang, "nl_sub")}</p>
-              <ul className="mx-auto mt-5 inline-flex flex-col gap-2.5 text-left text-[19px] font-600 text-white/95 lg:mx-0">
+              <p className="mt-3 text-base text-white sm:text-lg">{t(lang, "nl_sub")}</p>
+              <ul className="mx-auto mt-5 inline-flex flex-col gap-2.5 text-left text-[19px] font-600 text-white lg:mx-0">
                 <li className="flex items-center gap-2"><span aria-hidden>✅</span>{t(lang, "nl_perk_curated")}</li>
                 <li className="flex items-center gap-2"><span aria-hidden>📍</span>{t(lang, "nl_perk_local")}</li>
                 <li className="flex items-center gap-2"><span aria-hidden>🎉</span>{t(lang, "nl_perk_free")}</li>
@@ -107,7 +107,7 @@ export default async function HomePage({
             </div>
             <div className="w-full rounded-3xl bg-white/12 p-5 sm:p-6 lg:col-span-2 lg:mt-3">
               <SubscribeBox lang={lang} stacked />
-              <p className="mt-3 text-center text-sm text-white/70">{t(lang, "nl_note")}</p>
+              <p className="mt-3 text-center text-sm text-white">{t(lang, "nl_note")}</p>
             </div>
           </div>
         </div>
