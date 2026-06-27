@@ -20,15 +20,20 @@ Threesided Studios.
 
 ## ⚠️ Working rules (read before doing anything)
 
-1. **`main` auto-deploys to Cloudflare** via `.github/workflows/deploy.yml`
-   (GitHub Actions → `npm run cf:deploy` = OpenNext build → `wrangler deploy`,
-   using the `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` GH secrets).
-   **Pushing to `main` = a live deploy.** Cloudflare has no Netlify-style
-   build-minute/data caps, so auto-deploy-on-push is fine here — the old
-   "deploy only on request" rule was Netlify-cost-driven and **no longer
-   applies** (set 2026-06-14). Manual deploy still works: `npm run cf:deploy`
-   with the CF env vars (token in vault `Logins & Passwords/Hermes-Keys.md
-   ## Cloudflare`).
+1. **Deploy = `npm run cf:deploy` (manual).** Push auto-deploy is **currently
+   DISABLED** (2026-06-27): `.github/workflows/deploy.yml` works, but
+   `npm run cf:deploy` pre-warms the R2 incremental cache
+   (`open-next.config.ts` → `r2IncrementalCache`) by calling Cloudflare's R2
+   **management** API, and the `CLOUDFLARE_API_TOKEN` **repo secret can't reach
+   it** ("Premature close") — so every push failed + emailed. An R2-scoped
+   token works fine off-runner (every manual deploy succeeds). **To re-enable
+   auto-deploy:** give the `CLOUDFLARE_API_TOKEN` GitHub Actions secret the
+   **Account · Workers R2 Storage · Edit** permission (the vault token in
+   `Logins & Passwords/Hermes-Keys.md ## Cloudflare` already has it), then
+   re-add the `push:` block to `deploy.yml`. Until then deploy manually:
+   `export` the CF + `AIRTABLE_*` + `NEXT_PUBLIC_VAPID_PUBLIC_KEY` env vars,
+   then `npm run cf:deploy`. (No build-minute/data caps on CF, so frequent
+   deploys are fine — the old Netlify "deploy only on request" rule is retired.)
 2. **After each batch, give Adam a localhost:3100 preview link** to review before
    deploying. Don't run `next build` (or `npm run cf:deploy`) while the dev
    server is up — they fight over `.next` → 500s. Use `npx tsc --noEmit` to
@@ -98,10 +103,17 @@ or hard reloads get the fresh deploy immediately.
 
 ## Other gotchas
 
-- `git push` to `main` auto-deploys via `.github/workflows/deploy.yml`
-  (added 2026-06-14; runs `npm run cf:deploy` on the existing CF secrets,
-  skips `**.md`/`tools/**`/`assets/**`-only pushes). **Manual step still
-  owed by Adam:** disconnect the old *native* Cloudflare Workers Build
-  git-trigger (CF dashboard → vegaskiddos → Settings → Builds) so it doesn't
-  double-fire alongside this workflow — that native build was the source of
-  the "deploy failed from GitHub" emails.
+- **Deploy CI is paused (see Working rule #1).** `.github/workflows/deploy.yml`
+  is `workflow_dispatch`-only right now; push auto-deploy was disabled
+  2026-06-27 because the `CLOUDFLARE_API_TOKEN` repo secret lacks
+  **Workers R2 Storage** scope, so the R2 cache pre-warm fails ("Premature
+  close") and every push emailed a failure. Re-enable by adding R2 scope to the
+  secret + restoring the `push:` block. Diagnosed with the GitHub Actions logs
+  (`gh run view <id> --log-failed` via the git-credential token) — the build +
+  Airtable fetch succeed on the runner; only the CF R2 management API call
+  fails, and the same token works off-runner, which is what points at the
+  secret's scope rather than a network issue.
+- **Native Cloudflare Workers Build git-trigger:** if a *separate* "deploy
+  failed" email still appears, disconnect it (CF dashboard → vegaskiddos →
+  Settings → Builds). The Workers-Builds API isn't reachable with the standard
+  CF API token, so this stays a dashboard step.
