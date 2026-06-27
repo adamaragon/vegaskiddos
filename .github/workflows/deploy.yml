@@ -37,14 +37,10 @@ jobs:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
-        # Deploy with plain `wrangler deploy` (not `opennextjs-cloudflare
-        # deploy`): the latter pre-warms the R2 incremental cache via the CF R2
-        # management API, which fails in CI ("Premature close") because the
-        # CLOUDFLARE_API_TOKEN secret can't reach the R2 bucket-management API.
-        # The R2 binding (wrangler.jsonc) still works at runtime, so the cache
-        # fills lazily — we just skip the deploy-time pre-warm. To restore
-        # pre-warm, give the token "Workers R2 Storage" scope and switch back to
-        # `npm run cf:deploy`.
-        run: |
-          npm run cf:build
-          npx wrangler deploy
+          # The OpenNext R2 cache-populate step fetches Cloudflare's R2 API; on
+          # Node 22 runners that fetch intermittently dies with "Premature close"
+          # — undici's happy-eyeballs (dual IPv4/IPv6) racing connections against
+          # the CF API. Disabling family autoselection makes the fetch reliable.
+          # (Same token + opennextjs-cloudflare deploy works fine off-runner.)
+          NODE_OPTIONS: --no-network-family-autoselection
+        run: npm run cf:deploy
