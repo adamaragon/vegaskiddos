@@ -37,11 +37,14 @@ jobs:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
-        # opennext deploy pre-warms the R2 incremental cache via the CF R2
-        # management API, which needs the token's "Workers R2 Storage" scope.
-        # If the token lacks it, fall back to a plain `wrangler deploy` so the
-        # Worker still ships (the R2 cache then fills lazily at runtime). Once
-        # the CLOUDFLARE_API_TOKEN secret has R2 scope, the pre-warm path runs.
+        # Deploy with plain `wrangler deploy` (not `opennextjs-cloudflare
+        # deploy`): the latter pre-warms the R2 incremental cache via the CF R2
+        # management API, which fails in CI ("Premature close") because the
+        # CLOUDFLARE_API_TOKEN secret can't reach the R2 bucket-management API.
+        # The R2 binding (wrangler.jsonc) still works at runtime, so the cache
+        # fills lazily — we just skip the deploy-time pre-warm. To restore
+        # pre-warm, give the token "Workers R2 Storage" scope and switch back to
+        # `npm run cf:deploy`.
         run: |
           npm run cf:build
-          npx opennextjs-cloudflare deploy || npx wrangler deploy
+          npx wrangler deploy
