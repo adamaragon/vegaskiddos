@@ -61,7 +61,7 @@ export default async function ChangelogPage({
                 <span className="absolute left-0 top-1.5 h-4 w-4 rounded-full border-4 border-sand bg-coral sm:h-5 sm:w-5" aria-hidden />
                 <div className="flex flex-wrap items-center gap-3">
                   <time className="text-sm font-700 text-ink/70">{fmt(e.date, locale)}</time>
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-800 ${TAG_STYLE[e.tag]}`}>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-800 ${TAG_STYLE[e.tag]}`}>
                     {e.tag}
                   </span>
                 </div>

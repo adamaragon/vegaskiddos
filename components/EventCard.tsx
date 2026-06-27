@@ -55,7 +55,7 @@ export function EventCard({ event, index = 0, distanceMi, lang = "en", priority 
         )}
         <FavButton id={event.id} className="absolute right-2 top-2" />
         {typeof distanceMi === "number" && (
-          <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-800 text-ink/70 shadow-pop backdrop-blur">
+          <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-1 text-xs font-800 text-ink/70 shadow-pop">
             📍 {distanceMi < 10 ? distanceMi.toFixed(1) : Math.round(distanceMi)} mi
           </span>
         )}
@@ -65,7 +65,7 @@ export function EventCard({ event, index = 0, distanceMi, lang = "en", priority 
           <p className="flex flex-wrap items-center gap-1.5 text-xs font-700 uppercase tracking-wide text-teal-btn">
             {formatWhen(when)}
             {event.recurrence && (
-              <span className="rounded-full bg-grape/15 px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-grape-dark">
+              <span className="rounded-full bg-grape/15 px-1.5 py-1 text-[10px] normal-case tracking-normal text-grape-dark">
                 🔁 {event.recurrence}
               </span>
             )}
@@ -99,7 +99,7 @@ export function EventCard({ event, index = 0, distanceMi, lang = "en", priority 
 
       <div className="mt-auto flex items-center justify-between border-t border-ink/10 px-5 py-3 text-xs text-ink/70">
         <span className="font-700">📍 {event.venue}</span>
-        <span className="rounded-full bg-grape/10 px-2 py-0.5 font-700 text-grape-dark">
+        <span className="rounded-full bg-grape/10 px-2 py-1 font-700 text-grape-dark">
           {hood.label}
         </span>
       </div>

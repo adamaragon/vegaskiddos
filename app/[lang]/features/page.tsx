@@ -130,7 +130,7 @@ export default function FeaturesPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-display text-lg font-600">{f.title}</h3>
                     {f.featured && <span className="text-sunny">⭐</span>}
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-800 capitalize ${STATUS_STYLE[f.status] || STATUS_STYLE.idea}`}>
+                    <span className={`rounded-full px-2 py-1 text-xs font-800 capitalize ${STATUS_STYLE[f.status] || STATUS_STYLE.idea}`}>
                       {tr(STATUS_KEY[f.status] || "ft_status_idea")}
                     </span>
                   </div>
@@ -151,7 +151,7 @@ export default function FeaturesPage() {
               <div key={f.id}
                 className="rounded-blob border border-teal/30 bg-gradient-to-br from-teal/5 to-sunny/10 p-4 shadow-card">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="rounded-full bg-teal-btn px-2.5 py-0.5 text-xs font-800 text-white">
+                  <span className="rounded-full bg-teal-btn px-2.5 py-1 text-xs font-800 text-white">
                     ✓ {tr("ft_success_badge")}
                   </span>
                   <span className="font-display text-sm font-700 text-teal-btn tabular-nums">
