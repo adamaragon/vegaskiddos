@@ -20,19 +20,22 @@ Threesided Studios.
 
 ## ⚠️ Working rules (read before doing anything)
 
-1. **Deploy = `npm run cf:deploy` (manual).** Push auto-deploy is **currently
-   DISABLED** (2026-06-27): `.github/workflows/deploy.yml` works, but
-   `npm run cf:deploy` pre-warms the R2 incremental cache
-   (`open-next.config.ts` → `r2IncrementalCache`) by calling Cloudflare's R2
-   **management** API, and the `CLOUDFLARE_API_TOKEN` **repo secret can't reach
-   it** ("Premature close") — so every push failed + emailed. An R2-scoped
-   token works fine off-runner (every manual deploy succeeds). **To re-enable
-   auto-deploy:** give the `CLOUDFLARE_API_TOKEN` GitHub Actions secret the
-   **Account · Workers R2 Storage · Edit** permission (the vault token in
-   `Logins & Passwords/Hermes-Keys.md ## Cloudflare` already has it), then
-   re-add the `push:` block to `deploy.yml`. Until then deploy manually:
-   `export` the CF + `AIRTABLE_*` + `NEXT_PUBLIC_VAPID_PUBLIC_KEY` env vars,
-   then `npm run cf:deploy`. (No build-minute/data caps on CF, so frequent
+1. **Deploy = `npm run cf:deploy`, run MANUALLY off a real machine.** GitHub
+   Actions auto-deploy is **disabled** (2026-06-28) — CI genuinely *cannot*
+   run this deploy. `npm run cf:deploy` pre-warms the R2 incremental cache
+   (`open-next.config.ts` → `r2IncrementalCache`), which fetches Cloudflare's
+   R2 API; on **GitHub-hosted runners** that fetch dies with "Premature close"
+   and aborts the deploy. **It is NOT the token** — the `CLOUDFLARE_API_TOKEN`
+   secret was updated 2026-06-28 to the R2-capable vault token, and it returns
+   `200` off-runner *and* via `curl -4` / plain `node fetch` *on* the runner.
+   It's a bug in **opennextjs-cloudflare 1.19.11's CF-API fetch client** on GH
+   runners (broken IPv6 there; OpenNext's client doesn't fall back to IPv4 the
+   way plain fetch does). Disabling IPv6 + `--dns-result-order=ipv4first` did
+   NOT help. **So deploy manually:** `export` CF + `AIRTABLE_*` +
+   `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, then `npm run cf:deploy` (works every time
+   off-runner). **To get CI back:** upgrade `@opennextjs/cloudflare` (+ wrangler)
+   and re-test; if a newer version's populate fetch falls back to IPv4, re-add
+   the `push:` block to `deploy.yml`. (CF has no build/data caps, so frequent
    deploys are fine — the old Netlify "deploy only on request" rule is retired.)
 2. **After each batch, give Adam a localhost:3100 preview link** to review before
    deploying. Don't run `next build` (or `npm run cf:deploy`) while the dev
