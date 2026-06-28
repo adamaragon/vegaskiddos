@@ -33,6 +33,13 @@ jobs:
           node-version: "22"
           cache: "npm"
       - run: npm ci
+      # GitHub-hosted runners have no working IPv6 route to api.cloudflare.com
+      # (verified: `curl -6` can't connect; `curl -4` + node fetch = 200).
+      # OpenNext's R2 cache-populate fetch reaches for IPv6 anyway and dies with
+      # "Premature close" (it ignores --dns-result-order). Removing IPv6 from the
+      # runner leaves only the working IPv4 path.
+      - name: Disable IPv6 (no IPv6 route to api.cloudflare.com on runners)
+        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 net.ipv6.conf.default.disable_ipv6=1
       - name: Build + deploy (OpenNext → Workers)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -41,10 +48,5 @@ jobs:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
-          # GitHub-hosted runners have no working IPv6 route to api.cloudflare.com
-          # (verified: `curl -6` can't connect, `curl -4` + node fetch return 200).
-          # OpenNext's R2 cache-populate fetch otherwise attempts IPv6 and dies
-          # with "Premature close", aborting the deploy. Force IPv4-first DNS so
-          # the Cloudflare API calls take the working path.
           NODE_OPTIONS: --dns-result-order=ipv4first
         run: npm run cf:deploy
