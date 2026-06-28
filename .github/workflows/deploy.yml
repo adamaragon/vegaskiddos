@@ -6,16 +6,17 @@ name: Deploy (Cloudflare Workers)
 # the flaky Cloudflare native git-build. Runtime secrets already live on the
 # Worker and persist across deploys; CI only needs build-time env below.
 
-# Push auto-deploy is DISABLED on purpose (2026-06-27). `npm run cf:deploy`
-# pre-warms the R2 incremental cache (open-next.config.ts → r2IncrementalCache),
-# which calls Cloudflare's R2 *management* API. On the runner that call dies with
-# "Premature close" because the CLOUDFLARE_API_TOKEN repo secret can't reach the
-# R2 management API (an R2-scoped token works fine off-runner — every manual
-# `npm run cf:deploy` succeeds). Until the secret is given "Workers R2 Storage"
-# scope, every push failed the deploy and emailed. Fix = update the secret, then
-# restore the `push:` block below. Meanwhile: deploy manually with
-# `npm run cf:deploy` (token in vault) or trigger this workflow by hand.
+# Push to main auto-deploys. The R2 cache pre-warm (open-next.config.ts →
+# r2IncrementalCache) calls Cloudflare's R2 management API, which needs the
+# CLOUDFLARE_API_TOKEN secret to have R2 access — restored 2026-06-28 (the
+# secret had an older, narrower token that failed with "Premature close").
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "tools/**"
+      - "assets/**"
   workflow_dispatch: {}
 
 concurrency:
