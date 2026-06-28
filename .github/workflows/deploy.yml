@@ -6,17 +6,19 @@ name: Deploy (Cloudflare Workers)
 # the flaky Cloudflare native git-build. Runtime secrets already live on the
 # Worker and persist across deploys; CI only needs build-time env below.
 
-# Push to main auto-deploys. The R2 cache pre-warm (open-next.config.ts →
-# r2IncrementalCache) calls Cloudflare's R2 management API, which needs the
-# CLOUDFLARE_API_TOKEN secret to have R2 access — restored 2026-06-28 (the
-# secret had an older, narrower token that failed with "Premature close").
+# Auto-deploy on push is DISABLED (2026-06-28) — CI can't run this deploy.
+# opennextjs-cloudflare's R2 cache-populate fetch (open-next.config.ts →
+# r2IncrementalCache → api.cloudflare.com/.../r2/buckets) dies with "Premature
+# close" on GitHub-hosted runners. Ruled out: token scope (the secret token
+# returns 200 off-runner AND via curl-4 / plain `node fetch` ON the runner),
+# IPv6 (kernel-disabled it — no change), DNS order (--dns-result-order=ipv4first
+# — no change). It's a bug in OpenNext 1.19.11's CF-API client on these runners;
+# a plain node fetch to the same URL succeeds, OpenNext's does not. workflow_dispatch
+# runs on the same runners so it fails too. **Deploy MANUALLY (off-runner):**
+# `npm run cf:deploy` with CF + AIRTABLE_* + NEXT_PUBLIC_VAPID_PUBLIC_KEY env
+# (works every time). Re-add the `push:` block after an opennextjs-cloudflare
+# upgrade if it fixes the populate fetch.
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "**.md"
-      - "tools/**"
-      - "assets/**"
   workflow_dispatch: {}
 
 concurrency:
@@ -33,13 +35,6 @@ jobs:
           node-version: "22"
           cache: "npm"
       - run: npm ci
-      # GitHub-hosted runners have no working IPv6 route to api.cloudflare.com
-      # (verified: `curl -6` can't connect; `curl -4` + node fetch = 200).
-      # OpenNext's R2 cache-populate fetch reaches for IPv6 anyway and dies with
-      # "Premature close" (it ignores --dns-result-order). Removing IPv6 from the
-      # runner leaves only the working IPv4 path.
-      - name: Disable IPv6 (no IPv6 route to api.cloudflare.com on runners)
-        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 net.ipv6.conf.default.disable_ipv6=1
       - name: Build + deploy (OpenNext → Workers)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -48,5 +43,4 @@ jobs:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
-          NODE_OPTIONS: --dns-result-order=ipv4first
         run: npm run cf:deploy
