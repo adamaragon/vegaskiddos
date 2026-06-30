@@ -45,6 +45,7 @@ async function airtableAll(table, params = "") {
 function subjectFor(text) {
   const t = text.toLowerCase();
   const map = [
+    [/ice ?cream|gelato|\bsundae|snow ?cone|popsicle|frozen yogurt|froyo/, "colorful ice cream cones, scoops, and a sundae topped with sprinkles and a cherry"],
     [/storytime|story time|story ?walk|\bread|\bbook/, "an open storybook with friendly characters drifting out"],
     [/music|sing|concert|vocal|\bband\b|drum|ukulele/, "colorful musical instruments and floating music notes"],
     [/\bart\b|paint|craft|draw|create|messy|color/, "paint pots, brushes and craft supplies"],

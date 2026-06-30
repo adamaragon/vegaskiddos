@@ -1,0 +1,44 @@
+name: Sync images to R2
+
+# Manual, lightweight image sync: pushes any new/changed event images
+# (ArtImage or scraped Image) to the R2 bucket served at img.vegaskiddos.com.
+# The daily scrape already does this as a final step; this is for when you
+# regenerate art out-of-band (e.g. fixing a category's images) and want it live
+# now without running the full ~15-minute scrape. Idempotent — the manifest
+# skips unchanged images. Add `force` to re-sync everything.
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Ignore the manifest and re-sync every image"
+        type: boolean
+        default: false
+
+concurrency:
+  group: sync-images
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: "22", cache: "npm" }
+      - run: npm ci
+      - name: Sync event images to R2
+        env:
+          AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node tools/sync-images.mjs ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+      - name: Commit updated image manifest
+        if: ${{ always() }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tools/.image-sync-manifest.json || true
+          git diff --staged --quiet || git commit -m "chore: update image-sync manifest [skip ci]"
+          git push || true
