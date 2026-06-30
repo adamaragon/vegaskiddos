@@ -35,12 +35,21 @@ interface AirtableRecord {
   fields: Record<string, unknown>;
 }
 
-// First URL out of an Airtable attachment field ([{ url }, ...]).
-function attachmentUrl(v: unknown): string | undefined {
-  if (Array.isArray(v) && v[0] && typeof v[0] === "object" && "url" in (v[0] as object)) {
-    return String((v[0] as { url?: unknown }).url || "") || undefined;
-  }
-  return undefined;
+// First attachment object out of an Airtable attachment field ([{ id, url }, …]).
+function firstAttachment(v: unknown): { id?: string; url?: string } | null {
+  if (Array.isArray(v) && v[0] && typeof v[0] === "object") return v[0] as { id?: string; url?: string };
+  return null;
+}
+
+// Short stable token from an image's identity (attachment id, else its source
+// URL). The public image URL embeds it as ?v=, so the URL changes whenever the
+// underlying image changes — busting Cloudflare's immutable edge cache when an
+// event's art is regenerated (R2 keeps the same /event/<id>/<w>.webp key, which
+// the edge would otherwise serve stale for up to a year).
+function imgVersion(ident: string): string {
+  let h = 0;
+  for (let i = 0; i < ident.length; i++) h = (Math.imul(h, 31) + ident.charCodeAt(i)) >>> 0;
+  return h.toString(36);
 }
 
 function mapRecord(rec: AirtableRecord): KidEvent | null {
@@ -67,10 +76,13 @@ function mapRecord(rec: AirtableRecord): KidEvent | null {
     url: f.Url ? String(f.Url) : undefined,
     // Reference the durable R2 copy (synced from ArtImage attachment or the
     // scraped Image URL) so cached HTML never holds an expiring Airtable URL.
-    image:
-      attachmentUrl((f as Record<string, unknown>).ArtImage) || f.Image
-        ? `${IMG_CDN}/event/${rec.id}/1024.webp`
-        : undefined,
+    // ?v= changes when the source image changes, so a regenerated image is
+    // fetched fresh instead of the immutable-cached old one.
+    image: ((): string | undefined => {
+      const art = firstAttachment((f as Record<string, unknown>).ArtImage);
+      const ident = art?.id || art?.url || (f.Image ? String(f.Image) : null);
+      return ident ? `${IMG_CDN}/event/${rec.id}/1024.webp?v=${imgVersion(ident)}` : undefined;
+    })(),
     source: String(f.Source || "Community"),
     // Preserve "unknown" — coercing a missing Indoor field to false would
     // mislabel every unflagged event as outdoor (e.g. library storytimes).

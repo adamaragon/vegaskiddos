@@ -26,9 +26,10 @@ export default function imageLoader({
 
   // Durable R2 image: .../event/<id>/<size>.webp → swap <size> for the nearest
   // generated width (clamped to the largest available).
-  if (cdn && src.startsWith(cdn) && /\/\d+\.webp$/.test(src)) {
+  if (cdn && src.startsWith(cdn) && /\/\d+\.webp(\?|$)/.test(src)) {
     const pick = SIZES.find((s) => s >= width) ?? SIZES[SIZES.length - 1];
-    return src.replace(/\/\d+\.webp$/, `/${pick}.webp`);
+    // Non-anchored so any ?v= cache-busting query after .webp is preserved.
+    return src.replace(/\/\d+\.webp/, `/${pick}.webp`);
   }
 
   // Fallback: built-in optimizer (sharp in dev).

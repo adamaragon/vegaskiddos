@@ -19,6 +19,9 @@ concurrency:
   group: sync-images
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
   sync:
     runs-on: ubuntu-latest
