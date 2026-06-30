@@ -123,18 +123,18 @@ export default async function HomePage({
 
       {/* Friendly footer nudge */}
       <Reveal as="section" variant="pop" className="mt-12">
-        <div className="relative overflow-hidden rounded-blob border-2 border-dashed border-ink/15 bg-white p-8 text-center shadow-card">
-          <Star className="pointer-events-none absolute -left-3 top-2 h-12 w-12 animate-bob text-sunny" />
-          <Star className="pointer-events-none absolute right-4 bottom-2 h-8 w-8 animate-float text-teal" />
-          <Scribble className="pointer-events-none absolute right-8 top-3 hidden h-14 w-14 text-coral/60 sm:block" />
-          <Scribble className="pointer-events-none absolute left-10 bottom-3 hidden h-10 w-10 text-grape/50 sm:block" />
-          <h2 className="font-display text-2xl font-700">{t(lang, "cta_title")}</h2>
-          <p className="mx-auto mt-2 max-w-md text-ink/70">{t(lang, "cta_sub")}</p>
-          <a href="/submit" className="hover-pop mt-4 inline-block rounded-full bg-coral-btn px-6 py-3 font-800 text-white shadow-pop">
+        <div className="relative overflow-hidden rounded-blob border-2 border-dashed border-white/30 bg-gradient-to-br from-coral-btn to-grape p-8 text-center text-white shadow-card">
+          <Star className="pointer-events-none absolute -left-3 top-2 h-12 w-12 animate-bob text-white/20" />
+          <Star className="pointer-events-none absolute right-4 bottom-2 h-8 w-8 animate-float text-white/20" />
+          <Scribble className="pointer-events-none absolute right-8 top-3 hidden h-14 w-14 text-white/20 sm:block" />
+          <Scribble className="pointer-events-none absolute left-10 bottom-3 hidden h-10 w-10 text-white/20 sm:block" />
+          <h2 className="font-display text-2xl font-700 drop-shadow-sm">{t(lang, "cta_title")}</h2>
+          <p className="mx-auto mt-2 max-w-md text-white/90">{t(lang, "cta_sub")}</p>
+          <a href="/submit" className="hover-pop mt-4 inline-block rounded-full bg-white px-6 py-3 font-800 text-coral-btn shadow-pop">
             {t(lang, "nav_add")}
           </a>
-          <div className="mt-6 flex flex-col items-center gap-2 border-t border-ink/10 pt-5">
-            <p className="text-sm font-700 text-ink/70">{t(lang, "cta_share")}</p>
+          <div className="mt-6 flex flex-col items-center gap-2 border-t border-white/25 pt-5">
+            <p className="text-sm font-700 text-white/90">{t(lang, "cta_share")}</p>
             <ShareButtons url={SITE} title="Vegas Kiddos"
               text="Vegas Kiddos — find kid-safe Las Vegas family events by age, price & neighborhood" />
           </div>
