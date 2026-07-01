@@ -68,6 +68,30 @@ React 19 peer issues) · Three.js hero · **Airtable as DB + admin panel** ·
 - Secrets: `.env.local` (gitignored) + `SECRETS.local.md` (gitignored). Actual
   values also in vault `Memory/VegasKiddos-Secrets.md`.
 
+## Event images (AI art + R2)
+
+- `tools/gen-event-art.mjs` generates on-brand illustrations (OpenAI gpt-image-1)
+  into the Airtable `ArtImage` attachment. `subjectFor()` maps title/description
+  keywords → an illustration subject (17+ categories: storytime, art, music,
+  ice cream, …). Add a new category by adding a `[regex, subject]` row **near the
+  top** of the map (first match wins). Daily cron only generates for events with
+  no image at all; `--ids rec1,rec2` regenerates specific events on demand.
+- **Gotcha — uploads APPEND:** Airtable's `uploadAttachment` adds to the field,
+  and `lib/data.ts` reads attachment `[0]`. So when regenerating art for an event
+  that **already has** an ArtImage (e.g. via `--ids`), CLEAR the field first
+  (`PATCH ArtImage: []`) or the new image lands second and is ignored.
+- `tools/sync-images.mjs` resizes each event's image to WebP widths and uploads
+  to R2 (`vegaskiddos-media`), served at `img.vegaskiddos.com/event/<id>/<w>.webp`.
+  Idempotent via `tools/.image-sync-manifest.json` (keyed on attachment id).
+  Runs as the last step of the daily scrape; trigger standalone with the **Sync
+  images to R2** workflow (`workflow_dispatch`, `.github/workflows/sync-images.yml`).
+- **Gotcha — immutable edge cache:** R2 images are served `cache-control:
+  immutable, max-age=1yr`. Overwriting an image at the same key leaves Cloudflare's
+  edge serving the OLD copy for up to a year. `lib/data.ts` therefore appends
+  `?v=<hash of the image's identity>` to every image URL (and `lib/imageLoader.ts`
+  preserves that query when swapping responsive widths), so a regenerated/reassigned
+  image gets a fresh cache key automatically. Don't strip the `?v=`.
+
 ## SEO collection pages
 
 `lib/collections.ts` defines dynamic filtered "guide" feeds, each with its own
