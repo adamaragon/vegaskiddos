@@ -20,23 +20,23 @@ Threesided Studios.
 
 ## ⚠️ Working rules (read before doing anything)
 
-1. **Deploy = `npm run cf:deploy`, run MANUALLY off a real machine.** GitHub
-   Actions auto-deploy is **disabled** (2026-06-28) — CI genuinely *cannot*
-   run this deploy. `npm run cf:deploy` pre-warms the R2 incremental cache
-   (`open-next.config.ts` → `r2IncrementalCache`), which fetches Cloudflare's
-   R2 API; on **GitHub-hosted runners** that fetch dies with "Premature close"
-   and aborts the deploy. **It is NOT the token** — the `CLOUDFLARE_API_TOKEN`
-   secret was updated 2026-06-28 to the R2-capable vault token, and it returns
-   `200` off-runner *and* via `curl -4` / plain `node fetch` *on* the runner.
-   It's a bug in **opennextjs-cloudflare 1.19.11's CF-API fetch client** on GH
-   runners (broken IPv6 there; OpenNext's client doesn't fall back to IPv4 the
-   way plain fetch does). Disabling IPv6 + `--dns-result-order=ipv4first` did
-   NOT help. **So deploy manually:** `export` CF + `AIRTABLE_*` +
-   `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, then `npm run cf:deploy` (works every time
-   off-runner). **To get CI back:** upgrade `@opennextjs/cloudflare` (+ wrangler)
-   and re-test; if a newer version's populate fetch falls back to IPv4, re-add
-   the `push:` block to `deploy.yml`. (CF has no build/data caps, so frequent
-   deploys are fine — the old Netlify "deploy only on request" rule is retired.)
+1. **Deploy = push to `main` (auto CI), or `npm run cf:deploy` manually.**
+   GitHub Actions auto-deploy on push to `main` is **enabled and working**
+   (fixed 2026-07-13). Both paths run the same `opennextjs-cloudflare build →
+   deploy`, which pre-warms the R2 incremental cache (`open-next.config.ts` →
+   `r2IncrementalCache`) via Cloudflare's R2 API. That fetch used to die with
+   "Premature close" on **GitHub-hosted runners** — root cause was **no working
+   IPv6 route to `api.cloudflare.com`** on the runners (OpenNext's fetch client
+   reaches for IPv6 and doesn't fall back to IPv4 the way plain fetch/curl do;
+   it was never the token — the R2-capable secret returns `200` off-runner and
+   via `curl -4` on-runner). **The fix** is the `Pin api.cloudflare.com to IPv4`
+   step in `deploy.yml` (writes the host's current IPv4 into `/etc/hosts` before
+   the deploy) — **do not remove it** or CI breaks again. Bot image-sync commits
+   carry `[skip ci]`, so they don't trigger a deploy. **Manual deploy still
+   works any time** (off-runner it never had the IPv6 problem): `export` CF +
+   `AIRTABLE_*` + `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, then `npm run cf:deploy`. (CF
+   has no build/data caps, so frequent deploys are fine — the old Netlify
+   "deploy only on request" rule is retired.)
 2. **After each batch, give Adam a localhost:3100 preview link** to review before
    deploying. Don't run `next build` (or `npm run cf:deploy`) while the dev
    server is up — they fight over `.next` → 500s. Use `npx tsc --noEmit` to
@@ -130,16 +130,16 @@ or hard reloads get the fresh deploy immediately.
 
 ## Other gotchas
 
-- **Deploy CI is paused (see Working rule #1).** `.github/workflows/deploy.yml`
-  is `workflow_dispatch`-only right now; push auto-deploy was disabled
-  2026-06-27 because the `CLOUDFLARE_API_TOKEN` repo secret lacks
-  **Workers R2 Storage** scope, so the R2 cache pre-warm fails ("Premature
-  close") and every push emailed a failure. Re-enable by adding R2 scope to the
-  secret + restoring the `push:` block. Diagnosed with the GitHub Actions logs
-  (`gh run view <id> --log-failed` via the git-credential token) — the build +
-  Airtable fetch succeed on the runner; only the CF R2 management API call
-  fails, and the same token works off-runner, which is what points at the
-  secret's scope rather than a network issue.
+- **Deploy CI is live again (see Working rule #1).** `.github/workflows/deploy.yml`
+  runs on push to `main` (+ `workflow_dispatch`). It was paused 2026-06-27→07-13
+  because the R2 cache pre-warm failed with "Premature close" on the runner. That
+  turned out to be a **network** problem, not the token: GH runners can't reach
+  `api.cloudflare.com` over IPv6, and OpenNext's fetch client won't fall back to
+  IPv4. The `Pin api.cloudflare.com to IPv4` step fixes it. Diagnose future CI
+  issues with `gh run view <id> --log` (via the git-credential token); note the
+  deploy step's full tail only shows in the **raw** job log
+  (`gh api repos/adamaragon/vegaskiddos/actions/jobs/<jobid>/logs`), not always
+  in `--log`.
 - **Native Cloudflare Workers Build git-trigger:** if a *separate* "deploy
   failed" email still appears, disconnect it (CF dashboard → vegaskiddos →
   Settings → Builds). The Workers-Builds API isn't reachable with the standard

@@ -5,20 +5,19 @@ name: Deploy (Cloudflare Workers)
 # ever worked here (every successful deploy shows source: wrangler). Replaces
 # the flaky Cloudflare native git-build. Runtime secrets already live on the
 # Worker and persist across deploys; CI only needs build-time env below.
-
-# Auto-deploy on push is DISABLED (2026-06-28) — CI can't run this deploy.
-# opennextjs-cloudflare's R2 cache-populate fetch (open-next.config.ts →
-# r2IncrementalCache → api.cloudflare.com/.../r2/buckets) dies with "Premature
-# close" on GitHub-hosted runners. Ruled out: token scope (the secret token
-# returns 200 off-runner AND via curl-4 / plain `node fetch` ON the runner),
-# IPv6 (kernel-disabled it — no change), DNS order (--dns-result-order=ipv4first
-# — no change). It's a bug in OpenNext 1.19.11's CF-API client on these runners;
-# a plain node fetch to the same URL succeeds, OpenNext's does not. workflow_dispatch
-# runs on the same runners so it fails too. **Deploy MANUALLY (off-runner):**
-# `npm run cf:deploy` with CF + AIRTABLE_* + NEXT_PUBLIC_VAPID_PUBLIC_KEY env
-# (works every time). Re-add the `push:` block after an opennextjs-cloudflare
-# upgrade if it fixes the populate fetch.
+#
+# Auto-deploy on push to main is ENABLED. It was broken 2026-06-28 → fixed
+# 2026-07-13: opennextjs-cloudflare's R2 cache-populate fetch (open-next.config.ts
+# → r2IncrementalCache → api.cloudflare.com/.../r2/buckets) died with "Premature
+# close" on GitHub-hosted runners. Root cause: GH runners have no working IPv6
+# route to api.cloudflare.com, and OpenNext's fetch client reaches for IPv6
+# without falling back to IPv4 the way plain fetch/curl do. Fix = the "Pin
+# api.cloudflare.com to IPv4" step below, which forces every client on the
+# runner onto the IPv4 path. Confirmed green (Version cbdd6bb1). Bot image-sync
+# commits carry [skip ci], so they don't trigger a deploy.
 on:
+  push:
+    branches: [main]
   workflow_dispatch: {}
 
 concurrency:
@@ -35,17 +34,16 @@ jobs:
           node-version: "22"
           cache: "npm"
       - run: npm ci
-      # GH runners have no IPv6 route to api.cloudflare.com and OpenNext's R2
-      # populate fetch reaches for IPv6 → "Premature close". Pin the hostname to
-      # its current IPv4 so every client (incl. OpenNext's fetch) uses the path
-      # that works (curl -4 / node fetch both return 200 on the runner).
+      # GH runners have no working IPv6 route to api.cloudflare.com and OpenNext's
+      # R2 populate fetch reaches for IPv6 → "Premature close". Pin the hostname to
+      # its current IPv4 (resolved fresh each run) so every client (incl. OpenNext's
+      # fetch) uses the path that works. This is the load-bearing fix — do not remove.
       - name: Pin api.cloudflare.com to IPv4
         run: |
           IP=$(getent ahostsv4 api.cloudflare.com | awk '{print $1; exit}')
           echo "$IP api.cloudflare.com" | sudo tee -a /etc/hosts
           echo "pinned api.cloudflare.com -> $IP"
       - name: Build + deploy (OpenNext → Workers)
-        continue-on-error: true  # TEMP: keep run green while testing the IPv4 pin (no failure email)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
