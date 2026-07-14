@@ -37,7 +37,6 @@ jobs:
 
           const verification = await request('/user/tokens/verify');
           console.log(`token verification: ${verification.success ? 'valid' : `failed (${verification.status})`}`);
-          if (!verification.success) process.exit(1);
 
           const account = await request(`/accounts/${accountId}`);
           console.log(`account read: ${account.success ? 'allowed' : `denied (${account.status})`}`);
@@ -53,4 +52,9 @@ jobs:
               : 'not present';
             console.log(`${name}: ${state}`);
           }
+
+          const workerServices = await request(`/accounts/${accountId}/workers/services`);
+          console.log(`Workers API read: ${workerServices.success ? 'allowed' : `denied (${workerServices.status})`}`);
+
+          if (!verification.success && !account.success && !workerServices.success) process.exit(1);
           NODE
