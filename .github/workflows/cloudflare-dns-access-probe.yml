@@ -52,7 +52,7 @@ jobs:
             return {
               status: response.status,
               success: body.success === true,
-              errors: (body.errors || []).map((error) => error.code),
+              errors: (body.errors || []).map((error) => `${error.code}:${error.message || 'unknown'}`),
               result: body.result,
             };
           }
