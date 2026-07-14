@@ -147,7 +147,7 @@ jobs:
           }
 
           if (mode === 'accept-scanned-records') {
-            const writableFields = ['name', 'ttl', 'type', 'content', 'priority'];
+            const writableFields = ['id', 'name', 'ttl', 'type', 'content', 'priority'];
             for (const name of ['dndcards.com', 'dndwar.com', 'dndnote.com', 'dnd.chat']) {
               const zones = await request(`/zones?name=${encodeURIComponent(name)}`);
               const zone = zones.success && zones.result?.[0];
