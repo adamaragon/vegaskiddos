@@ -147,7 +147,7 @@ jobs:
           }
 
           if (mode === 'accept-scanned-records') {
-            const writableFields = ['name', 'ttl', 'type', 'content', 'priority', 'data', 'comment', 'tags', 'settings'];
+            const writableFields = ['name', 'ttl', 'type', 'content', 'priority'];
             for (const name of ['dndcards.com', 'dndwar.com', 'dndnote.com', 'dnd.chat']) {
               const zones = await request(`/zones?name=${encodeURIComponent(name)}`);
               const zone = zones.success && zones.result?.[0];
@@ -176,7 +176,8 @@ jobs:
               const proxiedWeb = permanent.success
                 ? (permanent.result || []).filter((record) => ['A', 'AAAA', 'CNAME'].includes(record.type) && record.proxied === true).length
                 : 'unavailable';
-              console.log(`${name}: scan acceptance ${accepted.success ? 'completed' : `failed (${accepted.status})`}, permanent=${permanent.success ? (permanent.result || []).length : 'unavailable'}, proxied-web=${proxiedWeb}`);
+              const errorCodes = (accepted.errors || []).join(', ') || 'none';
+              console.log(`${name}: scan acceptance ${accepted.success ? 'completed' : `failed (${accepted.status}; errors=${errorCodes})`}, permanent=${permanent.success ? (permanent.result || []).length : 'unavailable'}, proxied-web=${proxiedWeb}`);
             }
           }
 
