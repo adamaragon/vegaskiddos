@@ -14,6 +14,8 @@ on:
         options:
           - probe
           - stage-zones
+          - scan-records
+          - review-records
 
 permissions:
   contents: read
@@ -107,6 +109,39 @@ jobs:
               const nameservers = Array.isArray(zone.name_servers) ? zone.name_servers.join(', ') : 'unavailable';
               const recordCount = records.success ? (records.result || []).length : 'unavailable';
               console.log(`${name}: staged (${zone.status || 'unknown'}), records=${recordCount}, forced-dns-only=${forcedDnsOnly}, nameservers=${nameservers}`);
+            }
+          }
+
+          if (mode === 'scan-records') {
+            for (const name of ['dndcards.com', 'dndwar.com', 'dndnote.com', 'dnd.chat']) {
+              const zones = await request(`/zones?name=${encodeURIComponent(name)}`);
+              const zone = zones.success && zones.result?.[0];
+              if (!zone) {
+                console.log(`${name}: cannot trigger scan (zone unavailable)`);
+                continue;
+              }
+              const started = await request(`/zones/${zone.id}/dns_records/scan/trigger`, {
+                method: 'POST',
+                body: JSON.stringify({}),
+              });
+              console.log(`${name}: DNS scan ${started.success ? 'started' : `failed (${started.status})`}`);
+            }
+          }
+
+          if (mode === 'review-records') {
+            for (const name of ['dndcards.com', 'dndwar.com', 'dndnote.com', 'dnd.chat']) {
+              const zones = await request(`/zones?name=${encodeURIComponent(name)}`);
+              const zone = zones.success && zones.result?.[0];
+              if (!zone) {
+                console.log(`${name}: cannot review scan (zone unavailable)`);
+                continue;
+              }
+              const permanent = await request(`/zones/${zone.id}/dns_records?per_page=5000`);
+              const review = await request(`/zones/${zone.id}/dns_records/scan/review`);
+              const types = new Map();
+              for (const record of review.result || []) types.set(record.type, (types.get(record.type) || 0) + 1);
+              const typeSummary = [...types.entries()].map(([type, count]) => `${type}:${count}`).join(', ') || 'none';
+              console.log(`${name}: permanent=${permanent.success ? (permanent.result || []).length : 'unavailable'}, scan-candidates=${review.success ? (review.result || []).length : 'unavailable'}, types=${typeSummary}`);
             }
           }
 
