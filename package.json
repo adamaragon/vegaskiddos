@@ -31,6 +31,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.69.0",
     "leaflet": "1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "next": "^15.5.18",
