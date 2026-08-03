@@ -43,7 +43,15 @@ export function HeroCanvas() {
       const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
       camera.position.set(0, 0.4, 6);
 
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      // Some clients can't hand out a WebGL context at all (headless crawlers,
+      // GPU-less VMs, hardware acceleration off). The dino is decorative, so
+      // bail quietly and leave the static crayon hero in place.
+      try {
+        renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      } catch {
+        renderer = null;
+        return;
+      }
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(w, h);
       mount.appendChild(renderer.domElement);
@@ -146,7 +154,10 @@ export function HeroCanvas() {
     };
 
     const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
-    idleId = ric ? ric(() => init(), { timeout: 2000 }) : window.setTimeout(() => init(), 600);
+    // init() is fire-and-forget, so anything it throws (a failed three chunk,
+    // a refused WebGL context) would otherwise land as an unhandled rejection.
+    const start = () => void init().catch((err) => console.error("hero canvas init failed", err));
+    idleId = ric ? ric(start, { timeout: 2000 }) : window.setTimeout(start, 600);
 
     return () => {
       disposed = true;
