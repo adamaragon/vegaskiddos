@@ -140,11 +140,21 @@ async function diagnoseToken() {
   };
   const me = await get("me?fields=id,name,category");
   const perms = await get("me/permissions");
-  const grantedPosts = Array.isArray(perms?.data) && perms.data.some((p) => p.permission === "pages_manage_posts" && p.status === "granted");
   console.error("── token diagnostics ──");
   console.error("identity (/me):", JSON.stringify(me));         // a Page has a `category`; a User does not
   console.error("scopes (/me/permissions):", JSON.stringify(perms?.data || perms));
   console.error(`FB_PAGE_ID being posted to: ${PAGE_ID}`);
+  // A rejected token answers NOTHING, so `category`/`permissions` come back
+  // absent for a dead PAGE token exactly as they would for a live USER token.
+  // Reporting "USER token" in that case is a false lead (it sent the 2026-08-03
+  // triage hunting a token-type mixup when the token was a Page token that had
+  // simply expired). Only classify once we know the token authenticates.
+  if (me?.error) {
+    console.error(`token TYPE UNKNOWN — Facebook rejected the token, so it reports no identity: ${me.error.message}`);
+    console.error("  ↳ This is an expiry/revocation problem, NOT necessarily the wrong token type.");
+    return;
+  }
+  const grantedPosts = Array.isArray(perms?.data) && perms.data.some((p) => p.permission === "pages_manage_posts" && p.status === "granted");
   console.error(`token looks like a ${me?.category ? "PAGE token" : "USER token (← needs to be the PAGE token)"}; pages_manage_posts granted: ${grantedPosts}`);
 }
 
@@ -382,11 +392,25 @@ if (DRY && (!PAGE_ID || !PAGE_TOKEN)) {
   console.log("FB_PAGE_ID / FB_PAGE_TOKEN not set — compose-only preview (no posting).\n");
 }
 // ── verify: report token type + expiry without posting ─────────────────────
+// This is the ONLY early-warning the pipeline has, so it must FAIL LOUD on every
+// unhealthy state — including the ones where Facebook stops answering questions
+// about the token. It used to only fail on "numeric expiry within 21 days", which
+// meant a fully EXPIRED token (debug_token returns an error, so there is no
+// numeric expiry to test) sailed through GREEN: the alarm switched itself off at
+// exactly the moment the outage became total. Every branch below therefore ends
+// in an explicit pass/fail, and "I couldn't tell" counts as fail.
+const EXPIRY_WARN_DAYS = 21;
 async function runVerify() {
   const get = async (path) => {
     try { return await (await fetch(`${GRAPH}/${path}${path.includes("?") ? "&" : "?"}access_token=${encodeURIComponent(PAGE_TOKEN)}`)).json(); }
-    catch (e) { return { error: String(e) }; }
+    catch (e) { return { error: { message: String(e) } }; }
   };
+  const fail = (code, msg) => { console.error(msg); process.exitCode = code; };
+
+  if (!PAGE_ID || !PAGE_TOKEN) {
+    return fail(2, "❌ FB_PAGE_ID / FB_PAGE_TOKEN are not set — nothing to verify, and live posting is disabled.");
+  }
+
   const me = await get("me?fields=id,name,category");
   const dbg = await get(`debug_token?input_token=${encodeURIComponent(PAGE_TOKEN)}`);
   const info = dbg?.data || {};
@@ -394,18 +418,61 @@ async function runVerify() {
   console.log("identity (/me):", JSON.stringify(me));
   console.log("token type:", info.type || "(unknown)");
   console.log("expires_at:", exp === 0 ? "0 → never expires (long-lived ✅)" : exp ? new Date(exp * 1000).toISOString() : "(debug_token unavailable with this token)");
-  console.log(me?.category ? `✅ Valid PAGE token for "${me.name}" (id ${me.id})` : "⚠️ This is NOT a Page token (no category on /me).");
 
-  // Warn (and exit non-zero) when the token is close to expiring, so a scheduled
-  // verify run surfaces it before posting silently breaks.
-  if (typeof exp === "number" && exp > 0) {
-    const days = Math.floor((exp * 1000 - Date.now()) / 86_400_000);
-    if (days <= 21) {
-      console.error(`⚠️  TOKEN EXPIRES IN ${days} DAY(S) — refresh FB_PAGE_TOKEN soon (regenerate a long-lived Page token and re-set the secret).`);
-      process.exitCode = 3;
+  // 1. The token no longer authenticates at all (expired / revoked / malformed).
+  //    Facebook reports this on /me; debug_token also stops working, which is why
+  //    the old expiry-only check could not see it.
+  if (me?.error) {
+    return fail(2, `❌ TOKEN IS DEAD — Facebook rejected it: ${me.error.message}\n` +
+      "   Mint a fresh non-expiring PAGE token and update the FB_PAGE_TOKEN secret.");
+  }
+
+  // 2. Authenticates, but it isn't a Page token — posting to /{page-id}/feed will
+  //    fail. Only a Page has a `category` on /me.
+  if (!me?.category) {
+    return fail(2, `❌ NOT A PAGE TOKEN — /me returned ${JSON.stringify(me)} with no \`category\`.\n` +
+      "   FB_PAGE_TOKEN must hold the PAGE token from /me/accounts, not the user token.");
+  }
+  console.log(`✅ Valid PAGE token for "${me.name}" (id ${me.id})`);
+
+  // 3. Authenticates, but we can't introspect it — so we cannot answer "is this
+  //    about to expire?". Unknown is NOT healthy; fail rather than fail open.
+  if (dbg?.error || typeof exp !== "number") {
+    return fail(3, `❌ CANNOT DETERMINE EXPIRY — debug_token did not return a usable payload: ${JSON.stringify(dbg).slice(0, 300)}\n` +
+      "   Treating unknown as unhealthy: the whole point of this check is to see expiry coming.");
+  }
+
+  // 4. Scopes. debug_token reports them even for a Page token, so this catches a
+  //    token that looks fine but can't actually publish.
+  if (Array.isArray(info.scopes)) {
+    const missing = ["pages_manage_posts", "pages_read_engagement"].filter((s) => !info.scopes.includes(s));
+    if (missing.length) {
+      fail(3, `⚠️  TOKEN IS MISSING SCOPE(S): ${missing.join(", ")} — posting will fail. Re-grant them when minting the token.`);
     } else {
-      console.log(`token healthy: ~${days} days until expiry.`);
+      console.log("scopes ok: pages_manage_posts, pages_read_engagement granted.");
     }
+  }
+
+  // 5. Expiry. A Page token derived from a LONG-LIVED user token has
+  //    expires_at === 0 and never dies. Any non-zero expiry means the token was
+  //    derived from a user token that still had a finite clock, so it will die on
+  //    a schedule with nobody touching it — which is exactly how posting broke on
+  //    2026-07-28. Say so every run, not just inside the 21-day window.
+  if (exp === 0) {
+    // Don't call it healthy if an earlier check (e.g. scopes) already failed.
+    console.log(process.exitCode ? "expiry ok (never expires), but see the failure above." : "token healthy: never expires.");
+    return;
+  }
+  const days = Math.floor((exp * 1000 - Date.now()) / 86_400_000);
+  console.error(
+    `⚠️  THIS PAGE TOKEN HAS A FINITE EXPIRY (${new Date(exp * 1000).toISOString()}, ~${days} day(s) away).\n` +
+    "   A Page token minted from a LONG-LIVED user token reports expires_at=0 and never expires.\n" +
+    "   A non-zero expiry means it was minted from a user token that had not been exchanged for a\n" +
+    "   long-lived one, so posting WILL break on that date even if nobody changes anything.");
+  if (days <= EXPIRY_WARN_DAYS) {
+    fail(3, `⚠️  TOKEN EXPIRES IN ${days} DAY(S) — refresh FB_PAGE_TOKEN now (regenerate a long-lived Page token and re-set the secret).`);
+  } else {
+    console.log(`(not yet inside the ${EXPIRY_WARN_DAYS}-day warning window — this run still passes, but replace the token with a non-expiring one.)`);
   }
 }
 
