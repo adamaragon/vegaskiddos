@@ -1,0 +1,65 @@
+{
+  "ranAt": "2026-08-13T03:17:44.525Z",
+  "sources": {
+    "City of Las Vegas": {
+      "ids": [
+        "colv:12442",
+        "colv:12358",
+        "colv:12232",
+        "colv:12414",
+        "series:City of Las Vegas|food truck thursday|on goodman way between las vegas city hall and las vegas civic center",
+        "colv:10625",
+        "colv:12415",
+        "colv:12416",
+        "series:City of Las Vegas|rainbow company youth theatre presents disney s high school musical show|charleston heights arts center",
+        "colv:12417",
+        "colv:12411",
+        "colv:12418",
+        "colv:12441",
+        "series:City of Las Vegas|vegas city opera presents the mad mind of shakespeare|charleston heights arts center",
+        "colv:12399",
+        "colv:12419",
+        "series:City of Las Vegas|nevada shakespeare festival presents the taming of the shrew|sammy davis jr. festival plaza",
+        "colv:12420",
+        "colv:12398",
+        "colv:12421",
+        "colv:12429",
+        "series:City of Las Vegas|rainbow company youth theatre presents sense sensibility|charleston heights arts center",
+        "colv:12430",
+        "colv:12433",
+        "colv:12434",
+        "colv:12413",
+        "colv:12437",
+        "colv:12453",
+        "colv:12412",
+        "colv:12435",
+        "series:City of Las Vegas|phantom of charleston heights arts center a night of sir andrew lloyd webber|charleston heights arts center"
+      ],
+      "maxStart": "2027-01-29T19:30:00-07:00"
+    },
+    "Clark County": {
+      "ids": [
+        "series:Clark County|foster care information session spanish|family services",
+        "series:Clark County|foster care information session|family services",
+        "cc:/calendar/family-services/091726-foster-care-info-session-evening-with-the-stars",
+        "cc:/calendar/parks-and-recreation/100926-ren-fair"
+      ],
+      "maxStart": "2026-10-09T10:00:00-07:00"
+    },
+    "City of Henderson": {
+      "ids": [
+        "series:City of Henderson|art gallery stories of southern nevada|city of henderson",
+        "series:City of Henderson|art exhibit home means nevada|city of henderson",
+        "series:City of Henderson|henderson farmers market|fox ridge park",
+        "hen:6372:2026-09-05",
+        "series:City of Henderson|henderson farmers market|cornerstone park",
+        "hen:6360:2026-09-12",
+        "hen:6276:2026-09-25",
+        "hen:6336:2026-09-25",
+        "hen:6358:2026-09-25",
+        "hen:6338:2026-09-26"
+      ],
+      "maxStart": "2026-09-26T09:00:00-07:00"
+    }
+  }
+}
