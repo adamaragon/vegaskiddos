@@ -16,20 +16,13 @@ import { nextOccurrenceISO, laDateKey, eventHasEnded } from "@/lib/recurrence";
 import { AdminEventControls } from "@/components/AdminEventControls";
 import { t, ageLabel, priceLabel, hoodLabel, type Lang } from "@/lib/i18n";
 
-// Prebuild listed event pages per locale so they ship as static HTML and the
-// Worker serves them from the edge / R2-backed ISR cache (revalidate: 10 min)
-// instead of re-rendering on every request. Returning [] here made the route
-// compile as dynamic — every hit was a full SSR (no-store), which was both the
-// LCP cold-start tail and the CPU cost. With real params it's static/ISR, so
-// prebuilt pages AND on-demand ones (dynamicParams) cache. New events added
-// between deploys fall back to on-demand rendering, then cache on first hit.
+// ISR on demand (revalidate 10 min). Do not prebuild every event permalink:
+// hundreds of pages × locales made CI hang on OpenNext's R2 cache populate.
+// First visitor generates the page; after that the Worker serves the cache.
 export const revalidate = 600;
 export const dynamicParams = true;
-export async function generateStaticParams() {
-  // Prebuild listed (upcoming + recurring) pages. Past permalinks render
-  // on demand via dynamicParams so deploys stay small.
-  const events = await getEvents("en");
-  return events.map((e) => ({ id: e.id }));
+export function generateStaticParams() {
+  return [];
 }
 
 const SITE = "https://vegaskiddos.com";
