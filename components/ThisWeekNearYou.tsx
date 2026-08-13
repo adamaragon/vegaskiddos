@@ -135,7 +135,7 @@ export function ThisWeekNearYou({ events, lang = "en" }: { events: KidEvent[]; l
       {/* Horizontal scroll strip; cards snap into place. */}
       <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:thin]">
         {shown.map(({ e }, i) => (
-          <div key={e.id} className="w-[280px] shrink-0 snap-start sm:w-[300px]">
+          <div key={e.id} className="w-[340px] shrink-0 snap-start sm:w-[380px]">
             <EventCard
               event={e}
               index={i}

@@ -69,20 +69,15 @@ export function CalendarView({ events, lang = "en" }: { events: KidEvent[]; lang
     [byDay, recurring]
   );
 
-  // Start on the month of the first upcoming event (fallback: today).
-  const firstMonth = useMemo(() => {
-    const earliest = events.reduce<string | null>(
-      (a, e) => (!a || e.start < a ? e.start : a),
-      null
-    );
-    const d = earliest ? new Date(earliest) : new Date();
-    const parts = fmtKey.formatToParts(d);
-    const y = Number(parts.find((p) => p.type === "year")!.value);
-    const m = Number(parts.find((p) => p.type === "month")!.value) - 1;
-    return { y, m };
-  }, [events]);
-
-  const [view, setView] = useState(firstMonth);
+  // Always open on the current Vegas month. Past events in the dataset
+  // (May leftovers, etc.) must not rewind the grid.
+  const [view, setView] = useState(() => {
+    const parts = fmtKey.formatToParts(new Date());
+    return {
+      y: Number(parts.find((p) => p.type === "year")!.value),
+      m: Number(parts.find((p) => p.type === "month")!.value) - 1,
+    };
+  });
   const todayKey = dayKey(new Date().toISOString());
   const [selected, setSelected] = useState<string>(todayKey);
 
@@ -222,7 +217,7 @@ export function CalendarView({ events, lang = "en" }: { events: KidEvent[]; lang
             <p className="text-sm">Tap a day with dots to see what&apos;s on.</p>
           </div>
         ) : (
-          <div className="mt-3 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {selectedEvents.map((e, i) => (
               <EventCard key={e.id} event={e} index={i} lang={lang} />
             ))}

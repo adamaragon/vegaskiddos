@@ -5,3 +5,11 @@ export const DESCRIPTION_MIN_LEN = 15;
 export function hasSubstantialDescription(text: string | undefined | null): boolean {
   return (text || "").trim().length >= DESCRIPTION_MIN_LEN;
 }
+
+export {
+  DESCRIPTION_MAX_LEN,
+  sanitizeDescription,
+  looksLikeCode,
+  fallbackDescription,
+  stripMarkup,
+} from "./sanitize-description.mjs";

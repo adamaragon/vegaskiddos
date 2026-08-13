@@ -10,6 +10,7 @@ import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
+import { sanitizeDescription } from "../lib/scrape/sanitize-description.mjs";
 
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
@@ -75,7 +76,7 @@ async function scrapeCityOfLV(browser) {
     events.push({
       externalId: `colv:${e.id}`,
       title: String(e.title || "").trim(),
-      description: String(e.description || "").replace(/\s+/g, " ").trim().slice(0, 600),
+      description: sanitizeDescription(e.description),
       venue: (e.address || "").split(",")[0] || "City of Las Vegas",
       address: e.address || "",
       neighborhood: hoodFromText(e.address) || "downtown",
@@ -107,7 +108,7 @@ async function scrapeClarkCounty(browser) {
   for (const e of rows) {
     const date = String(e.start || "").slice(0, 10);
     if (!date || date < today) continue; // upcoming only (feed includes years of history)
-    const desc = String(e.eventdescription || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const desc = sanitizeDescription(e.eventdescription);
     const blob = `${e.title} ${desc} ${e.divisionname || ""}`;
     if (!kidRelevant(blob)) continue;
     events.push({
@@ -230,7 +231,8 @@ async function upsert(events) {
       const f = { Title: e.title, Venue: e.venue, Address: e.address,
         Start: e.start, AgeTiers: e.ageTiers, Source: e.source, ExternalId: e.externalId, ScrapedAt: new Date().toISOString() };
       // Keep in sync with lib/scrape/description.ts — don't clobber enrich-generated text.
-      if ((e.description || "").trim().length >= 15) f.Description = e.description;
+      const description = sanitizeDescription(e.description);
+      if (description.trim().length >= 15) f.Description = description;
       if (e.neighborhood) f.Neighborhood = e.neighborhood;
       if (e.priceTier) f.PriceTier = e.priceTier;
       if (e.url) f.Url = e.url;

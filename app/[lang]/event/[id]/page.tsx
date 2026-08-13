@@ -7,7 +7,7 @@ import { eventAbsUrl, homePath, venuePath } from "@/lib/eventUrl";
 import { safeHttpUrl } from "@/lib/httpUrl";
 import { ageTier, priceTier, neighborhood, venueSlug } from "@/lib/constants";
 import { eventEnv } from "@/lib/env";
-import { formatWhen, EventCard } from "@/components/EventCard";
+import { formatWhen, EventCard, PRICE_BG } from "@/components/EventCard";
 import { ShareButtons } from "@/components/ShareButtons";
 import { TrackedLink } from "@/components/TrackedLink";
 import { JsonLd } from "@/components/JsonLd";
@@ -155,7 +155,7 @@ export default async function EventPage({
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-8">
       <JsonLd data={ended && !event.canceled
         ? [breadcrumbLd([
             { name: "Vegas Kiddos", url: lang === "es" ? `${SITE}/es` : SITE },
@@ -218,21 +218,19 @@ export default async function EventPage({
 
       <div className={`mt-4 overflow-hidden rounded-blob border bg-white shadow-card ${event.canceled ? "border-coral-dark/30" : "border-ink/10"}`}>
         {event.image ? (
-          // Hero treatment when we have the event art: full-bleed image with a
-          // dark-bottom gradient scrim so the title sits on top of its own
-          // palette. The aspect matches the generated 1536×1024 art so nothing
-          // gets cropped on the card.
-          <div className="relative aspect-[3/2] w-full overflow-hidden bg-sand">
+          // Shorter banner than the 3:2 art, so the title overlay still fits
+          // without the hero eating the viewport.
+          <div className="relative h-[274px] w-full overflow-hidden bg-sand sm:h-[338px]">
             <Image
               src={event.image}
               alt={event.venue ? `${event.title} — ${event.venue}` : event.title}
               fill
               priority
-              sizes="(max-width: 768px) 100vw, 768px"
+              sizes="(max-width: 896px) 100vw, 896px"
               className={`object-cover ${event.canceled ? "grayscale-[60%]" : ""}`}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/30 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 text-white">
+            <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/45 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7 text-white">
               <p className="text-sm font-700 uppercase tracking-wide text-white/90">
                 {event.recurrence ? `${t(lang, "ev_next")} ` : ""}{formatWhen(whenStart, lang)}
                 {event.end && !event.recurrence ? ` – ${formatWhen(event.end, lang).split(", ").pop()}` : ""}
@@ -278,36 +276,33 @@ export default async function EventPage({
           </div>
         )}
 
-        <div className="p-6 sm:p-8">
-          <div className="flex flex-wrap gap-2">
+        <div className="p-5 sm:p-7">
+          <div className="grid grid-cols-2 gap-2">
+            <span className={`flex min-h-[2.75rem] min-w-0 items-center justify-center rounded-xl px-3 py-2 text-center text-sm font-800 leading-snug ${PRICE_BG[price.color]}`}>
+              {price.emoji} {event.priceText || priceLabel(lang, event.priceTier)}
+            </span>
             {event.neighborhood !== "unknown" && (
-              <span className="rounded-full bg-grape/10 px-3 py-1 text-sm font-700 text-grape-dark">
+              <span className="flex min-h-[2.75rem] min-w-0 items-center justify-center rounded-xl bg-grape/10 px-3 py-2 text-center text-sm font-700 leading-snug text-grape-dark">
                 {hoodName}
               </span>
             )}
-            <span className="rounded-full bg-sand px-3 py-1 text-sm font-700 text-ink/70">
-              {price.emoji} {event.priceText || priceLabel(lang, event.priceTier)}
-            </span>
             {eventEnv(event) && (
-              <span className="rounded-full bg-sand px-3 py-1 text-sm font-700 text-ink/70">
+              <span className="flex min-h-[2.75rem] min-w-0 items-center justify-center rounded-xl border border-ink/10 bg-sand px-3 py-2 text-center text-sm font-700 leading-snug text-ink/70">
                 {eventEnv(event) === "indoor" ? t(lang, "indoor") : t(lang, "outdoor")}
               </span>
             )}
-            <span className="rounded-full bg-sand px-3 py-1 text-sm font-700 text-ink/70">
+            <span className="flex min-h-[2.75rem] min-w-0 items-center justify-center rounded-xl border border-ink/10 bg-sand px-3 py-2 text-center text-sm font-700 leading-snug text-ink/70">
               {t(lang, "ev_via")} {event.source}
             </span>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
             {event.ageTiers.map((aid) => {
               const a = ageTier(aid);
               const L = ageLabel(lang, aid);
               return (
                 <span
                   key={aid}
-                  className="rounded-full border-2 border-teal/40 px-3 py-1 text-sm font-700 text-teal-btn"
+                  className="flex min-h-[2.75rem] min-w-0 items-center justify-center rounded-xl border-2 border-teal/40 px-3 py-2 text-center text-sm font-700 leading-snug text-teal-btn"
                 >
-                  {a.emoji} {L.label} <span className="text-ink/70">{L.sublabel}</span>
+                  {a.emoji} {L.label} <span className="ml-1 font-700 text-ink/70">{L.sublabel}</span>
                 </span>
               );
             })}
@@ -370,7 +365,7 @@ export default async function EventPage({
       {moreAtVenue.length > 0 && (
         <section className="mt-10">
           <h2 className="font-display text-2xl font-700">{t(lang, "ev_more_at")} {event.venue}</h2>
-          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {moreAtVenue.map((e, i) => <EventCard key={e.id} event={e} index={i} lang={lang} />)}
           </div>
         </section>
@@ -379,7 +374,7 @@ export default async function EventPage({
       {moreNearby.length > 0 && (
         <section className="mt-10">
           <h2 className="font-display text-2xl font-700">{t(lang, "ev_more_in")} {hoodName}</h2>
-          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {moreNearby.map((e, i) => <EventCard key={e.id} event={e} index={i} lang={lang} />)}
           </div>
         </section>

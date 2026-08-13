@@ -4,10 +4,11 @@ import { ageTier, priceTier } from "@/lib/constants";
 import { nextOccurrenceISO } from "@/lib/recurrence";
 import { t, ageLabel, priceLabel, hoodLabel, type Lang } from "@/lib/i18n";
 import { eventPath } from "@/lib/eventUrl";
+import { cardPlaceLabel } from "@/lib/eventPlace";
 import { EventThumb } from "./EventThumb";
 import { FavButton } from "./FavButton";
 
-const PRICE_BG: Record<string, string> = {
+export const PRICE_BG: Record<string, string> = {
   teal: "bg-teal-btn text-white",
   sunny: "bg-sunny text-ink",
   coral: "bg-coral-btn text-white",
@@ -29,6 +30,7 @@ export function formatWhen(iso: string, lang: Lang = "en") {
 export function EventCard({ event, index = 0, distanceMi, lang = "en", priority = false }: { event: KidEvent; index?: number; distanceMi?: number; lang?: Lang; priority?: boolean }) {
   const price = priceTier(event.priceTier);
   const hoodName = hoodLabel(lang, event.neighborhood);
+  const place = cardPlaceLabel(event);
   const when = nextOccurrenceISO(event.start, event.recurrence, event.canceledDates);
   // Stagger the dramatic entrance within each loaded batch.
   const delay = (index % 30) * 45;
@@ -60,50 +62,45 @@ export function EventCard({ event, index = 0, distanceMi, lang = "en", priority 
           </span>
         )}
       </div>
-      <div className="flex items-start justify-between gap-2 p-5 pb-3">
-        <div>
-          <p className="flex flex-wrap items-center gap-1.5 text-xs font-700 uppercase tracking-wide text-teal-btn">
-            {formatWhen(when, lang)}
-            {event.recurrence && (
-              <span className="rounded-full bg-grape/15 px-1.5 py-1 text-[10px] normal-case tracking-normal text-grape-dark">
-                🔁 {event.recurrence}
-              </span>
-            )}
-          </p>
-          <h3 className="mt-1 font-display text-xl font-600 leading-tight text-ink group-hover:text-coral">
-            {event.title}
-          </h3>
-        </div>
-        <span
-          className={`shrink-0 rounded-full px-3 py-1 text-xs font-800 ${PRICE_BG[price.color]}`}
-        >
-          {price.emoji} {event.priceText || priceLabel(lang, event.priceTier)}
-        </span>
-      </div>
+      <div className="flex flex-1 flex-col p-4">
+        <p className="text-xs font-700 uppercase tracking-wide text-teal-btn">
+          {formatWhen(when, lang)}
+        </p>
+        <h3 className="mt-1.5 font-display text-2xl font-semibold leading-tight text-ink group-hover:text-coral">
+          {event.title}
+        </h3>
+        <p className="mt-1.5 text-sm leading-snug text-ink/70 line-clamp-3">{event.description}</p>
 
-      <p className="px-5 text-sm text-ink/70 line-clamp-2">{event.description}</p>
-
-      <div className="mt-3 flex flex-wrap gap-1.5 px-5">
-        {event.ageTiers.map((id) => {
-          const a = ageTier(id);
-          const L = ageLabel(lang, id);
-          return (
-            <span
-              key={id}
-              className="rounded-full bg-sand px-2.5 py-1 text-xs font-700 text-ink/70"
-            >
-              {a.emoji} {L.label}
-            </span>
-          );
-        })}
-      </div>
-
-      <div className="mt-auto flex items-center justify-between border-t border-ink/10 px-5 py-3 text-xs text-ink/70">
-        <span className="font-700">📍 {event.venue}</span>
-        {event.neighborhood !== "unknown" && (
-          <span className="rounded-full bg-grape/10 px-2 py-1 font-700 text-grape-dark">
-            {hoodName}
+        <div className="flex-1" />
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <span
+            className={`flex min-h-[2.5rem] min-w-0 items-center justify-center rounded-xl px-2.5 py-1.5 text-center text-xs font-800 leading-snug ${PRICE_BG[price.color]}`}
+          >
+            {price.emoji} {event.priceText || priceLabel(lang, event.priceTier)}
           </span>
+          {event.recurrence && (
+            <span className="flex min-h-[2.5rem] min-w-0 items-center justify-center rounded-xl border border-grape/20 bg-grape/15 px-2.5 py-1.5 text-center text-xs font-700 leading-snug text-grape-dark">
+              🔁 {event.recurrence}
+            </span>
+          )}
+          {event.ageTiers.length > 0 && (
+            <span className="flex min-h-[2.5rem] min-w-0 items-center justify-center rounded-xl border border-ink/10 bg-sunny/25 px-2.5 py-1.5 text-center text-xs font-700 leading-snug text-ink/80">
+              {event.ageTiers
+                .map((id) => `${ageTier(id).emoji} ${ageLabel(lang, id).label}`)
+                .join(" · ")}
+            </span>
+          )}
+          {event.neighborhood !== "unknown" && (
+            <span className="flex min-h-[2.5rem] min-w-0 items-center justify-center rounded-xl border border-grape/20 bg-grape/10 px-2.5 py-1.5 text-center text-xs font-700 leading-snug text-grape-dark">
+              {hoodName}
+            </span>
+          )}
+        </div>
+
+        {place && (
+          <p className="mt-3 border-t border-ink/10 pt-3 text-xs font-700 leading-snug text-ink/70">
+            📍 {place}
+          </p>
         )}
       </div>
     </Link>

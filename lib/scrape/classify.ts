@@ -2,6 +2,8 @@
 // scraped event lands in the Airtable review queue (Approved=false), so a
 // human corrects anything the heuristics get wrong before it goes live.
 
+import { sanitizeDescription } from "./sanitize-description.mjs";
+
 export type AgeTierId = "baby" | "toddler" | "kids" | "tweens";
 export type PriceTierId = "free" | "under10" | "mid" | "premium";
 export type NeighborhoodId =
@@ -166,32 +168,5 @@ export function isBarOrAdult(text: string): boolean {
 }
 
 export function stripHtml(html?: string | null): string {
-  if (!html) return "";
-  return html
-    // Remove script/style blocks entirely (content + tags) — ad sliders, etc.
-    .replace(/<(script|style|noscript)[\s\S]*?<\/\1>/gi, "")
-    // Strip leftover inline JS that some feeds dump without script tags.
-    .replace(/\(\s*window\.[\s\S]*?\}\s*\)\s*;?/g, "")
-    .replace(/jQuery\([\s\S]*?\}\s*\)\s*;?/g, "")
-    // Preserve structure: turn block/line tags into newlines before stripping.
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n))) // numeric entities, e.g. &#038; -> &
-    .replace(/&amp;/g, "&")
-    .replace(/&rsquo;|&#8217;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/&[a-z]+;/g, " ") // strip any remaining named entities
-    // Repair "develop.m.ental" artifacts + normalize a.m./p.m. -> am/pm.
-    .replace(/\.([a-z])\./gi, "$1")
-    // Divider runs of dashes -> a clean separator line.
-    .replace(/\s*[—–-]{3,}\s*/g, "\n•••\n")
-    .replace(/[ \t]+/g, " ")
-    // Single-spaced clean lines: trim each, drop blanks + ad labels + JS scraps.
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l !== "" && !/^(sponsors?|advertisements?|advertisement)$/i.test(l) && !/^[(){};.]+$/.test(l) && !/function\s*\(|\.unslider\(|jQuery\(|window\./.test(l))
-    .join("\n")
-    .trim();
+  return sanitizeDescription(html);
 }

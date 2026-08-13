@@ -474,7 +474,7 @@ export function EventBrowser({ events, lang = "en" }: { events: KidEvent[]; lang
         ) : view === "list" ? (
           <>
             <h2 className="sr-only">Upcoming events</h2>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.slice(0, visible).map((e, i) => (
                 <EventCard
                   key={e.id}

@@ -7,6 +7,7 @@
 import type { ScrapedEvent, SourceResult } from "../types";
 import { classifyAges, isKidRelevant, type NeighborhoodId } from "../classify";
 import { parseIcal, unescapeIcal, icalToIso } from "../ical";
+import { sanitizeDescription } from "../description";
 
 export interface CommunicoBranch {
   id: string;
@@ -57,7 +58,7 @@ export function makeCommunicoAdapter(opts: {
 
       for (const ve of parseIcal(ics)) {
         const title = unescapeIcal(ve.SUMMARY || "");
-        const desc = unescapeIcal(ve.DESCRIPTION || "").slice(0, 600);
+        const desc = sanitizeDescription(unescapeIcal(ve.DESCRIPTION || ""));
         const location = unescapeIcal(ve.LOCATION || "");
         if (!title || !ve.DTSTART) continue;
 

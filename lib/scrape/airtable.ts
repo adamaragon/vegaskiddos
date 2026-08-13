@@ -1,5 +1,5 @@
 import type { ScrapedEvent } from "./types";
-import { hasSubstantialDescription } from "./description";
+import { hasSubstantialDescription, sanitizeDescription } from "./description";
 
 const API = "https://api.airtable.com/v0";
 
@@ -26,7 +26,9 @@ function toFields(e: ScrapedEvent) {
     ScrapedAt: new Date().toISOString(),
   };
   // Omit empty/short descriptions so daily upserts don't wipe AI-filled text.
-  if (hasSubstantialDescription(e.description)) f.Description = e.description;
+  // Sanitize here so HTML/JS/CSS never lands in Airtable even if a source misses it.
+  const description = sanitizeDescription(e.description);
+  if (hasSubstantialDescription(description)) f.Description = description;
   if (e.neighborhood) f.Neighborhood = e.neighborhood;
   if (e.end) f.End = e.end;
   if (e.priceTier) f.PriceTier = e.priceTier;

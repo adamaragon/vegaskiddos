@@ -41,7 +41,7 @@ export function CollectionView({ meta, events, lang = "en" }: { meta: Collection
           <p className="mt-2 font-700">Nothing here right now — check back soon!</p>
         </div>
       ) : (
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {events.map((e, i) => (
             <EventCard key={e.id} event={e} index={i} lang={lang} priority={i === 0} />
           ))}

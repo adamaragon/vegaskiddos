@@ -17,6 +17,7 @@ import {
 } from "../classify";
 import { fetchJsonRetry, fetchTextRetry } from "../http";
 import { parseIcal, unescapeIcal, icalToIso } from "../ical";
+import { sanitizeDescription } from "../description";
 
 const UA =
   "Mozilla/5.0 (compatible; VegasKiddos/1.0; +https://vegaskiddos.com)";
@@ -86,7 +87,7 @@ function fromTribeEvent(e: TribeEvent, source: string): ScrapedEvent | null {
 function fromIcalEvent(ve: Record<string, string>, source: string): ScrapedEvent | null {
   const title = unescapeIcal(ve.SUMMARY || "");
   if (!title || /cancell|postpone|sold out/i.test(title)) return null;
-  const desc = unescapeIcal(ve.DESCRIPTION || "");
+  const desc = sanitizeDescription(unescapeIcal(ve.DESCRIPTION || ""));
   const cats = (ve.CATEGORIES || "").split(",").map((c) => c.trim()).filter(Boolean);
   const blob = `${title} ${desc} ${cats.join(" ")}`;
   if (!isKidRelevant(blob, cats)) return null;

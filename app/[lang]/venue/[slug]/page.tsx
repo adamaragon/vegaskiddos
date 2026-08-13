@@ -69,7 +69,7 @@ export default async function VenuePage({ params }: { params: Promise<{ lang: st
           ? `${upcoming.length} upcoming kid-friendly ${upcoming.length === 1 ? "event" : "events"} at this venue`
           : t(lang, "ended_note")}
       </p>
-      <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {shown.map((e, i) => (
           <EventCard key={e.id} event={e} index={i} lang={lang} priority={i === 0} />
         ))}
