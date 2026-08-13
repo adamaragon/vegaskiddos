@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { allowRequest } from "@/lib/rateLimit";
 
 // Stores contact / feedback / suggestion submissions in the Airtable Feedback
 // table for review. Falls back to logging when Airtable isn't configured.
 export async function POST(req: Request) {
+  if (!allowRequest(req, "feedback", 8, 10 * 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Try again in a few minutes." }, { status: 429 });
+  }
   let body: Record<string, unknown>;
   try {
     body = await req.json();

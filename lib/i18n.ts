@@ -253,6 +253,33 @@ export const STRINGS = {
     en: "Heads up — these upcoming sessions are canceled (the rest of the series still runs):",
     es: "Aviso — estas próximas sesiones están canceladas (el resto de la serie continúa):",
   },
+  ended_banner: { en: "This event has passed", es: "Este evento ya pasó" },
+  ended_note: {
+    en: "We're keeping this page up so old links still work. Browse upcoming events below.",
+    es: "Mantenemos esta página para que los enlaces antiguos sigan funcionando. Mira los próximos eventos abajo.",
+  },
+  nf_title: { en: "Lost in the desert", es: "Perdido en el desierto" },
+  nf_body: {
+    en: "We couldn't find that page. The link may have moved.",
+    es: "No encontramos esa página. Es posible que el enlace se haya movido.",
+  },
+  nf_browse: { en: "Browse all events", es: "Ver todos los eventos" },
+  nf_weekend: { en: "This weekend", es: "Este finde" },
+  list_loading: { en: "Loading…", es: "Cargando…" },
+  list_empty_h: { en: "Your list is empty", es: "Tu lista está vacía" },
+  list_empty_p: {
+    en: "Tap the ❤️ on any event to save it here for your weekend planning.",
+    es: "Toca el ❤️ en cualquier evento para guardarlo aquí y planear el finde.",
+  },
+  list_browse: { en: "Browse events", es: "Ver eventos" },
+  list_h: { en: "❤️ My list", es: "❤️ Mi lista" },
+  list_saved_1: { en: "saved event", es: "evento guardado" },
+  list_saved_n: { en: "saved events", es: "eventos guardados" },
+  list_share_title: { en: "My Vegas Kiddos list", es: "Mi lista de Vegas Kiddos" },
+  list_share_text: {
+    en: "Check out these kid events I saved on Vegas Kiddos",
+    es: "Mira estos eventos para niños que guardé en Vegas Kiddos",
+  },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;
@@ -283,6 +310,7 @@ const HOOD_ES: Record<NeighborhoodId, string> = {
   "spring-valley": "Spring Valley",
   enterprise: "Enterprise / Suroeste",
   downtown: "Centro / Distrito de Arte",
+  unknown: "Las Vegas",
 };
 
 export function ageLabel(lang: Lang, id: AgeTierId): { label: string; sublabel: string } {
@@ -294,6 +322,7 @@ export function priceLabel(lang: Lang, id: PriceTierId): string {
   return PRICE_TIERS.find((x) => x.id === id)!.label;
 }
 export function hoodLabel(lang: Lang, id: NeighborhoodId): string {
+  if (id === "unknown") return "Las Vegas";
   if (lang === "es") return HOOD_ES[id];
-  return NEIGHBORHOODS.find((x) => x.id === id)!.label;
+  return NEIGHBORHOODS.find((x) => x.id === id)?.label ?? "Las Vegas";
 }

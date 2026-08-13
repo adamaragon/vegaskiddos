@@ -27,4 +27,8 @@ export interface SourceResult {
   source: string;
   events: ScrapedEvent[];
   errors: string[];
+  // When true, the cancellation sweep skips this source even if events landed.
+  // Used when a fallback feed (e.g. Tribe iCal) uses different ids than the
+  // primary REST feed — matching would false-positive mass-cancellations.
+  skipSweep?: boolean;
 }

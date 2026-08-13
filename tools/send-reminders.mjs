@@ -10,6 +10,7 @@
 // Env: AIRTABLE_TOKEN, AIRTABLE_BASE_ID, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
 //      VAPID_SUBJECT, [RESEND_API_KEY], [DIGEST_FROM]
 import fs from "fs";
+import crypto from "crypto";
 import webpush from "web-push";
 
 try {
@@ -27,6 +28,8 @@ const BASE = process.env.AIRTABLE_BASE_ID;
 const DRY = process.argv.includes("--dry");
 const SITE = "https://vegaskiddos.com";
 const FROM = process.env.DIGEST_FROM || "Vegas Kiddos <hello@vegaskiddos.com>";
+const unsubSecret = process.env.AUTH_SECRET || BASE;
+const unsubToken = (email) => crypto.createHmac("sha256", unsubSecret).update(String(email).toLowerCase()).digest("hex");
 const PUBLIC = process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 if (!TOKEN || !BASE) { console.error("Missing Airtable env"); process.exit(1); }
 if (PUBLIC && process.env.VAPID_PRIVATE_KEY) {
@@ -76,7 +79,7 @@ function happensTomorrow(f) {
   return false;
 }
 
-const events = (await list("Events")).filter((r) => r.fields.Approved && !r.fields.Rejected);
+const events = (await list("Events")).filter((r) => r.fields.Approved && !r.fields.Rejected && !r.fields.Canceled);
 const byId = new Map(events.map((r) => [r.id, r.fields]));
 const tomorrowEvents = new Set(events.filter((r) => happensTomorrow(r.fields)).map((r) => r.id));
 const subs = (await list("Reminders")).filter((r) => r.fields.Active);
@@ -119,7 +122,7 @@ for (const r of subs) {
           <div style="font-size:34px">🌵</div><h1 style="margin:6px 0;font-size:20px">${subject}</h1>
           <p style="margin:0;opacity:.9">Your saved events are coming up tomorrow.</p></div>
         <table style="width:100%;margin-top:16px;border-collapse:collapse">${rows}</table>
-        <p style="text-align:center;color:#aaa;font-size:12px;margin-top:18px">Vegas Kiddos · always confirm details with the venue</p></div>`;
+        <p style="text-align:center;color:#aaa;font-size:12px;margin-top:18px">Vegas Kiddos · always confirm details with the venue<br><a href="${SITE}/unsubscribe?e=${encodeURIComponent(f.Email)}&t=${unsubToken(f.Email)}&kind=reminders" style="color:#aaa">Stop event reminders</a></p></div>`;
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },

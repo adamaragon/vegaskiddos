@@ -27,4 +27,5 @@ jobs:
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           DIGEST_FROM: ${{ secrets.DIGEST_FROM }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: node tools/send-reminders.mjs

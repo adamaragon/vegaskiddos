@@ -4,8 +4,9 @@ import { getCollection, getCollectionMeta } from "@/lib/collections";
 import { CollectionView } from "@/components/CollectionView";
 import { langAlternates } from "@/lib/seo";
 import type { Lang } from "@/lib/i18n";
+import { PAGE_REVALIDATE } from "@/lib/pageCache";
 
-export const revalidate = 86400;
+export const revalidate = PAGE_REVALIDATE;
 const SLUG = "arts-and-crafts";
 
 export async function generateMetadata({

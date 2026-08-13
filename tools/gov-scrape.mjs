@@ -6,6 +6,9 @@
 //
 // Env: AIRTABLE_TOKEN, AIRTABLE_BASE_ID (table "Events").
 
+import { writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
 
 const UA =
@@ -259,24 +262,21 @@ async function dedupeApproved() {
     const u = new URL(`https://api.airtable.com/v0/${base}/Events`);
     u.searchParams.set("pageSize", "100");
     u.searchParams.set("filterByFormula", "{Approved}=1");
-    ["Title", "Venue", "Image", "Description", "ExternalId"].forEach((f) => u.searchParams.append("fields[]", f));
+    ["Title", "Venue"].forEach((f) => u.searchParams.append("fields[]", f));
     if (offset) u.searchParams.set("offset", offset);
     const r = await fetch(u, { headers: { Authorization: `Bearer ${token}` } });
     if (!r.ok) return 0;
     const d = await r.json(); recs.push(...d.records); offset = d.offset;
   } while (offset);
-  const score = (r) => (String(r.fields.ExternalId || "").startsWith("series:") ? 100 : 0) + (r.fields.Image ? 10 : 0) + Math.min(5, String(r.fields.Description || "").length / 100);
-  const groups = new Map();
-  for (const r of recs) { const k = `${norm(r.fields.Title)}|${norm(r.fields.Venue)}`; (groups.get(k) || groups.set(k, []).get(k)).push(r); }
-  const reject = [];
-  for (const g of groups.values()) { if (g.length < 2) continue; g.sort((a, b) => score(b) - score(a)); reject.push(...g.slice(1).map((r) => r.id)); }
-  for (let i = 0; i < reject.length; i += 10) {
-    await fetch(`https://api.airtable.com/v0/${base}/Events`, {
-      method: "PATCH", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ records: reject.slice(i, i + 10).map((id) => ({ id, fields: { Approved: false, Rejected: true } })) }),
-    });
+  let groups = 0;
+  const seen = new Map();
+  for (const r of recs) {
+    const k = `${norm(r.fields.Title)}|${norm(r.fields.Venue)}`;
+    if (seen.has(k)) groups++;
+    else seen.set(k, r.id);
   }
-  return reject.length;
+  if (groups) console.log(`dedupe: ${groups} approved duplicate(s) left untouched (never un-approve live events)`);
+  return 0;
 }
 
 /* ---------------- main ---------------- */
@@ -296,6 +296,16 @@ for (const [name, fn] of Object.entries(sources)) {
 await browser.close();
 all = collapse(all);
 console.log(`total after collapse: ${all.length}`);
+
+const live = {};
+for (const e of all) {
+  if (!live[e.source]) live[e.source] = { ids: [], maxStart: "" };
+  if (e.externalId) live[e.source].ids.push(e.externalId);
+  if (e.start && e.start > live[e.source].maxStart) live[e.source].maxStart = e.start;
+}
+const snapPath = join(dirname(fileURLToPath(import.meta.url)), ".gov-live-ids.json");
+writeFileSync(snapPath, JSON.stringify({ ranAt: new Date().toISOString(), sources: live }, null, 2));
+console.log(`wrote live-id snapshot → ${snapPath} (${Object.keys(live).join(", ") || "none"})`);
 if (dryRun) {
   for (const e of all.slice(0, 8)) console.log(`   - ${e.title} | ${e.start.slice(0,16)} | ${e.neighborhood} | ${e.priceTier} | ${e.recurrence || "one-time"}`);
 } else if (all.length) {

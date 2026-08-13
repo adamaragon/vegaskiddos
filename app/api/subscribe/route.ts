@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
+import { unsubToken } from "@/lib/unsubToken";
+import { allowRequest } from "@/lib/rateLimit";
 
 const SITE = "https://vegaskiddos.com";
 
@@ -10,8 +11,9 @@ async function sendWelcome(email: string, lang: "en" | "es", base: string) {
   const key = process.env.RESEND_API_KEY;
   if (!key) return;
   const from = process.env.DIGEST_FROM || "Vegas Kiddos <hello@vegaskiddos.com>";
-  const tok = crypto.createHash("sha256").update(email.toLowerCase() + base).digest("hex").slice(0, 16);
-  const unsub = `${SITE}/unsubscribe?e=${encodeURIComponent(email)}&t=${tok}`;
+  const tok = unsubToken(email, base);
+  const unsubPage = `${SITE}/unsubscribe?e=${encodeURIComponent(email)}&t=${tok}`;
+  const unsubApi = `${SITE}/api/unsubscribe?e=${encodeURIComponent(email)}&t=${tok}`;
   const c = lang === "es"
     ? {
         subject: "🌵 ¡Bienvenido a Vegas Kiddos!",
@@ -39,13 +41,13 @@ async function sendWelcome(email: string, lang: "en" | "es", base: string) {
       <div style="text-align:center;margin-top:20px">
         <a href="${SITE}" style="background:#FF6B5E;color:#fff;padding:12px 24px;border-radius:999px;font-weight:800;text-decoration:none">${c.cta}</a>
       </div>
-      <p style="text-align:center;color:#999;font-size:12px;margin-top:24px">${c.foot}<br><a href="${unsub}" style="color:#999">${c.unsub}</a></p>
+      <p style="text-align:center;color:#999;font-size:12px;margin-top:24px">${c.foot}<br><a href="${unsubPage}" style="color:#999">${c.unsub}</a></p>
     </div></body></html>`;
   try {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to: email, subject: c.subject, html, headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }),
+      body: JSON.stringify({ from, to: email, subject: c.subject, html, headers: { "List-Unsubscribe": `<${unsubApi}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }),
     });
   } catch (err) {
     console.error("welcome email failed:", err);
@@ -54,6 +56,9 @@ async function sendWelcome(email: string, lang: "en" | "es", base: string) {
 
 // Adds an email to the weekly-digest Subscribers list (deduped by email).
 export async function POST(req: Request) {
+  if (!allowRequest(req, "subscribe", 8, 10 * 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Try again in a few minutes." }, { status: 429 });
+  }
   const body = (await req.json().catch(() => ({}))) as { email?: string; neighborhood?: string; lang?: string };
   const email = String(body.email || "").trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {

@@ -94,8 +94,8 @@ export async function publishPending(): Promise<{ approved: number; rejected: nu
   const protectedKeys = new Set(approved.map((r) => normKey(r.fields.Title, r.fields.Venue)));
 
   const pending = await page(
-    "AND(NOT({Approved}), NOT({Rejected}))",
-    ["Title", "Venue", "ExternalId", "Image", "Description"]
+    "AND(NOT({Approved}), NOT({Rejected}), NOT({Source}='Community'))",
+    ["Title", "Venue", "ExternalId", "Image", "Description", "Source"]
   );
 
   const score = (r: Rec) =>
@@ -128,11 +128,14 @@ export async function publishPending(): Promise<{ approved: number; rejected: nu
 
   const patch = async (ids: string[], fields: Record<string, unknown>) => {
     for (let i = 0; i < ids.length; i += 10) {
-      await fetch(`${API}/${base}/${encodeURIComponent(table)}`, {
+      const res = await fetch(`${API}/${base}/${encodeURIComponent(table)}`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ records: ids.slice(i, i + 10).map((id) => ({ id, fields })) }),
       });
+      if (!res.ok) {
+        throw new Error(`Airtable PATCH ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      }
     }
   };
   await patch(approveIds, { Approved: true });

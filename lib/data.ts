@@ -1,33 +1,31 @@
 import { cache } from "react";
 import type { KidEvent } from "./types";
 import { MOCK_EVENTS } from "./mock-events";
-import type { AgeTierId, PriceTierId, NeighborhoodId } from "./constants";
-import { nextOccurrenceISO } from "./recurrence";
+import { NEIGHBORHOODS, type AgeTierId, type PriceTierId, type NeighborhoodId } from "./constants";
+import { nextOccurrenceISO, isListedEvent } from "./recurrence";
 import type { Lang } from "./i18n";
+import { artTemplateSrc, artTypeFor } from "./eventArt";
+import { PAGE_REVALIDATE } from "./pageCache";
+import { safeHttpUrl } from "./httpUrl";
 
-// Sort by the next real occurrence (recurring series use their computed next date).
 function byNextOccurrence(a: KidEvent, b: KidEvent) {
   return nextOccurrenceISO(a.start, a.recurrence, a.canceledDates).localeCompare(
     nextOccurrenceISO(b.start, b.recurrence, b.canceledDates)
   );
 }
 
-// Data layer. Reads from Airtable when env vars are present, otherwise falls
-// back to the seed data so the app runs with zero configuration.
-
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const AIRTABLE_BASE = process.env.AIRTABLE_BASE_ID;
 const AIRTABLE_TABLE = process.env.AIRTABLE_TABLE_NAME || "Events";
 
-// Durable image host. Event images are synced (tools/sync-images.mjs) to the R2
-// bucket served here as /event/<id>/<width>.webp, so the app references stable
-// URLs instead of Airtable's ephemeral signed URLs (which expire ~2h and break
-// in cached HTML). 1024 is the default/OG size; lib/imageLoader.ts swaps the
-// width segment per responsive <Image> request.
 const IMG_CDN = "https://img.vegaskiddos.com";
 
 export function isAirtableConfigured() {
   return Boolean(AIRTABLE_TOKEN && AIRTABLE_BASE);
+}
+
+function failClosed(): boolean {
+  return process.env.NODE_ENV === "production" && isAirtableConfigured();
 }
 
 interface AirtableRecord {
@@ -35,26 +33,17 @@ interface AirtableRecord {
   fields: Record<string, unknown>;
 }
 
-// First attachment object out of an Airtable attachment field ([{ id, url }, …]).
-function firstAttachment(v: unknown): { id?: string; url?: string } | null {
-  if (Array.isArray(v) && v[0] && typeof v[0] === "object") return v[0] as { id?: string; url?: string };
-  return null;
-}
+const KNOWN_HOODS = new Set<string>(NEIGHBORHOODS.map((n) => n.id));
 
-// Short stable token from an image's identity (attachment id, else its source
-// URL). The public image URL embeds it as ?v=, so the URL changes whenever the
-// underlying image changes — busting Cloudflare's immutable edge cache when an
-// event's art is regenerated (R2 keeps the same /event/<id>/<w>.webp key, which
-// the edge would otherwise serve stale for up to a year).
-function imgVersion(ident: string): string {
-  let h = 0;
-  for (let i = 0; i < ident.length; i++) h = (Math.imul(h, 31) + ident.charCodeAt(i)) >>> 0;
-  return h.toString(36);
+function parseNeighborhood(raw: unknown): NeighborhoodId {
+  const id = String(raw || "");
+  return KNOWN_HOODS.has(id) ? (id as NeighborhoodId) : "unknown";
 }
 
 function mapRecord(rec: AirtableRecord): KidEvent | null {
   const f = rec.fields;
   if (!f.Title || !f.Start) return null;
+  const art = artTypeFor(String(f.Title), String(f.Description || ""));
   return {
     id: rec.id,
     title: String(f.Title),
@@ -63,7 +52,7 @@ function mapRecord(rec: AirtableRecord): KidEvent | null {
     descriptionEs: f.DescriptionEs ? String(f.DescriptionEs) : undefined,
     venue: String(f.Venue || ""),
     address: String(f.Address || ""),
-    neighborhood: (f.Neighborhood as NeighborhoodId) || "downtown",
+    neighborhood: parseNeighborhood(f.Neighborhood),
     lat: Number(f.Lat) || 0,
     lng: Number(f.Lng) || 0,
     start: String(f.Start),
@@ -73,36 +62,19 @@ function mapRecord(rec: AirtableRecord): KidEvent | null {
       .filter(Boolean) as AgeTierId[],
     priceTier: (f.PriceTier as PriceTierId) || "free",
     priceText: f.PriceText ? String(f.PriceText) : undefined,
-    url: f.Url ? String(f.Url) : undefined,
-    // Reference the durable R2 copy (synced from ArtImage attachment or the
-    // scraped Image URL) so cached HTML never holds an expiring Airtable URL.
-    // ?v= changes when the source image changes, so a regenerated image is
-    // fetched fresh instead of the immutable-cached old one.
-    image: ((): string | undefined => {
-      const art = firstAttachment((f as Record<string, unknown>).ArtImage);
-      const ident = art?.id || art?.url || (f.Image ? String(f.Image) : null);
-      return ident ? `${IMG_CDN}/event/${rec.id}/1024.webp?v=${imgVersion(ident)}` : undefined;
-    })(),
+    url: safeHttpUrl(f.Url ? String(f.Url) : undefined),
+    image: `${IMG_CDN}${artTemplateSrc(art.id)}`,
     source: String(f.Source || "Community"),
-    // Preserve "unknown" — coercing a missing Indoor field to false would
-    // mislabel every unflagged event as outdoor (e.g. library storytimes).
     indoor: f.Indoor == null ? undefined : Boolean(f.Indoor),
     recurrence: f.Recurrence ? String(f.Recurrence) : undefined,
-    // Cancelled events stay visible (still Approved) but render a banner — the
-    // cancellation sweep sets this when a source pulls an event we'd listed.
     canceled: f.Canceled == null ? undefined : Boolean(f.Canceled),
     canceledReason: f.CanceledReason ? String(f.CanceledReason) : undefined,
-    // For a recurring series: specific cancelled occurrences. Stored as a
-    // comma/newline-separated list of "YYYY-MM-DD"; the recurrence helpers skip
-    // these so one cancelled date never takes down the whole series.
     canceledDates: f.CanceledDates
       ? String(f.CanceledDates).split(/[\s,]+/).map((s) => s.trim()).filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
       : undefined,
   };
 }
 
-// When rendering in Spanish, swap in the stored translation (falling back to
-// the source text if a given event hasn't been translated yet).
 function localize(events: KidEvent[], lang: Lang): KidEvent[] {
   if (lang !== "es") return events;
   return events.map((e) =>
@@ -112,48 +84,124 @@ function localize(events: KidEvent[], lang: Lang): KidEvent[] {
   );
 }
 
-// Wrapped in React cache() so multiple calls in one request (e.g. an event
-// page's generateMetadata + render, or the homepage's strip + browser) share a
-// single fetch + parse. Cross-request data is already cached via revalidate:86400.
-export const getEvents = cache(async (lang: Lang = "en"): Promise<KidEvent[]> => {
+async function fetchAirtableRecords(formula: string): Promise<AirtableRecord[]> {
+  const records: AirtableRecord[] = [];
+  let offset: string | undefined;
+  do {
+    const url = new URL(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE}/${encodeURIComponent(AIRTABLE_TABLE)}`
+    );
+    url.searchParams.set("filterByFormula", formula);
+    url.searchParams.set("pageSize", "100");
+    if (offset) url.searchParams.set("offset", offset);
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
+      next: { revalidate: PAGE_REVALIDATE },
+    });
+    if (!res.ok) throw new Error(`Airtable ${res.status}`);
+    const data = (await res.json()) as { records: AirtableRecord[]; offset?: string };
+    records.push(...data.records);
+    offset = data.offset;
+  } while (offset);
+  return records;
+}
+
+function toEvents(records: AirtableRecord[], lang: Lang): KidEvent[] {
+  return localize(
+    records.map(mapRecord).filter((e): e is KidEvent => e !== null).sort(byNextOccurrence),
+    lang,
+  );
+}
+
+function mockEvents(lang: Lang): KidEvent[] {
+  return localize([...MOCK_EVENTS].sort(byNextOccurrence), lang);
+}
+
+export const getApprovedEvents = cache(async (lang: Lang = "en"): Promise<KidEvent[]> => {
   if (!isAirtableConfigured()) {
-    return localize([...MOCK_EVENTS].sort(byNextOccurrence), lang);
+    return mockEvents(lang);
   }
   try {
-    // Approved events that are either upcoming OR recurring (recurring series
-    // never expire — their next occurrence is computed for display).
-    const formula =
-      "AND({Approved}=1, OR(NOT({Recurrence}=BLANK()), IS_AFTER({Start}, DATEADD(NOW(),-1,'days'))))";
-    const records: AirtableRecord[] = [];
-    let offset: string | undefined;
-    do {
-      const url = new URL(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE}/${encodeURIComponent(AIRTABLE_TABLE)}`
-      );
-      url.searchParams.set("filterByFormula", formula);
-      url.searchParams.set("pageSize", "100");
-      if (offset) url.searchParams.set("offset", offset);
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
-        next: { revalidate: 86400 },
-      });
-      if (!res.ok) throw new Error(`Airtable ${res.status}`);
-      const data = (await res.json()) as { records: AirtableRecord[]; offset?: string };
-      records.push(...data.records);
-      offset = data.offset;
-    } while (offset);
-    const events = records
-      .map(mapRecord)
-      .filter((e): e is KidEvent => e !== null)
-      .sort(byNextOccurrence);
-    return localize(events.length ? events : MOCK_EVENTS, lang);
+    const records = await fetchAirtableRecords("{Approved}=1");
+    const events = toEvents(records, lang);
+    if (events.length) return events;
+    if (failClosed()) {
+      console.error("Airtable returned zero approved events — failing closed");
+      return [];
+    }
+    return mockEvents(lang);
   } catch (err) {
-    console.error("Airtable fetch failed, using seed data:", err);
-    return localize([...MOCK_EVENTS].sort(byNextOccurrence), lang);
+    console.error("Airtable fetch failed:", err);
+    if (failClosed()) return [];
+    return mockEvents(lang);
   }
 });
 
-export async function getEvent(id: string, lang: Lang = "en"): Promise<KidEvent | undefined> {
-  const events = await getEvents(lang);
-  return events.find((e) => e.id === id);
+export const getEvents = cache(async (lang: Lang = "en"): Promise<KidEvent[]> => {
+  return (await getApprovedEvents(lang)).filter((e) => isListedEvent(e));
+});
+
+const AIRTABLE_ID = /^rec[a-zA-Z0-9]{10,}$/;
+
+export type EventLookup =
+  | { kind: "ok"; event: KidEvent }
+  | { kind: "gone" }
+  | { kind: "missing" };
+
+async function fetchRecordById(id: string): Promise<{ status: number; rec?: AirtableRecord }> {
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE}/${encodeURIComponent(AIRTABLE_TABLE)}/${id}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
+    next: { revalidate: PAGE_REVALIDATE },
+  });
+  if (res.status === 404) return { status: 404 };
+  if (!res.ok) throw new Error(`Airtable ${res.status}`);
+  const rec = (await res.json()) as AirtableRecord;
+  return { status: 200, rec };
 }
+
+export const lookupEvent = cache(async (id: string, lang: Lang = "en"): Promise<EventLookup> => {
+  if (!AIRTABLE_ID.test(id)) return { kind: "missing" };
+
+  if (!isAirtableConfigured()) {
+    const event = localize(MOCK_EVENTS, lang).find((e) => e.id === id);
+    return event ? { kind: "ok", event } : { kind: "missing" };
+  }
+
+  try {
+    const { status, rec } = await fetchRecordById(id);
+    if (status === 404 || !rec) return { kind: "gone" };
+    if (!rec.fields?.Approved) return { kind: "gone" };
+    const event = mapRecord(rec);
+    if (!event) return { kind: "gone" };
+    return { kind: "ok", event: localize([event], lang)[0] };
+  } catch (err) {
+    console.error("Airtable lookupEvent failed:", err);
+    const cached = (await getApprovedEvents(lang)).find((e) => e.id === id);
+    if (cached) return { kind: "ok", event: cached };
+    return { kind: "missing" };
+  }
+});
+
+export const getEvent = cache(async (id: string, lang: Lang = "en"): Promise<KidEvent | undefined> => {
+  const hit = await lookupEvent(id, lang);
+  return hit.kind === "ok" ? hit.event : undefined;
+});
+
+export const getEventsByIds = cache(async (ids: string[], lang: Lang = "en"): Promise<KidEvent[]> => {
+  const uniq = [...new Set(ids)].filter((id) => AIRTABLE_ID.test(id)).slice(0, 40);
+  if (!uniq.length) return [];
+
+  if (!isAirtableConfigured()) {
+    const want = new Set(uniq);
+    return localize(MOCK_EVENTS.filter((e) => want.has(e.id)), lang);
+  }
+
+  const formula = `AND({Approved}=1, OR(${uniq.map((id) => `RECORD_ID()='${id}'`).join(",")}))`;
+  try {
+    return toEvents(await fetchAirtableRecords(formula), lang);
+  } catch (err) {
+    console.error("Airtable getEventsByIds failed:", err);
+    return [];
+  }
+});

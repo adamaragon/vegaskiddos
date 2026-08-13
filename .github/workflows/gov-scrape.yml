@@ -37,16 +37,10 @@ jobs:
 
       # Fetch-based adapters (WP calendars, library iCal feeds, Nevada Moms).
       # always() so a gov-scrape failure above doesn't skip these.
-      #
-      # continue-on-error: when upstream sources serve WAF/HTML challenges
-      # instead of JSON (Vegas Family Guide and Nevada Moms have done this
-      # intermittently), the script exits 1 after retries. Per-source errors
-      # are logged in the step output. We don't want one blocked source to
-      # mark the whole nightly run red and email — other sources usually
-      # succeeded, and the next day's run often recovers automatically.
+      # Vegas Family Guide / Nevada Moms WAF errors are soft-fail inside cli.ts
+      # so Library/Henderson/Family Fun Vegas going dark still turns the job red.
       - name: Run fetch scraper (library + WP calendars)
         if: ${{ always() }}
-        continue-on-error: true
         env:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
@@ -67,7 +61,7 @@ jobs:
         env:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
-        run: npm run sweep -- --apply || true
+        run: npm run sweep -- --apply
 
       # Self-heal incomplete events from every source (gov, library, fetch
       # scrapers): fill blank descriptions, geocode missing coordinates, and tag
@@ -84,19 +78,26 @@ jobs:
           node tools/geocode-events.mjs
           node tools/infer-ages.mjs
 
-      # Auto-generate AI event art for any approved events missing an image of
-      # any kind. Runs at low quality (~$0.011/image) and only touches events
-      # with neither ArtImage nor Image set, so this is cheap once the catalog
-      # is backfilled — typical daily cost is a few cents. The sync step below
-      # then picks up the new ArtImage attachments and pushes them to R2.
-      - name: Generate art for new approved events
+      - name: Pin api.cloudflare.com to IPv4
+        if: ${{ always() }}
+        run: |
+          IP=$(getent ahostsv4 api.cloudflare.com | awk '{print $1; exit}')
+          echo "$IP api.cloudflare.com" | sudo tee -a /etc/hosts
+          echo "pinned api.cloudflare.com -> $IP"
+
+      # Type templates on R2 (img.vegaskiddos.com/type/<id>/<w>.webp). Idempotent:
+      # reuses an existing ArtImage for known types, generates only missing types
+      # (e.g. yoga). Display no longer depends on per-event ArtImage.
+      - name: Sync art type templates to R2
         if: ${{ always() }}
         env:
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           GEN_QUALITY: low
-        run: node tools/gen-event-art.mjs batch || true
+        run: npx tsx tools/sync-art-templates.mjs
 
       # Durable images: sync each approved event's image to R2 as responsive
       # WebP (img.vegaskiddos.com/event/<id>/<w>.webp). The manifest skips
@@ -116,6 +117,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add tools/.image-sync-manifest.json || true
+          git add tools/.image-sync-manifest.json tools/.geocode-cache.json tools/.gov-live-ids.json || true
           git diff --staged --quiet || git commit -m "chore: update image-sync manifest [skip ci]"
-          git push || true
+          git push

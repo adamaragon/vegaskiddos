@@ -75,7 +75,7 @@ export default function SubmitPage() {
         before it goes live.
       </p>
 
-      <form onSubmit={onSubmit} className="mt-8 space-y-5">
+      <form onSubmit={onSubmit} className="relative mt-8 space-y-5">
         <Labeled label="Event title *">
           <input name="title" required className={field} placeholder="Toddler Storytime" />
         </Labeled>
@@ -167,6 +167,13 @@ export default function SubmitPage() {
         <Labeled label="Your email (so we can follow up)">
           <input name="submitterEmail" type="email" className={field} placeholder="you@email.com" />
         </Labeled>
+
+        <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+          <label>
+            Company
+            <input name="company" tabIndex={-1} autoComplete="off" />
+          </label>
+        </div>
 
         {status === "error" && (
           <p role="alert" className="rounded-2xl bg-coral/10 px-4 py-3 text-sm font-700 text-ink/80">

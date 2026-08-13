@@ -1,11 +1,15 @@
 name: Weekly email digest
 
 # Compiles "This Week for Vegas Kids" from Airtable and emails subscribers.
-# Sends via Resend when RESEND_API_KEY is set; otherwise just compiles (preview).
+# Sends via Resend. A second Thursday slot retries if the first run never
+# acquired a GitHub-hosted runner (that is what killed 6 Aug 2026). Resend
+# Idempotency-Key in send-digest.mjs keeps a successful first send from
+# double-emailing on the retry.
 
 on:
   schedule:
-    - cron: "0 16 * * 4" # Thursdays 09:00 PT
+    - cron: "0 16 * * 4"   # Thursdays 09:00 PT
+    - cron: "30 18 * * 4"  # Thursdays 11:30 PT backup
   workflow_dispatch: {}
 
 jobs:
@@ -21,4 +25,5 @@ jobs:
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           DIGEST_FROM: ${{ secrets.DIGEST_FROM }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: node tools/send-digest.mjs

@@ -25,6 +25,8 @@
 //   • only one-time events within the feed's horizon are considered (recurring
 //     series and far-future events legitimately aren't in the window).
 import { fetchAllSources } from "./run";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const API = "https://api.airtable.com/v0";
 const META = "https://api.airtable.com/v0/meta";
@@ -35,6 +37,28 @@ function cfg() {
   const table = process.env.AIRTABLE_TABLE_NAME || "Events";
   if (!token || !base) throw new Error("AIRTABLE_TOKEN/AIRTABLE_BASE_ID not set");
   return { token, base, table };
+}
+
+const GOV_LIVE = join(process.cwd(), "tools/.gov-live-ids.json");
+const GOV_LIVE_MAX_MS = 36 * 60 * 60 * 1000;
+
+function loadGovLive(): { source: string; ids: Set<string>; maxStart: string }[] {
+  try {
+    const raw = JSON.parse(readFileSync(GOV_LIVE, "utf8")) as {
+      ranAt?: string;
+      sources?: Record<string, { ids?: string[]; maxStart?: string }>;
+    };
+    if (!raw.ranAt || Date.now() - Date.parse(raw.ranAt) > GOV_LIVE_MAX_MS) return [];
+    const out: { source: string; ids: Set<string>; maxStart: string }[] = [];
+    for (const [source, s] of Object.entries(raw.sources || {})) {
+      const ids = new Set((s.ids || []).filter(Boolean));
+      if (!ids.size) continue;
+      out.push({ source, ids, maxStart: s.maxStart || "" });
+    }
+    return out;
+  } catch {
+    return [];
+  }
 }
 
 type Rec = { id: string; fields: Record<string, unknown> };
@@ -158,6 +182,7 @@ export async function runSweep(opts?: { apply?: boolean }): Promise<SweepSummary
   const liveBySource = new Map<string, { ids: Set<string>; maxStart: string }>();
   const sourcesSkipped: { source: string; why: string }[] = [];
   for (const r of results) {
+    if (r.skipSweep) { sourcesSkipped.push({ source: r.source, why: "fallback feed with mismatched ids" }); continue; }
     if (r.errors.length) { sourcesSkipped.push({ source: r.source, why: `errors: ${r.errors.join("; ")}` }); continue; }
     if (r.events.length === 0) { sourcesSkipped.push({ source: r.source, why: "returned 0 events" }); continue; }
     const ids = new Set<string>();
@@ -167,6 +192,10 @@ export async function runSweep(opts?: { apply?: boolean }): Promise<SweepSummary
       if (e.start && e.start > maxStart) maxStart = e.start;
     }
     liveBySource.set(r.source, { ids, maxStart });
+  }
+  for (const g of loadGovLive()) {
+    if (liveBySource.has(g.source)) continue;
+    liveBySource.set(g.source, { ids: g.ids, maxStart: g.maxStart });
   }
   const sourcesSwept = [...liveBySource.keys()];
 

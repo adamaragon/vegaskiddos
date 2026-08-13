@@ -1,6 +1,6 @@
 // Deploy self-heal for stale-HTML chunk 404s.
 //
-// Pages are ISR-cached for a day (`export const revalidate = 86400`) and served
+// Pages are ISR-cached for 10 minutes (`PAGE_REVALIDATE`) and served
 // with a 30-day stale-while-revalidate, so a repeat visitor can be holding HTML
 // from before a deploy. That HTML points at hashed chunks the new deploy
 // deleted, so the chunk request 404s, hydration dies with a ChunkLoadError, and

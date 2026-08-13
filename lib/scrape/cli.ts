@@ -7,10 +7,16 @@ import { runScrape } from "./run";
 // instead of the source silently flatlining for weeks (as Nevada Moms did).
 // Thin/volatile sources are intentionally excluded — a 0 there is plausible.
 const CORE_SOURCES = new Set([
-  "Vegas Family Guide",
   "Family Fun Vegas",
   "Library",
   "Henderson Libraries",
+]);
+
+// Known-flaky aggregator hosts (WAF/HTML challenges). Log them, don't fail the
+// nightly job — Library/Henderson/Family Fun Vegas going dark still fails red.
+const SOFT_ERROR_SOURCES = new Set([
+  "Vegas Family Guide",
+  "Nevada Moms",
 ]);
 
 const dryRun = process.argv.includes("--dry");
@@ -29,12 +35,12 @@ runScrape({ dryRun })
     // Alert conditions: a core source went dark, or any source errored.
     const deadCore = s.sources.filter((x) => CORE_SOURCES.has(x.source) && x.found === 0);
     const errored = s.sources.filter((x) => x.errors.length > 0);
-    if (deadCore.length || errored.length) {
+    const hardErrors = errored.filter((x) => !SOFT_ERROR_SOURCES.has(x.source));
+    if (deadCore.length || hardErrors.length) {
       if (deadCore.length)
         console.error(`\n❌ CORE SOURCE RETURNED ZERO: ${deadCore.map((x) => x.source).join(", ")}`);
       if (errored.length)
         console.error(`❌ SOURCE ERRORS: ${errored.map((x) => x.source).join(", ")}`);
-      // Don't fail a dry preview; do fail real CI runs so the failure surfaces.
       if (!dryRun) process.exit(1);
     }
     process.exit(0);

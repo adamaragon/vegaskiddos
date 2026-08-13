@@ -2,18 +2,55 @@
 // (giving the time + weekday) plus a human label in `recurrence`. We compute the
 // next real occurrence on the fly so the series never shows a stale past date.
 //
-// A series can have INDIVIDUAL occurrences cancelled (e.g. the library cancels
-// next Tuesday's storytime but the weekly series continues). Those are recorded
-// as `canceledDates` — a list of "YYYY-MM-DD" Las Vegas calendar days — and the
-// helpers below skip them, so a single cancelled instance never removes the
-// whole series; it just drops that one date.
+// Civil-date math is always America/Los_Angeles — Cloudflare Workers are UTC,
+// and evening PT events sit on the next UTC day.
 
-// Las Vegas calendar day ("YYYY-MM-DD") for an instant — the canonical key for
-// matching a cancelled occurrence to a computed one regardless of how the source
-// ISO was formatted (Z vs offset).
+const LA = "America/Los_Angeles";
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function pad(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function laParts(d: Date) {
+  const map: Record<string, string> = {};
+  for (const p of new Intl.DateTimeFormat("en-US", {
+    timeZone: LA,
+    weekday: "short",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(d)) {
+    if (p.type !== "literal") map[p.type] = p.value;
+  }
+  return {
+    weekday: DOW.indexOf(map.weekday),
+    year: Number(map.year),
+    month: Number(map.month),
+    day: Number(map.day),
+    hour: Number(map.hour),
+    minute: Number(map.minute),
+  };
+}
+
+function fromLosAngeles(year: number, month: number, day: number, hour = 0, minute = 0): Date {
+  const civil = `${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}:00`;
+  for (const off of ["-07:00", "-08:00"] as const) {
+    const d = new Date(`${civil}${off}`);
+    const p = laParts(d);
+    if (p.year === year && p.month === month && p.day === day && p.hour === hour && p.minute === minute) {
+      return d;
+    }
+  }
+  return new Date(`${civil}-07:00`);
+}
+
 export function laDateKey(d: Date): string {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Los_Angeles",
+    timeZone: LA,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -24,13 +61,23 @@ export function isRecurring(recurrence?: string): boolean {
   return Boolean(recurrence && recurrence.trim());
 }
 
+export function isListedEvent(
+  event: { start: string; recurrence?: string },
+  now: Date = new Date(),
+): boolean {
+  if (isRecurring(event.recurrence)) return true;
+  return new Date(event.start).getTime() > now.getTime() - 86_400_000;
+}
+
+export function eventHasEnded(startIso: string, recurrence?: string, now: Date = new Date()): boolean {
+  if (isRecurring(recurrence)) return false;
+  return !isListedEvent({ start: startIso, recurrence }, now);
+}
+
 export function isDateCanceled(canceledDates: string[] | undefined, key: string): boolean {
   return Boolean(canceledDates && canceledDates.includes(key));
 }
 
-// Returns the next occurrence ISO at/after now, SKIPPING any cancelled dates.
-// For one-time (or still-upcoming non-recurring) events this is just the stored
-// start (one-time cancellations use the whole-event `canceled` flag instead).
 export function nextOccurrenceISO(
   startIso: string,
   recurrence?: string,
@@ -41,32 +88,39 @@ export function nextOccurrenceISO(
   if (!isRecurring(recurrence)) return startIso;
 
   const cancelled = canceledDates && canceledDates.length ? new Set(canceledDates) : null;
-  const isCancelled = (d: Date) => (cancelled ? cancelled.has(laDateKey(d)) : false);
-
-  // Start from the stored instance; if it's in the past, move it to today first
-  // (keeping the time-of-day), then walk forward to the next valid occurrence.
-  const result = new Date(start);
-  if (start < now) {
-    result.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
-  }
+  const startP = laParts(start);
+  const nowP = laParts(now);
   const daily = /daily|multiple days/i.test(recurrence!);
-  const targetDow = start.getDay();
+  const targetDow = startP.weekday;
 
-  // Advance day-by-day to the next slot that is the right weekday (weekly),
-  // on/after now, and not cancelled. Guard covers several cancelled weeks.
+  let y = nowP.year;
+  let m = nowP.month;
+  let d = nowP.day;
+  if (start > now) {
+    y = startP.year;
+    m = startP.month;
+    d = startP.day;
+  }
+
   let guard = 0;
   while (guard < 120) {
-    const rightDay = daily || result.getDay() === targetDow;
-    if (rightDay && result >= now && !isCancelled(result)) return result.toISOString();
-    result.setDate(result.getDate() + 1);
-    result.setHours(start.getHours(), start.getMinutes(), 0, 0);
+    const instant = fromLosAngeles(y, m, d, startP.hour, startP.minute);
+    const key = `${y}-${pad(m)}-${pad(d)}`;
+    const rightDay = daily || laParts(instant).weekday === targetDow;
+    if (rightDay && instant >= now && !(cancelled && cancelled.has(key))) {
+      return instant.toISOString();
+    }
+    const next = fromLosAngeles(y, m, d, 12, 0);
+    next.setUTCDate(next.getUTCDate() + 1);
+    const np = laParts(next);
+    y = np.year;
+    m = np.month;
+    d = np.day;
     guard++;
   }
-  return result.toISOString();
+  return fromLosAngeles(y, m, d, startP.hour, startP.minute).toISOString();
 }
 
-// Does a weekly/daily recurring event fall on a given calendar day (y, m, d)?
-// A cancelled occurrence on that day returns false (it doesn't happen).
 export function recursOnDay(
   startIso: string,
   recurrence: string | undefined,
@@ -76,16 +130,16 @@ export function recursOnDay(
   canceledDates?: string[]
 ): boolean {
   if (!isRecurring(recurrence)) return false;
-  const cell = new Date(y, m, d);
-  const start = new Date(startIso);
-  // Only from the series' first date onward.
-  if (cell < new Date(start.getFullYear(), start.getMonth(), start.getDate())) return false;
-  const onDay = /daily|multiple days/i.test(recurrence!) ? true : cell.getDay() === start.getDay();
+  const startP = laParts(new Date(startIso));
+  const cell = fromLosAngeles(y, m + 1, d, 12, 0);
+  const startDay = fromLosAngeles(startP.year, startP.month, startP.day, 0, 0);
+  if (cell < startDay) return false;
+  const onDay = /daily|multiple days/i.test(recurrence!)
+    ? true
+    : laParts(cell).weekday === startP.weekday;
   if (!onDay) return false;
-  // Skip a specifically-cancelled occurrence. Compare the calendar cell directly
-  // (the canceledDates are calendar days, same basis as the grid).
   if (canceledDates && canceledDates.length) {
-    const key = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const key = `${y}-${pad(m + 1)}-${pad(d)}`;
     if (canceledDates.includes(key)) return false;
   }
   return true;

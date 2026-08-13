@@ -3,6 +3,8 @@ import { makeTribeAdapter } from "./sources/tribe";
 import { fetchNevadaMoms } from "./sources/nevadaMoms";
 import { fetchLibrary } from "./sources/library";
 import { fetchHendersonLibraries } from "./sources/hendersonLibraries";
+import { fetchBoulderCityLibrary } from "./sources/boulderCityLibrary";
+import { fetchDiscoveryKids } from "./sources/discoveryKids";
 import { upsertEvents, publishPending } from "./airtable";
 import { collapseRecurring } from "./recurring";
 import { fillBlankDescriptions } from "./fill-descriptions";
@@ -48,6 +50,8 @@ const SOURCES: (() => Promise<SourceResult>)[] = [
   () => fetchNevadaMoms({ days: 60 }),
   () => fetchLibrary({ days: 45 }),
   () => fetchHendersonLibraries({ days: 45 }),
+  () => fetchBoulderCityLibrary({ days: 45 }),
+  () => fetchDiscoveryKids(),
 ];
 
 // Fetch every source's CURRENT feed without upserting — used by the cancellation
@@ -100,7 +104,10 @@ export async function runScrape(opts?: { dryRun?: boolean }): Promise<RunSummary
   // established event or create a visible duplicate.
   let approved = 0;
   if (!dryRun) {
-    try { approved = (await publishPending()).approved; } catch (e) { console.error("publish skipped:", e); }
+  try { approved = (await publishPending()).approved; } catch (e) {
+    console.error("publish failed:", e);
+    throw e;
+  }
   }
 
   return {

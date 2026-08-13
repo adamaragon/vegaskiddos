@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { unsubTokenOk } from "@/lib/unsubToken";
+import { allowRequest } from "@/lib/rateLimit";
 
 // Stores a "remind me about my favorites" subscription — web push and/or email.
 // Upserts by Endpoint (push) or Email so re-subscribing / syncing the favorite
@@ -14,9 +16,13 @@ type Body = {
   favoriteIds?: string[];
   lang?: string;
   unsubscribe?: boolean;
+  t?: string;
 };
 
 export async function POST(req: Request) {
+  if (!allowRequest(req, "reminders", 20, 10 * 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Try again in a few minutes." }, { status: 429 });
+  }
   const token = process.env.AIRTABLE_TOKEN;
   const base = process.env.AIRTABLE_BASE_ID;
   if (!token || !base) return NextResponse.json({ ok: true, stored: "log" });
@@ -29,6 +35,21 @@ export async function POST(req: Request) {
   const isEmail = b.channel === "email" && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(b.email || ""));
   if (!isPush && !isEmail) {
     return NextResponse.json({ error: "Need a valid push subscription or email." }, { status: 400 });
+  }
+  if (b.unsubscribe && isEmail) {
+    if (!unsubTokenOk(String(b.email), base, String(b.t || ""))) {
+      return NextResponse.json({ error: "Invalid unsubscribe token" }, { status: 403 });
+    }
+  }
+  if (isEmail && !b.unsubscribe) {
+    const find = await fetch(
+      `${API}/${base}/Reminders?maxRecords=1&filterByFormula=${encodeURIComponent(`AND({Channel}='email', LOWER({Email})='${String(b.email).toLowerCase().replace(/'/g, "")}')`)}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    const existing = (await find.json().catch(() => ({}))) as { records?: unknown[] };
+    if (existing.records?.length && !unsubTokenOk(String(b.email), base, String(b.t || ""))) {
+      return NextResponse.json({ error: "Invalid update token" }, { status: 403 });
+    }
   }
 
   const fields: Record<string, unknown> = {

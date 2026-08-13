@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
+import { allowRequest } from "@/lib/rateLimit";
 
 const API = "https://api.airtable.com/v0";
 
 // POST { id, dir: 1 | -1 } — adjusts a feature's vote count. Double-vote
 // prevention is handled client-side via localStorage (good enough for v1).
 export async function POST(req: Request) {
+  if (!allowRequest(req, "vote", 30, 60_000)) {
+    return NextResponse.json({ error: "Too many votes. Slow down." }, { status: 429 });
+  }
   const token = process.env.AIRTABLE_TOKEN;
   const base = process.env.AIRTABLE_BASE_ID;
   const body = (await req.json().catch(() => ({}))) as { id?: string; dir?: number };

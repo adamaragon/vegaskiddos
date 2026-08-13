@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { KidEvent } from "@/lib/types";
-import { ageTier, priceTier, neighborhood } from "@/lib/constants";
+import { ageTier, priceTier } from "@/lib/constants";
 import { nextOccurrenceISO } from "@/lib/recurrence";
-import { t, type Lang } from "@/lib/i18n";
+import { t, ageLabel, priceLabel, hoodLabel, type Lang } from "@/lib/i18n";
+import { eventPath } from "@/lib/eventUrl";
 import { EventThumb } from "./EventThumb";
 import { FavButton } from "./FavButton";
 
@@ -13,10 +14,9 @@ const PRICE_BG: Record<string, string> = {
   grape: "bg-grape text-white",
 };
 
-export function formatWhen(iso: string) {
+export function formatWhen(iso: string, lang: Lang = "en") {
   const d = new Date(iso);
-  // Pin to Las Vegas time so server and client render identically (no hydration drift).
-  return d.toLocaleString("en-US", {
+  return d.toLocaleString(lang === "es" ? "es-US" : "en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -28,13 +28,13 @@ export function formatWhen(iso: string) {
 
 export function EventCard({ event, index = 0, distanceMi, lang = "en", priority = false }: { event: KidEvent; index?: number; distanceMi?: number; lang?: Lang; priority?: boolean }) {
   const price = priceTier(event.priceTier);
-  const hood = neighborhood(event.neighborhood);
+  const hoodName = hoodLabel(lang, event.neighborhood);
   const when = nextOccurrenceISO(event.start, event.recurrence, event.canceledDates);
   // Stagger the dramatic entrance within each loaded batch.
   const delay = (index % 30) * 45;
   return (
     <Link
-      href={`/event/${event.id}`}
+      href={eventPath(event.id, lang)}
       style={{ animationDelay: `${delay}ms` }}
       className={`animate-card-in group flex h-full flex-col overflow-hidden rounded-blob border bg-white shadow-card transition-shadow hover:-translate-y-1 hover:shadow-lg ${event.canceled ? "border-coral-dark/40" : "border-ink/10"}`}
     >
@@ -63,7 +63,7 @@ export function EventCard({ event, index = 0, distanceMi, lang = "en", priority 
       <div className="flex items-start justify-between gap-2 p-5 pb-3">
         <div>
           <p className="flex flex-wrap items-center gap-1.5 text-xs font-700 uppercase tracking-wide text-teal-btn">
-            {formatWhen(when)}
+            {formatWhen(when, lang)}
             {event.recurrence && (
               <span className="rounded-full bg-grape/15 px-1.5 py-1 text-[10px] normal-case tracking-normal text-grape-dark">
                 🔁 {event.recurrence}
@@ -77,7 +77,7 @@ export function EventCard({ event, index = 0, distanceMi, lang = "en", priority 
         <span
           className={`shrink-0 rounded-full px-3 py-1 text-xs font-800 ${PRICE_BG[price.color]}`}
         >
-          {price.emoji} {price.label}
+          {price.emoji} {event.priceText || priceLabel(lang, event.priceTier)}
         </span>
       </div>
 
@@ -86,12 +86,13 @@ export function EventCard({ event, index = 0, distanceMi, lang = "en", priority 
       <div className="mt-3 flex flex-wrap gap-1.5 px-5">
         {event.ageTiers.map((id) => {
           const a = ageTier(id);
+          const L = ageLabel(lang, id);
           return (
             <span
               key={id}
               className="rounded-full bg-sand px-2.5 py-1 text-xs font-700 text-ink/70"
             >
-              {a.emoji} {a.label}
+              {a.emoji} {L.label}
             </span>
           );
         })}
@@ -99,9 +100,11 @@ export function EventCard({ event, index = 0, distanceMi, lang = "en", priority 
 
       <div className="mt-auto flex items-center justify-between border-t border-ink/10 px-5 py-3 text-xs text-ink/70">
         <span className="font-700">📍 {event.venue}</span>
-        <span className="rounded-full bg-grape/10 px-2 py-1 font-700 text-grape-dark">
-          {hood.label}
-        </span>
+        {event.neighborhood !== "unknown" && (
+          <span className="rounded-full bg-grape/10 px-2 py-1 font-700 text-grape-dark">
+            {hoodName}
+          </span>
+        )}
       </div>
     </Link>
   );

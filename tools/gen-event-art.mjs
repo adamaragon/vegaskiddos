@@ -9,6 +9,7 @@
 //
 // Env: OPENAI_API_KEY, AIRTABLE_TOKEN, AIRTABLE_BASE_ID, [GEN_QUALITY], [GEN_SIZE].
 // gpt-image-1 sizes: 1024x1024 | 1536x1024 (landscape) | 1024x1536 — no true 16:9.
+import { subjectFor } from "../lib/eventArt.ts";
 import fs from "node:fs";
 
 try {
@@ -42,31 +43,8 @@ async function airtableAll(table, params = "") {
 }
 
 // Map an event's text to a concrete illustration subject (keeps art relevant).
-function subjectFor(text) {
-  const t = text.toLowerCase();
-  const map = [
-    [/ice ?cream|gelato|\bsundae|snow ?cone|popsicle|frozen yogurt|froyo/, "colorful ice cream cones, scoops, and a sundae topped with sprinkles and a cherry"],
-    [/storytime|story time|story ?walk|\bread|\bbook/, "an open storybook with friendly characters drifting out"],
-    [/music|sing|concert|vocal|\bband\b|drum|ukulele/, "colorful musical instruments and floating music notes"],
-    [/\bart\b|paint|craft|draw|create|messy|color/, "paint pots, brushes and craft supplies"],
-    [/science|\bstem\b|lego|robot|coding|maker|experiment/, "playful little robots and bubbling science beakers"],
-    [/dino|jurassic|fossil/, "a cute friendly cartoon dinosaur"],
-    [/nature|garden|hike|trail|butterfly|\bfarm|preserve|outdoor/, "a sunny garden with plants and butterflies"],
-    [/animal|\bzoo\b|reptile|petting|touch tank|aquarium|shark|bug/, "friendly cartoon animals"],
-    [/swim|splash|\bpool\b|water play/, "a cheerful splashing pool scene"],
-    [/dance|ballet|zumbini|movement|ballroom/, "joyful dancing figures and ribbons"],
-    [/puppet|theat|magic|circus|stage|drama/, "a little puppet-theater stage with curtains"],
-    [/farmers market|\bmarket\b|vendor/, "a farmers market with fruit and veggie stands"],
-    [/festival|parade|\bfair\b|celebration|carnival|fiesta/, "a festive carnival scene with balloons and bunting"],
-    [/baby|toddler|infant|mommy|little ones|lapsit/, "soft toys and stacking blocks for little ones"],
-    [/teen|tween|gaming|\bgame|esport|anime/, "game controllers and playful arcade shapes"],
-    [/scavenger|\bhunt\b|explore|adventure|quest/, "a treasure map and a magnifying glass"],
-    [/chess|board game|puzzle/, "oversized board-game pieces and puzzle shapes"],
-    [/cook|baking|food|eat|snack|cafe/, "cookies, cupcakes and baking treats"],
-  ];
-  for (const [re, subj] of map) if (re.test(t)) return subj;
-  return "balloons, confetti and a cheerful celebration";
-}
+// Classification lives in lib/eventArt.ts (title-first, so Kids Cafe isn't
+// video games just because the blurb mentioned teens).
 
 // Deterministic per-event variation so events that share a subject (e.g. many
 // storytimes) still get visibly different art. Each axis is sampled with a
@@ -136,7 +114,7 @@ const hashStr = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 
 const pickV = (arr, h, salt) => arr[(h + salt) % arr.length];
 
 function promptFor(f, id = "") {
-  const subject = subjectFor(`${f.Title} ${f.Description || ""}`);
+  const subject = subjectFor(f.Title || "", f.Description || "");
   const h = hashStr(id || f.Title || "");
   const style = pickV(STYLES, h, 1);
   const palette = pickV(PALETTES, h, 2);

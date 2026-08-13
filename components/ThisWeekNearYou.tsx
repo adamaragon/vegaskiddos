@@ -31,7 +31,10 @@ export function ThisWeekNearYou({ events, lang = "en" }: { events: KidEvent[]; l
 
   useEffect(() => {
     setMounted(true);
-    const sync = () => setHood((getHood() as NeighborhoodId) || "");
+    const sync = () => {
+      const h = getHood();
+      setHood(h && h !== "unknown" ? (h as NeighborhoodId) : "");
+    };
     sync();
     window.addEventListener("vk-prefs", sync);
     return () => window.removeEventListener("vk-prefs", sync);

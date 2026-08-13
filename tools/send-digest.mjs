@@ -7,8 +7,12 @@
 
 import crypto from "crypto";
 const AT = process.env.AIRTABLE_TOKEN, BASE = process.env.AIRTABLE_BASE_ID;
-const unsubToken = (email) => crypto.createHash("sha256").update(email.toLowerCase() + BASE).digest("hex").slice(0, 16);
 if (!AT || !BASE) { console.error("AIRTABLE_TOKEN / AIRTABLE_BASE_ID required"); process.exit(1); }
+const IN_CI = process.env.GITHUB_ACTIONS === "true" || process.env.CI === "true";
+const unsubSecret = process.env.AUTH_SECRET || BASE;
+const unsubToken = (email) => crypto.createHmac("sha256", unsubSecret).update(email.toLowerCase()).digest("hex");
+const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+const weekKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 const FROM = process.env.DIGEST_FROM || "Vegas Kiddos <hello@vegaskiddos.com>";
 const SITE = "https://vegaskiddos.com";
 
@@ -80,8 +84,8 @@ const today = now.toISOString().slice(0, 10);
 
 // This week's approved events (upcoming within 7 days OR recurring).
 const events = (await airtableAll("Events", `&filterByFormula=${encodeURIComponent("AND({Approved}=1, OR(NOT({Recurrence}=BLANK()), AND(IS_AFTER({Start}, DATEADD(NOW(),-1,'days')), IS_BEFORE({Start}, DATEADD(NOW(),7,'days')))))")}`))
-  .map((r) => r.fields)
-  .filter((f) => f.Title && f.Start)
+  .filter((r) => r.fields.Title && r.fields.Start && !r.fields.Canceled)
+  .map((r) => ({ ...r.fields, id: r.id }))
   .sort((a, b) => String(a.Start).localeCompare(String(b.Start)))
   .slice(0, 18);
 
@@ -102,8 +106,8 @@ const rowsFor = (list, lang = "en") => list.map((f) => {
   return `
   <tr><td style="padding:14px 0;border-bottom:1px solid #eee">
     <div style="font-size:12px;font-weight:700;color:#0FA89A;text-transform:uppercase">${fmt(f.Start, f.Recurrence, c.locale)}</div>
-    <a href="${SITE}/event/${f.id || ""}" style="font-size:18px;font-weight:700;color:#2D2A32;text-decoration:none">${title}</a>
-    <div style="font-size:13px;color:#666">📍 ${f.Venue || ""} · ${price}</div>
+    <a href="${SITE}/event/${esc(f.id)}" style="font-size:18px;font-weight:700;color:#2D2A32;text-decoration:none">${esc(title)}</a>
+    <div style="font-size:13px;color:#666">📍 ${esc(f.Venue)} · ${esc(price)}</div>
   </td></tr>`;
 }).join("");
 
@@ -126,6 +130,10 @@ const htmlFor = (list, hoodLabel, unsub, lang = "en") => {
 };
 
 if (!process.env.RESEND_API_KEY) {
+  if (IN_CI) {
+    console.error("RESEND_API_KEY missing in CI — refusing to preview-exit 0");
+    process.exit(1);
+  }
   // Preview only — write a full EN + ES sample email to disk (no send).
   const fs = await import("node:fs");
   const dir = process.env.PREVIEW_DIR || ".";
@@ -147,13 +155,26 @@ for (const s of subs) {
     const local = events.filter((f) => f.Neighborhood === s.hood);
     if (local.length >= 3) list = local; // keep it worthwhile
   }
-  const unsub = `${SITE}/unsubscribe?e=${encodeURIComponent(s.email)}&t=${unsubToken(s.email)}`;
+  const tok = unsubToken(s.email);
+  const unsubPage = `${SITE}/unsubscribe?e=${encodeURIComponent(s.email)}&t=${tok}`;
+  const unsubApi = `${SITE}/api/unsubscribe?e=${encodeURIComponent(s.email)}&t=${tok}`;
   const c = T[s.lang];
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: FROM, to: s.email, subject: c.subject(list.length), html: htmlFor(list, "", unsub, s.lang), headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }),
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": `vk-digest-${weekKey}-${s.email}`,
+    },
+    body: JSON.stringify({
+      from: FROM,
+      to: s.email,
+      subject: c.subject(list.length),
+      html: htmlFor(list, "", unsubPage, s.lang),
+      headers: { "List-Unsubscribe": `<${unsubApi}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+    }),
   });
-  if (r.ok) sent++; else console.error("send fail", s.email, r.status, (await r.text()).slice(0, 120));
+  if (r.ok || r.status === 409) sent++;
+  else console.error("send fail", s.email, r.status, (await r.text()).slice(0, 120));
 }
 console.log(`sent ${sent}/${subs.length}`);

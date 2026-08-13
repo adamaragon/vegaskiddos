@@ -33,7 +33,16 @@ export async function PATCH(
   if (body.action === "approve") fields = { Approved: true, Rejected: false };
   else if (body.action === "reject") fields = { Approved: false, Rejected: true };
   else if (body.action === "unapprove") fields = { Approved: false };
-  else if (body.fields) fields = body.fields;
+  else if (body.fields) {
+    const allow = new Set([
+      "Title", "Description", "TitleEs", "DescriptionEs", "Venue", "Address",
+      "Neighborhood", "Start", "End", "AgeTiers", "PriceTier", "PriceText",
+      "Url", "Indoor", "Recurrence", "Canceled", "CanceledReason", "Lat", "Lng",
+      "Approved", "Rejected",
+    ]);
+    fields = Object.fromEntries(Object.entries(body.fields).filter(([k]) => allow.has(k)));
+    if (!Object.keys(fields).length) return NextResponse.json({ error: "No allowed fields" }, { status: 400 });
+  }
   else return NextResponse.json({ error: "No action" }, { status: 400 });
 
   try {

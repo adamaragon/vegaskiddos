@@ -3,8 +3,9 @@ import { getEvents } from "@/lib/data";
 import { MyList } from "@/components/MyList";
 import { langAlternates } from "@/lib/seo";
 import type { Lang } from "@/lib/i18n";
+import { PAGE_REVALIDATE } from "@/lib/pageCache";
 
-export const revalidate = 86400;
+export const revalidate = PAGE_REVALIDATE;
 
 export async function generateMetadata({
   params,

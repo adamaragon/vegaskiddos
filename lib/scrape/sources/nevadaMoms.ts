@@ -16,7 +16,7 @@ import { fetchJsonRetry } from "../http";
 const SOURCE = "Nevada Moms";
 const AJAX = "https://nvmoms.com/wp-admin/admin-ajax.php";
 const SN_CATEGORY = "1329"; // "Southern Nevada (Henderson-Vegas)" MEC category
-const UA = "VegasKiddos/1.0 (+https://vegaskiddos.com)";
+const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 const DAY_MS = 86_400_000;
 
 // "Uptown Tot Time", "Mommy & Me", "Stroller Strides" — family signals the
@@ -54,6 +54,7 @@ async function fetchVenue(id: string): Promise<string> {
   try {
     const res = await fetch(`https://nvmoms.com/?method=ical&id=${id}`, {
       headers: { "User-Agent": UA },
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return "";
     const ics = (await res.text()).replace(/\r?\n[ \t]/g, ""); // unfold
@@ -112,7 +113,7 @@ export async function fetchNevadaMoms(opts?: { days?: number }): Promise<SourceR
             headers: { "User-Agent": UA, "Content-Type": "application/x-www-form-urlencoded" },
             body,
           },
-          { retries: 3 },
+          { retries: 3, timeoutMs: 25_000 },
         );
       } catch (err) {
         errors.push(`${(err as Error).message} @ ${start}`);

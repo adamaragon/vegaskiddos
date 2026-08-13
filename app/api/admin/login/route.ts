@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE, ADMIN_PRESENT_COOKIE, authenticate } from "@/lib/adminAuth";
+import { allowRequest } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
+  if (!allowRequest(req, "admin-login", 8, 15 * 60_000)) {
+    return NextResponse.json({ error: "Too many attempts. Try again in a few minutes." }, { status: 429 });
+  }
   const { email, password } = (await req.json().catch(() => ({}))) as {
     email?: string;
     password?: string;

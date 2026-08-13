@@ -11,8 +11,9 @@ import { Cloud, Star, Underline, Scribble } from "@/components/Doodles";
 import { WeatherPill } from "@/components/WeatherPill";
 import { t, type Lang } from "@/lib/i18n";
 import { SITE, langAlternates } from "@/lib/seo";
+import { PAGE_REVALIDATE } from "@/lib/pageCache";
 
-export const revalidate = 86400;
+export const revalidate = PAGE_REVALIDATE;
 
 const siteLd = [
   {

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getEvent, getEvents } from "@/lib/data";
+import { notFound, permanentRedirect } from "next/navigation";
+import { lookupEvent, getEvents } from "@/lib/data";
+import { PAGE_REVALIDATE } from "@/lib/pageCache";
+import { eventAbsUrl, homePath, venuePath } from "@/lib/eventUrl";
+import { safeHttpUrl } from "@/lib/httpUrl";
 import { ageTier, priceTier, neighborhood, venueSlug } from "@/lib/constants";
 import { eventEnv } from "@/lib/env";
 import { formatWhen, EventCard } from "@/components/EventCard";
@@ -10,20 +13,22 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { TrackedLink } from "@/components/TrackedLink";
 import { JsonLd } from "@/components/JsonLd";
 import { breadcrumbLd, langAlternates } from "@/lib/seo";
-import { nextOccurrenceISO, laDateKey } from "@/lib/recurrence";
+import { nextOccurrenceISO, laDateKey, eventHasEnded } from "@/lib/recurrence";
 import { AdminEventControls } from "@/components/AdminEventControls";
 import { t, ageLabel, priceLabel, hoodLabel, type Lang } from "@/lib/i18n";
 
-// Prebuild every event page per locale so they ship as static HTML and the
-// Worker serves them from the edge / R2-backed ISR cache (revalidate: 86400)
+// Prebuild listed event pages per locale so they ship as static HTML and the
+// Worker serves them from the edge / R2-backed ISR cache (revalidate: 10 min)
 // instead of re-rendering on every request. Returning [] here made the route
 // compile as dynamic — every hit was a full SSR (no-store), which was both the
 // LCP cold-start tail and the CPU cost. With real params it's static/ISR, so
 // prebuilt pages AND on-demand ones (dynamicParams) cache. New events added
 // between deploys fall back to on-demand rendering, then cache on first hit.
-export const revalidate = 86400;
+export const revalidate = PAGE_REVALIDATE;
 export const dynamicParams = true;
 export async function generateStaticParams() {
+  // Prebuild listed (upcoming + recurring) pages. Past permalinks render
+  // on demand via dynamicParams so deploys stay small.
   const events = await getEvents("en");
   return events.map((e) => ({ id: e.id }));
 }
@@ -36,13 +41,14 @@ export async function generateMetadata({
   params: Promise<{ lang: string; id: string }>;
 }): Promise<Metadata> {
   const { lang, id } = (await params) as { lang: Lang; id: string };
-  const event = await getEvent(id, lang);
-  if (!event) return { title: "Event not found — Vegas Kiddos" };
+  const hit = await lookupEvent(id, lang);
+  if (hit.kind !== "ok") return { title: "Event not found — Vegas Kiddos" };
+  const event = hit.event;
   const hood = neighborhood(event.neighborhood);
   const desc =
     (event.description || `${event.title} at ${event.venue}.`).slice(0, 155);
   const title = `${event.title} — ${event.venue}, ${hood.label}`;
-  const url = `${SITE}/event/${event.id}`;
+  const url = eventAbsUrl(event.id, lang);
   return {
     title: `${event.title} | Vegas Kiddos`,
     description: desc,
@@ -64,8 +70,10 @@ export default async function EventPage({
   params: Promise<{ lang: string; id: string }>;
 }) {
   const { lang, id } = (await params) as { lang: Lang; id: string };
-  const event = await getEvent(id, lang);
-  if (!event) notFound();
+  const hit = await lookupEvent(id, lang);
+  if (hit.kind === "gone") permanentRedirect(homePath(lang)); // 308; GET-equivalent of 301 in App Router
+  if (hit.kind !== "ok") notFound();
+  const event = hit.event;
 
   const price = priceTier(event.priceTier);
   const hood = neighborhood(event.neighborhood);
@@ -74,14 +82,17 @@ export default async function EventPage({
   const moreAtVenue = event.venue
     ? allEvents.filter((e) => e.id !== event.id && e.venue === event.venue).slice(0, 3)
     : [];
-  const moreNearby = allEvents
-    .filter((e) => e.id !== event.id && e.neighborhood === event.neighborhood && e.venue !== event.venue)
-    .slice(0, 3);
+  const moreNearby = event.neighborhood === "unknown"
+    ? []
+    : allEvents
+        .filter((e) => e.id !== event.id && e.neighborhood === event.neighborhood && e.venue !== event.venue)
+        .slice(0, 3);
   const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     event.address || event.venue
   )}`;
 
   const whenStart = nextOccurrenceISO(event.start, event.recurrence, event.canceledDates);
+  const ended = eventHasEnded(event.start, event.recurrence);
   // Upcoming individually-cancelled occurrences of a recurring series (the series
   // itself keeps running) — shown as a heads-up note.
   const todayKey = laDateKey(new Date());
@@ -101,8 +112,8 @@ export default async function EventPage({
     `&details=${encodeURIComponent((event.description || "") + (event.url ? `\n\n${event.url}` : ""))}` +
     `&location=${encodeURIComponent(event.address || event.venue)}`;
 
-  const shareUrl = `${SITE}/event/${event.id}`;
-  // Free → "0"; paid → first number in the price text (e.g. "$8 / child" → "8").
+  const shareUrl = eventAbsUrl(event.id, lang);
+  const rsvpUrl = safeHttpUrl(event.url);
   const ldPrice = event.priceTier === "free" ? "0" : event.priceText?.match(/\d+(?:\.\d+)?/)?.[0];
   const eventLd = {
     "@context": "https://schema.org",
@@ -134,14 +145,14 @@ export default async function EventPage({
     ...(event.image ? { image: [event.image] } : {}),
     // Only emit Offer when we actually have a price — a currency/availability
     // block with no price is an incomplete Offer (Rich Results warning).
-    ...(ldPrice !== undefined
+    ...(ldPrice !== undefined && !ended
       ? {
           offers: {
             "@type": "Offer",
             price: ldPrice,
             priceCurrency: "USD",
             availability: "https://schema.org/InStock",
-            url: event.url || shareUrl,
+            url: rsvpUrl || shareUrl,
           },
         }
       : {}),
@@ -153,12 +164,17 @@ export default async function EventPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <JsonLd data={[eventLd, breadcrumbLd([
-        { name: "Vegas Kiddos", url: lang === "es" ? `${SITE}/es` : SITE },
-        { name: event.title, url: lang === "es" ? `${SITE}/es/event/${event.id}` : shareUrl },
-      ])]} />
+      <JsonLd data={ended && !event.canceled
+        ? [breadcrumbLd([
+            { name: "Vegas Kiddos", url: lang === "es" ? `${SITE}/es` : SITE },
+            { name: event.title, url: lang === "es" ? `${SITE}/es/event/${event.id}` : shareUrl },
+          ])]
+        : [eventLd, breadcrumbLd([
+            { name: "Vegas Kiddos", url: lang === "es" ? `${SITE}/es` : SITE },
+            { name: event.title, url: lang === "es" ? `${SITE}/es/event/${event.id}` : shareUrl },
+          ])]} />
       <Link
-        href="/"
+        href={homePath(lang)}
         className="text-sm font-700 text-teal-btn hover:underline"
       >
         {t(lang, "ev_back")}
@@ -167,6 +183,18 @@ export default async function EventPage({
       <div className="mt-3">
         <AdminEventControls id={event.id} />
       </div>
+
+      {ended && !event.canceled && (
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border-2 border-ink/15 bg-sand p-4 sm:p-5">
+          <span className="text-2xl leading-none" aria-hidden>📅</span>
+          <div>
+            <p className="font-display text-lg font-extrabold uppercase tracking-wide text-ink/80">
+              {t(lang, "ended_banner")}
+            </p>
+            <p className="mt-1 text-sm text-ink/75">{t(lang, "ended_note")}</p>
+          </div>
+        </div>
+      )}
 
       {event.canceled && (
         <div className="mt-4 flex items-start gap-3 rounded-2xl border-2 border-coral-dark/30 bg-coral/10 p-4 sm:p-5">
@@ -214,8 +242,8 @@ export default async function EventPage({
             <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/30 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 text-white">
               <p className="text-sm font-700 uppercase tracking-wide text-white/90">
-                {event.recurrence ? `${t(lang, "ev_next")} ` : ""}{formatWhen(whenStart)}
-                {event.end && !event.recurrence ? ` – ${formatWhen(event.end).split(", ").pop()}` : ""}
+                {event.recurrence ? `${t(lang, "ev_next")} ` : ""}{formatWhen(whenStart, lang)}
+                {event.end && !event.recurrence ? ` – ${formatWhen(event.end, lang).split(", ").pop()}` : ""}
               </p>
               {event.recurrence && (
                 <span className="mt-2 inline-block rounded-full bg-white/25 px-3 py-1 text-sm font-800 backdrop-blur-sm">
@@ -226,8 +254,8 @@ export default async function EventPage({
                 {event.title}
               </h1>
               <p className="mt-2 text-white/95 drop-shadow">
-                📍 {event.venue ? (
-                  <Link href={`/venue/${venueSlug(event.venue)}`} className="underline decoration-white/50 underline-offset-2 hover:decoration-white">
+                📍                 {event.venue ? (
+                  <Link href={venuePath(venueSlug(event.venue), lang)} className="underline decoration-white/50 underline-offset-2 hover:decoration-white">
                     {event.venue}
                   </Link>
                 ) : "Las Vegas"}
@@ -237,8 +265,8 @@ export default async function EventPage({
         ) : (
           <div className={`bg-gradient-to-br p-8 text-white ${event.canceled ? "from-ink/70 to-ink/50 grayscale" : "from-teal to-grape"}`}>
             <p className="text-sm font-700 uppercase tracking-wide text-white/80">
-              {event.recurrence ? `${t(lang, "ev_next")} ` : ""}{formatWhen(whenStart)}
-              {event.end && !event.recurrence ? ` – ${formatWhen(event.end).split(", ").pop()}` : ""}
+              {event.recurrence ? `${t(lang, "ev_next")} ` : ""}{formatWhen(whenStart, lang)}
+              {event.end && !event.recurrence ? ` – ${formatWhen(event.end, lang).split(", ").pop()}` : ""}
             </p>
             {event.recurrence && (
               <span className="mt-2 inline-block rounded-full bg-white/25 px-3 py-1 text-sm font-800">
@@ -249,8 +277,8 @@ export default async function EventPage({
               {event.title}
             </h1>
             <p className="mt-2 text-white/90">
-              📍 {event.venue ? (
-                <Link href={`/venue/${venueSlug(event.venue)}`} className="underline decoration-white/40 underline-offset-2 hover:decoration-white">
+              📍               {event.venue ? (
+                <Link href={venuePath(venueSlug(event.venue), lang)} className="underline decoration-white/40 underline-offset-2 hover:decoration-white">
                   {event.venue}
                 </Link>
               ) : "Las Vegas"}
@@ -260,9 +288,11 @@ export default async function EventPage({
 
         <div className="p-6 sm:p-8">
           <div className="flex flex-wrap gap-2">
-            <span className="rounded-full bg-grape/10 px-3 py-1 text-sm font-700 text-grape-dark">
-              {hoodName}
-            </span>
+            {event.neighborhood !== "unknown" && (
+              <span className="rounded-full bg-grape/10 px-3 py-1 text-sm font-700 text-grape-dark">
+                {hoodName}
+              </span>
+            )}
             <span className="rounded-full bg-sand px-3 py-1 text-sm font-700 text-ink/70">
               {price.emoji} {event.priceText || priceLabel(lang, event.priceTier)}
             </span>
@@ -320,10 +350,10 @@ export default async function EventPage({
             >
               {t(lang, "ev_calendar")}
             </TrackedLink>
-            {event.url && (
+            {rsvpUrl && (
               <TrackedLink
                 event="RSVP / Info"
-                href={event.url}
+                href={rsvpUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop transition hover:bg-coral-btnHover"

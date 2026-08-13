@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import webpush from "web-push";
+import { allowRequest } from "@/lib/rateLimit";
 
 // Sends a single test push to the caller's own subscription, through the full
 // server -> FCM -> service-worker path. Lets a subscriber confirm reminders
@@ -19,6 +20,9 @@ function configureWebpush(): boolean {
 }
 
 export async function POST(req: Request) {
+  if (!allowRequest(req, "remind-test", 10, 60_000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
   if (!configureWebpush()) return NextResponse.json({ error: "Push not configured." }, { status: 503 });
   const b = (await req.json().catch(() => ({}))) as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
   if (!b.endpoint || !b.keys?.p256dh || !b.keys?.auth) {

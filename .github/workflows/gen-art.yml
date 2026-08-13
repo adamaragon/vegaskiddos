@@ -30,7 +30,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with: { node-version: "22" }
+        with: { node-version: "22", cache: "npm" }
+      - run: npm ci
       - name: Generate
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -40,12 +41,12 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.mode }}" = "batch" ]; then
             if [ -n "${{ github.event.inputs.limit }}" ]; then
-              node tools/gen-event-art.mjs batch --limit "${{ github.event.inputs.limit }}"
+              npx tsx tools/gen-event-art.mjs batch --limit "${{ github.event.inputs.limit }}"
             else
-              node tools/gen-event-art.mjs batch
+              npx tsx tools/gen-event-art.mjs batch
             fi
           else
-            node tools/gen-event-art.mjs sample "${{ github.event.inputs.count || '2' }}"
+            npx tsx tools/gen-event-art.mjs sample "${{ github.event.inputs.count || '2' }}"
           fi
       - name: Upload samples for review
         if: ${{ github.event.inputs.mode == 'sample' }}

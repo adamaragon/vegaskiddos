@@ -30,10 +30,24 @@ const GRAPH = "https://graph.facebook.com/v21.0";
 const IMG_CDN = "https://img.vegaskiddos.com";
 
 // Pre-post image guard: a Facebook link post renders the event page's OG image,
-// which is the durable R2 copy at img.vegaskiddos.com/event/<id>/1024.webp. If
-// that 404s (e.g. a scraped image that never synced), the post shows an empty
-// grey box — so we skip such events when choosing what to post/schedule. Result
-// is memoized per id so a candidate is only checked once per run.
+// which is the type template at img.vegaskiddos.com/type/<id>/1024.webp. One
+// HEAD covers the set — if templates are up, every event page has a working image.
+let _templatesOk;
+async function ogImageOk() {
+  if (_templatesOk != null) return _templatesOk;
+  try {
+    const types = ["celebration", "food", "yoga", "market"];
+    const results = await Promise.all(
+      types.map((id) =>
+        fetch(`${IMG_CDN}/type/${id}/1024.webp`, { method: "HEAD", signal: AbortSignal.timeout(10000) })
+      )
+    );
+    _templatesOk = results.every((r) => r.ok);
+    return _templatesOk;
+  } catch {
+    return false;
+  }
+}
 // Some auto-approved library entries aren't kid events worth promoting — adult
 // programming and branch-closure notices. Skip them when choosing what to post
 // so the Page never highlights "Adult Perler Bead Crafternight" or "CLOSED FOR
@@ -50,20 +64,6 @@ function postableTitle(t) {
   if (CLOSURE_RE.test(s)) return false;
   if (ADULT_RE.test(s) && !YOUNG_ADULT_RE.test(s)) return false;
   return true;
-}
-
-const _imgOkCache = new Map();
-async function ogImageOk(recId) {
-  if (_imgOkCache.has(recId)) return _imgOkCache.get(recId);
-  try {
-    const r = await fetch(`${IMG_CDN}/event/${recId}/1024.webp`, { method: "HEAD", signal: AbortSignal.timeout(10000) });
-    _imgOkCache.set(recId, r.ok); // cache only a definitive answer (200 vs 404)
-    return r.ok;
-  } catch {
-    // Transient/network error → fail OPEN (don't permanently exclude a good event
-    // over a blip; the image is checked again at FB publish time). Don't cache.
-    return true;
-  }
 }
 
 // UTC instant for a given America/Los_Angeles wall-clock date + hour. Handles
@@ -225,7 +225,7 @@ async function runDaily() {
   for (const r of await unpostedEvents()) {
     if (!r.fields.Start) continue;
     if (!postableTitle(r.fields.Title)) continue;
-    if (await ogImageOk(r.id)) { rec = r; break; }
+    if (await ogImageOk()) { rec = r; break; }
   }
   if (!rec) { console.log("daily: no un-posted upcoming events with a working image — nothing to post."); return; }
   const { message, url } = eventPost(rec);
@@ -324,7 +324,7 @@ async function runSchedule() {
       if (usedTitles.has(String(f.Title || "").trim().toLowerCase())) continue;
       const valid = f.Recurrence || (f.Start && new Date(f.Start).getTime() > slot.getTime());
       if (!valid) continue;
-      if (!(await ogImageOk(r.id))) continue; // skip grey-box events
+      if (!(await ogImageOk())) continue; // skip grey-box events
       chosen = r; break;
     }
     if (!chosen) continue; // no eligible event for this slot — leave it empty, try next

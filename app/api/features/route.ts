@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { allowRequest } from "@/lib/rateLimit";
 
 const API = "https://api.airtable.com/v0";
 function cfg() {
@@ -55,6 +56,9 @@ export async function GET() {
 
 // POST: submit a new feature idea (starts at 1 vote, status "idea").
 export async function POST(req: Request) {
+  if (!allowRequest(req, "feature-submit", 8, 10 * 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Try again in a few minutes." }, { status: 429 });
+  }
   const { token, base } = cfg();
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const title = String(body.title || "").trim();

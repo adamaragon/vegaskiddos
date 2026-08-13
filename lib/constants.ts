@@ -27,7 +27,7 @@ export const NEIGHBORHOODS = [
   { id: "downtown", label: "Downtown / Arts District", center: [36.1663, -115.1391] },
 ] as const;
 
-export type NeighborhoodId = (typeof NEIGHBORHOODS)[number]["id"];
+export type NeighborhoodId = (typeof NEIGHBORHOODS)[number]["id"] | "unknown";
 
 export const LV_CENTER: [number, number] = [36.1147, -115.1728];
 
@@ -49,6 +49,7 @@ const NEARBY: Record<NeighborhoodId, NeighborhoodId[]> = {
   henderson: ["enterprise", "downtown"],
   "north-lv": ["downtown"],
   downtown: ["north-lv", "spring-valley", "summerlin", "henderson"],
+  unknown: [],
 };
 
 // Returns the neighborhoods to filter for a given ZIP: its own + adjacent.
@@ -84,5 +85,11 @@ export function ageTier(id: AgeTierId) {
   return AGE_TIERS.find((a) => a.id === id)!;
 }
 export function neighborhood(id: NeighborhoodId) {
-  return NEIGHBORHOODS.find((n) => n.id === id)!;
+  return (
+    NEIGHBORHOODS.find((n) => n.id === id) ?? {
+      id: "unknown" as const,
+      label: "Las Vegas",
+      center: LV_CENTER,
+    }
+  );
 }
