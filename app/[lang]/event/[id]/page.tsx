@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { lookupEvent, getEvents } from "@/lib/data";
-import { PAGE_REVALIDATE } from "@/lib/pageCache";
 import { eventAbsUrl, homePath, venuePath } from "@/lib/eventUrl";
 import { safeHttpUrl } from "@/lib/httpUrl";
 import { ageTier, priceTier, neighborhood, venueSlug } from "@/lib/constants";
@@ -24,7 +23,7 @@ import { t, ageLabel, priceLabel, hoodLabel, type Lang } from "@/lib/i18n";
 // LCP cold-start tail and the CPU cost. With real params it's static/ISR, so
 // prebuilt pages AND on-demand ones (dynamicParams) cache. New events added
 // between deploys fall back to on-demand rendering, then cache on first hit.
-export const revalidate = PAGE_REVALIDATE;
+export const revalidate = 600;
 export const dynamicParams = true;
 export async function generateStaticParams() {
   // Prebuild listed (upcoming + recurring) pages. Past permalinks render

@@ -9,9 +9,8 @@ const BASE = "https://vegaskiddos.com";
 // without waiting for a redeploy (it was static-at-build-time before). Daily
 // is plenty for crawlers and keeps the Airtable-backed render off the hot path
 // (was hourly — more function compute than the crawl cadence warrants).
-import { PAGE_REVALIDATE } from "@/lib/pageCache";
 
-export const revalidate = PAGE_REVALIDATE;
+export const revalidate = 600;
 
 // Each content URL exists in English (canonical) and Spanish (/es). Emit the
 // English URL with an `es` alternate so Google indexes both — matches the

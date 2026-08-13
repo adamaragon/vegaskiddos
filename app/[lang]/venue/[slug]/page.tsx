@@ -7,12 +7,11 @@ import { EventCard } from "@/components/EventCard";
 import { JsonLd } from "@/components/JsonLd";
 import { isListedEvent, nextOccurrenceISO } from "@/lib/recurrence";
 import { SITE, breadcrumbLd, langAlternates } from "@/lib/seo";
-import { PAGE_REVALIDATE } from "@/lib/pageCache";
 import { homePath } from "@/lib/eventUrl";
 import type { Lang } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 
-export const revalidate = PAGE_REVALIDATE;
+export const revalidate = 600;
 export const dynamicParams = true;
 export function generateStaticParams() {
   return [];
