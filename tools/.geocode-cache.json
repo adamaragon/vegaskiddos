@@ -134,5 +134,13 @@
   "6300 W Oakey Blvd., Las Vegas, NV, 89146": {
     "lat": 36.1522588,
     "lng": -115.2319877
+  },
+  "999 Colorado St., Boulder City, NV": {
+    "lat": 35.979505,
+    "lng": -114.8338757
+  },
+  "Sunrise Library, Las Vegas, NV": {
+    "lat": 36.1783664,
+    "lng": -115.054783
   }
 }
