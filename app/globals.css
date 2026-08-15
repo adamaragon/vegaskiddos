@@ -281,3 +281,15 @@ select:focus-visible,
   border-radius: 1.75rem;
 }
 .kk-pin { background: transparent; border: none; }
+
+/* Bilingual 404. app/[lang]/not-found.tsx renders both languages because that
+   boundary cannot read headers()/cookies() without de-opting every ISR page
+   that calls notFound() to dynamic, and it renders outside the [lang] layout
+   so there is no server-set <html lang> either. Its inline script sets
+   <html lang> from the URL before paint and hydration then keeps it; English
+   is the default, so a missing script or an unknown :lang segment still
+   renders something. Hidden copy leaves the a11y tree, so screen readers only
+   get one language. */
+.nf-lang-es { display: none; }
+html[lang="es"] .nf-lang-en { display: none; }
+html[lang="es"] .nf-lang-es { display: block; }
