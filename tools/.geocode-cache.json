@@ -142,5 +142,13 @@
   "Sunrise Library, Las Vegas, NV": {
     "lat": 36.1783664,
     "lng": -115.054783
+  },
+  "Whitney Library, Las Vegas, NV": {
+    "lat": 36.0998022,
+    "lng": -115.0603488
+  },
+  "Enterprise Library, Las Vegas, NV": {
+    "lat": 36.0383654,
+    "lng": -115.171127
   }
 }
