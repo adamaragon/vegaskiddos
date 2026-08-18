@@ -150,5 +150,13 @@
   "Enterprise Library, Las Vegas, NV": {
     "lat": 36.0383654,
     "lng": -115.171127
+  },
+  "Historic Fifth Street School, 401 S. Fourth St., Las Vegas, NV": {
+    "lat": 36.1653898,
+    "lng": -115.1440957
+  },
+  "UnCommons, Las Vegas, NV": {
+    "lat": 36.0633426,
+    "lng": -115.2769897
   }
 }
