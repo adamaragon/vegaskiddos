@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-08-18T15:54:57.992Z",
+  "ranAt": "2026-08-19T15:55:05.979Z",
   "sources": {
     "City of Las Vegas": {
       "ids": [
@@ -59,6 +59,7 @@
         "series:City of Henderson|henderson farmers market|cornerstone park",
         "hen:6398:2026-09-08",
         "hen:6360:2026-09-12",
+        "series:City of Henderson|art exhibit henderson creates|city of henderson",
         "hen:6276:2026-09-25",
         "hen:6336:2026-09-25",
         "hen:6358:2026-09-25",
