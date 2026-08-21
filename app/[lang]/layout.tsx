@@ -5,6 +5,7 @@ import "../globals.css";
 import { Header } from "@/components/Header";
 import { CrayonDefs, Heart } from "@/components/Doodles";
 import { PWARegister } from "@/components/PWARegister";
+import { ChunkErrorGuard } from "@/components/ChunkErrorGuard";
 import { LangToggle } from "@/components/LangToggle";
 import { ConsentBanner } from "@/components/ConsentBanner";
 import { CookieSettingsLink } from "@/components/CookieSettingsLink";
@@ -106,6 +107,7 @@ export default async function RootLayout({
         <Script id="ga4-init" strategy="afterInteractive">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});gtag('js',new Date());gtag('config','${GA_ID}');`}
         </Script>
+        <ChunkErrorGuard />
         <PWARegister />
         <ConsentBanner lang={lang} />
         <CrayonDefs />
