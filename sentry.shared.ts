@@ -5,4 +5,10 @@ export const sentryOptions = {
   sendDefaultPii: false,
   dataCollection: { userInfo: false, httpBodies: [] },
   tracesSampleRate: 0,
+  // Navigating away cancels Next.js's in-flight RSC prefetches, and the aborted
+  // body read surfaces as an AbortError thrown inside the framework runtime
+  // (Sentry VEGASKIDDOS-3). It is a cancelled request, not a fault. Matched on
+  // the browser wording only, so a server-side AbortSignal.timeout in the
+  // scrapers ("This operation was aborted") still reports.
+  ignoreErrors: ['BodyStreamBuffer was aborted', 'The user aborted a request'],
 };
