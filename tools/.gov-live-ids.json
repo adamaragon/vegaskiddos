@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-08-20T15:56:51.359Z",
+  "ranAt": "2026-08-21T15:57:08.136Z",
   "sources": {
     "City of Las Vegas": {
       "ids": [
@@ -8,6 +8,7 @@
         "colv:12414",
         "colv:12446",
         "series:City of Las Vegas|farmers market|las vegas civic center outdoor plaza",
+        "colv:12471",
         "colv:10625",
         "colv:12415",
         "colv:12416",
