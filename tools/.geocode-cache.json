@@ -182,5 +182,21 @@
   "Rainbow Library, Las Vegas, NV": {
     "lat": 36.2173101,
     "lng": -115.259304
+  },
+  "628 W Craig Rd, North Las Vegas, 89032": {
+    "lat": 36.2394841,
+    "lng": -115.1557664
+  },
+  "7025 South Fort Apache Road, Las Vegas, 89148": {
+    "lat": 36.1300726,
+    "lng": -115.2971675
+  },
+  "7950 W Windmill Ln, Las Vegas, 89113": {
+    "lat": 36.0410818,
+    "lng": -115.2644818
+  },
+  "Boulder City, 89005": {
+    "lat": 35.9787649,
+    "lng": -114.8337574
   }
 }
