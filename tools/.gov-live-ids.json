@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-08-30T18:41:39.869Z",
+  "ranAt": "2026-08-31T20:55:32.195Z",
   "sources": {
     "City of Las Vegas": {
       "ids": [
@@ -47,9 +47,14 @@
         "series:Clark County|foster care information session|family services",
         "cc:/calendar/family-services/091026-foster-care-info-session-spanish",
         "cc:/calendar/family-services/091726-foster-care-info-session-evening-with-the-stars",
-        "cc:/calendar/parks-and-recreation/100926-ren-fair"
+        "cc:/calendar/events/091026-public-service-career-fair",
+        "cc:/calendar/county-commission-district-a/091026-grandparents-day-celebration",
+        "cc:/calendar/county-commissioners-district-f/091226-great-american-kickoff",
+        "cc:/calendar/parks-and-recreation/100926-ren-fair-day-1",
+        "cc:/calendar/parks-and-recreation/100926-ren-fair-day-2",
+        "cc:/calendar/parks-and-recreation/100926-ren-fair-day-3"
       ],
-      "maxStart": "2026-10-09T10:00:00-07:00"
+      "maxStart": "2026-10-11T10:00:00-07:00"
     },
     "City of Henderson": {
       "ids": [
