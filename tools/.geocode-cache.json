@@ -206,5 +206,9 @@
   "Events, Las Vegas, NV": {
     "lat": 36.1687163,
     "lng": -115.1446408
+  },
+  "Clark County Library, Las Vegas, NV": {
+    "lat": 36.1137204,
+    "lng": -115.1349993
   }
 }
