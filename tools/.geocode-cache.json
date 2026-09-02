@@ -210,5 +210,9 @@
   "Clark County Library, Las Vegas, NV": {
     "lat": 36.1137204,
     "lng": -115.1349993
+  },
+  "Villa Pizza Durango, Las Vegas, NV": {
+    "lat": 36.1281837,
+    "lng": -115.2798051
   }
 }
