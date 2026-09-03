@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-09-02T18:51:08.191Z",
+  "ranAt": "2026-09-03T18:49:22.017Z",
   "sources": {
     "City of Las Vegas": {
       "ids": [
@@ -11,6 +11,7 @@
         "colv:12471",
         "colv:10625",
         "colv:12415",
+        "colv:12493",
         "colv:12416",
         "colv:12448",
         "series:City of Las Vegas|rainbow company youth theatre presents disney s high school musical show|charleston heights arts center",
@@ -37,6 +38,7 @@
         "colv:12453",
         "colv:12412",
         "colv:12435",
+        "colv:12491",
         "series:City of Las Vegas|phantom of charleston heights arts center a night of sir andrew lloyd webber|charleston heights arts center",
         "colv:12461"
       ],
@@ -65,6 +67,7 @@
         "series:City of Henderson|henderson farmers market|cornerstone park",
         "hen:6398:2026-09-08",
         "hen:6360:2026-09-12",
+        "hen:6476:2026-09-17",
         "series:City of Henderson|art exhibit henderson creates|city of henderson",
         "series:City of Henderson|henderson farmers market|army st.",
         "hen:6336:2026-09-25",
