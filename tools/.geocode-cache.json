@@ -222,5 +222,17 @@
   "Summerlin Library, Las Vegas, NV": {
     "lat": 36.1913167,
     "lng": -115.3017937
+  },
+  "8310 South Las Vegas Blvd., Las Vegas, 89123": {
+    "lat": 36.0383654,
+    "lng": -115.171127
+  },
+  "Spring Valley Library, Las Vegas, NV": {
+    "lat": 36.1114154,
+    "lng": -115.2242848
+  },
+  "5300 El Camino Rd, Las Vegas, 89118": {
+    "lat": 36.1436675,
+    "lng": -115.2295592
   }
 }

@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-09-03T18:49:22.017Z",
+  "ranAt": "2026-09-04T18:31:55.817Z",
   "sources": {
     "City of Las Vegas": {
       "ids": [
@@ -75,7 +75,9 @@
         "hen:6338:2026-09-26",
         "hen:5367:2026-10-10",
         "hen:6402:2026-10-11",
+        "hen:6490:2026-10-12",
         "series:City of Henderson|early voting kids vote general election|city of henderson",
+        "hen:6498:2026-10-21",
         "hen:6388:2026-10-24",
         "hen:6400:2026-10-24"
       ],
