@@ -234,5 +234,21 @@
   "5300 El Camino Rd, Las Vegas, 89118": {
     "lat": 36.1436675,
     "lng": -115.2295592
+  },
+  "2601 E. Sunset Rd., Las Vegas, 89120": {
+    "lat": 36.0714789,
+    "lng": -115.1162872
+  },
+  "1550 S Hollywood Blvd, Las Vegas, 89142": {
+    "lat": 36.1546536,
+    "lng": -115.0248583
+  },
+  "1650 S. Hollywood, Las Vegas, 89142": {
+    "lat": 36.1525973,
+    "lng": -115.0259988
+  },
+  "1830 S. Boulder Highway, Henderson, 89002": {
+    "lat": 36.0006007,
+    "lng": -114.9384672
   }
 }
