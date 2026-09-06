@@ -1,10 +1,8 @@
 {
-  "ranAt": "2026-09-05T17:26:29.066Z",
+  "ranAt": "2026-09-06T17:38:41.051Z",
   "sources": {
     "City of Las Vegas": {
       "ids": [
-        "colv:12358",
-        "colv:12232",
         "colv:12414",
         "colv:12446",
         "series:City of Las Vegas|farmers market|las vegas civic center outdoor plaza",
@@ -62,9 +60,8 @@
       "ids": [
         "series:City of Henderson|art gallery stories of southern nevada|city of henderson",
         "series:City of Henderson|art exhibit home means nevada|city of henderson",
-        "series:City of Henderson|upscale craft yard sale|city of henderson",
-        "series:City of Henderson|henderson farmers market|cornerstone park",
         "hen:6398:2026-09-08",
+        "series:City of Henderson|henderson farmers market|cornerstone park",
         "hen:6360:2026-09-12",
         "hen:6476:2026-09-17",
         "series:City of Henderson|henderson farmers market|fox ridge park",
@@ -73,6 +70,7 @@
         "hen:6336:2026-09-25",
         "hen:6358:2026-09-25",
         "hen:6338:2026-09-26",
+        "hen:6374:2026-10-03",
         "hen:5367:2026-10-10",
         "hen:6402:2026-10-11",
         "hen:6490:2026-10-12",

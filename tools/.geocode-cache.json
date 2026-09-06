@@ -250,5 +250,37 @@
   "1830 S. Boulder Highway, Henderson, 89002": {
     "lat": 36.0006007,
     "lng": -114.9384672
+  },
+  "2000 S Maryland Pkwy, Las Vegas, 89104": {
+    "lat": 36.14782,
+    "lng": -115.136905
+  },
+  "4525 New Forest Dr, Las Vegas, NV, 89147": {
+    "lat": 36.1067372,
+    "lng": -115.2520354
+  },
+  "11011 W Charleston Blvd., Las Vegas, 89135": {
+    "lat": 36.1561678,
+    "lng": -115.3339793
+  },
+  "3930 Cambridge St, Las Vegas, 89119": {
+    "lat": 36.1184549,
+    "lng": -115.1418249
+  },
+  "1401 E. Flamingo Rd., Las Vegas, 89119": {
+    "lat": 36.114403,
+    "lng": -115.135363
+  },
+  "9600 W. Sahara Ave., Las Vegas NV, 89117": {
+    "lat": 36.1444911,
+    "lng": -115.304397
+  },
+  "3075 North Walnut Road, Las Vegas, 89115": {
+    "lat": 36.1887475,
+    "lng": -115.0891258
+  },
+  "10111 W. Skye Canyon Park Drive, Las Vegas, NV, 89166": {
+    "lat": 36.313492,
+    "lng": -115.3154179
   }
 }
