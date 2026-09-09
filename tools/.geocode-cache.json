@@ -282,5 +282,9 @@
   "10111 W. Skye Canyon Park Drive, Las Vegas, NV, 89166": {
     "lat": 36.313492,
     "lng": -115.3154179
+  },
+  "Pavilion Center Pool, 101 S. Pavilion Center Drive, Las Vegas, NV": {
+    "lat": 36.173646,
+    "lng": -115.3335857
   }
 }
