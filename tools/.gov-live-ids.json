@@ -1,17 +1,17 @@
 {
-  "ranAt": "2026-09-09T18:45:34.301Z",
+  "ranAt": "2026-09-10T18:36:18.830Z",
   "sources": {
     "City of Las Vegas": {
       "ids": [
         "colv:12414",
         "colv:12446",
-        "series:City of Las Vegas|farmers market|las vegas civic center outdoor plaza",
         "colv:12471",
         "colv:10625",
         "colv:12415",
         "colv:12493",
         "colv:12416",
         "colv:12448",
+        "series:City of Las Vegas|farmers market|las vegas civic center outdoor plaza",
         "series:City of Las Vegas|rainbow company youth theatre presents disney s high school musical show|charleston heights arts center",
         "colv:12417",
         "colv:12411",
@@ -19,7 +19,6 @@
         "colv:12418",
         "colv:12441",
         "series:City of Las Vegas|vegas city opera presents the mad mind of shakespeare|charleston heights arts center",
-        "colv:12399",
         "colv:12464",
         "colv:12419",
         "series:City of Las Vegas|nevada shakespeare festival presents the taming of the shrew|sammy davis jr. festival plaza in lorenzi park",
@@ -38,6 +37,7 @@
         "colv:12435",
         "colv:12491",
         "series:City of Las Vegas|phantom of charleston heights arts center a night of sir andrew lloyd webber|charleston heights arts center",
+        "colv:12399",
         "colv:12461"
       ],
       "maxStart": "2027-05-01T19:30:00-07:00"
@@ -52,13 +52,14 @@
         "cc:/calendar/county-commissioners-district-f/091226-great-american-kickoff",
         "cc:/calendar/parks-and-recreation/100926-ren-fair-day-1",
         "cc:/calendar/parks-and-recreation/100926-ren-fair-day-2",
-        "cc:/calendar/parks-and-recreation/100926-ren-fair-day-3"
+        "cc:/calendar/parks-and-recreation/100926-ren-fair-day-3",
+        "cc:/calendar/county-commissioners-district-e/101726-celebrando-nuestra-cultura"
       ],
-      "maxStart": "2026-10-11T10:00:00-07:00"
+      "maxStart": "2026-10-17T15:00:00-07:00"
     },
     "City of Henderson": {
       "ids": [
-        "series:City of Henderson|art gallery stories of southern nevada|city of henderson",
+        "hen:6296:2026-09-10",
         "series:City of Henderson|art exhibit home means nevada|city of henderson",
         "series:City of Henderson|henderson farmers market|cornerstone park",
         "hen:6360:2026-09-12",
