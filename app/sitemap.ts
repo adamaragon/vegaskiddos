@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getApprovedEvents } from "@/lib/data";
 import { COLLECTIONS } from "@/lib/collections";
+import { GUIDES } from "@/lib/guides";
 import { venueSlug } from "@/lib/constants";
 
 const BASE = "https://vegaskiddos.com";
@@ -38,6 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     entry("/", { changeFrequency: "daily", priority: 1 }),
     ...COLLECTIONS.map((c) => entry(`/${c.slug}`, { changeFrequency: "daily", priority: 0.8 })),
+    ...GUIDES.map((g) => entry(`/guides/${g.slug}`, { changeFrequency: "weekly", priority: 0.7 })),
     entry("/about", { changeFrequency: "monthly", priority: 0.4 }),
     entry("/submit", { changeFrequency: "monthly", priority: 0.5 }),
     entry("/donate", { changeFrequency: "yearly", priority: 0.3 }),
