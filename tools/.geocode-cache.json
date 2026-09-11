@@ -286,5 +286,17 @@
   "Pavilion Center Pool, 101 S. Pavilion Center Drive, Las Vegas, NV": {
     "lat": 36.173646,
     "lng": -115.3335857
+  },
+  "7800 N Tenaya Way,, Las Vegas, 89131": {
+    "lat": 36.307279,
+    "lng": -115.251028
+  },
+  "3050 E. Centennial Parkway, North Las Vegas, 89081": {
+    "lat": 36.2773998,
+    "lng": -115.1066061
+  },
+  "333 S. Valley View Blvd., Las Vegas, 89107": {
+    "lat": 36.1712694,
+    "lng": -115.1898566
   }
 }
