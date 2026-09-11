@@ -7,8 +7,7 @@ export function FallHalloweenGuide2026() {
       <p className="mt-4 text-lg leading-relaxed text-ink/80">
         This is a plain parent guide to fall and Halloween around the valley: sorted by age,
         free vs paid, and neighborhood. We pull from the same kid-safe lane as Vegas Kiddos.
-        Venue facts below are verified where noted. Michelle pass still open before Adam
-        greenlight.
+        Venue facts below are verified where noted.
       </p>
 
       <h2 className="mt-10 font-display text-2xl font-600 text-ink">How to use this</h2>
@@ -57,7 +56,7 @@ export function FallHalloweenGuide2026() {
       <ul className="mt-2 list-disc space-y-3 pl-6 text-ink/80">
         <li>
           <span className="font-700">HallOVeen at the Magical Forest (Opportunity Village)</span>
-          {" "}— family Halloween park energy
+          . Family Halloween park energy
           <ul className="mt-1 list-disc space-y-0.5 pl-5 text-base">
             <li>Dates: Oct 2-4 and Oct 9-31, 2026</li>
             <li>Hours: 5:30-9 p.m. Sun–Thu; 5:30-9:30 p.m. Fri–Sat (OV press, Aug 2026)</li>
@@ -88,7 +87,7 @@ export function FallHalloweenGuide2026() {
           </ul>
         </li>
         <li>
-          <span className="font-700">Haunted Harvest at Springs Preserve</span> — trick-or-treat
+          <span className="font-700">Haunted Harvest at Springs Preserve</span>, trick-or-treat
           stations, crafts, food trucks; outdoor
           <ul className="mt-1 list-disc space-y-0.5 pl-5 text-base">
             <li>Dates: Oct 22-25, 2026, 6-8:30 p.m.; members early entry 4 p.m.</li>
@@ -110,7 +109,7 @@ export function FallHalloweenGuide2026() {
       <ul className="mt-2 list-disc space-y-3 pl-6 text-ink/80">
         <li>
           <span className="font-700">Trick or Treat Fest LV at Clark County Museum (Henderson)</span>
-          {" "}— historic homes, vendors, all-ages trick-or-treat; festive not scary
+          . Historic homes, vendors, all-ages trick-or-treat; festive not scary
           <ul className="mt-1 list-disc space-y-0.5 pl-5 text-base">
             <li>Dates: Oct 16-17, 2026 (fest site; Clark County page says Oct 17-18)</li>
             <li>
@@ -149,7 +148,7 @@ export function FallHalloweenGuide2026() {
         <li>VIVA Trunk or Treat Oct 30, 2 p.m., free registration</li>
         <li>Other park patches: confirm whether rides and pumpkins cost extra</li>
         <li>
-          Neighborhood trunk-or-treats hosted by schools, churches, and rec centers — watch local
+          Neighborhood trunk-or-treats hosted by schools, churches, and rec centers. Watch local
           listings the first two weeks of October
         </li>
       </ul>
@@ -209,8 +208,7 @@ export function FallHalloweenGuide2026() {
 
       <h2 className="mt-10 font-display text-2xl font-600 text-ink">On the board now</h2>
       <p className="mt-2 text-ink/80">
-        Refresh this block the week you publish. It is the free/local pattern from Vegas Kiddos,
-        not a dump of every October ticket.
+        Free and local picks from Vegas Kiddos. Check listings the week you go, hours change.
       </p>
       <p className="mt-3 text-ink/80">
         <span className="font-700">Free recurring meals (Three Square Kids Cafe / Meet Up to Eat Up):</span>{" "}
@@ -236,9 +234,12 @@ export function FallHalloweenGuide2026() {
         Free. Ages 0-5 / 3-5.
       </p>
       <p className="mt-3 text-ink/80">
-        Ticketed HallOVeen, VIVA, Haunted Harvest, and Trick or Treat Fest stay in the sections above
-        with their official links. Do not paste stale September carnival rows as if they were October.
-        Check Vegas Kiddos the week you go.
+        Ticketed HallOVeen, VIVA, Haunted Harvest, and Trick or Treat Fest are covered in the sections
+        above with their official links. Browse{" "}
+        <a href="https://vegaskiddos.com" className="font-700 text-teal-btn hover:underline">
+          vegaskiddos.com
+        </a>{" "}
+        the week you go for the latest free library and neighborhood events.
       </p>
 
       <h3 className="mt-6 font-display text-xl font-600 text-ink">Deep links</h3>
