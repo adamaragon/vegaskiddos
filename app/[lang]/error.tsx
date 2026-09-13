@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 import { isChunkLoadError, reloadOnChunkError, retryReload } from "@/lib/chunkReload";
+import { isTransientNetworkError } from "@/lib/networkError";
 
 // Page-level boundary for the whole [lang] tree. It catches errors in the pages
 // (the layout itself still escalates to app/global-error.tsx), which is where a
@@ -18,30 +19,35 @@ export default function Error({
   reset: () => void;
 }) {
   const chunkError = isChunkLoadError(error);
+  const networkError = isTransientNetworkError(error);
   const [recovering, setRecovering] = useState(() => chunkError);
 
   useEffect(() => {
     if (reloadOnChunkError(error)) return; // document is being replaced
     setRecovering(false);
-    Sentry.captureException(error);
-  }, [error]);
+    if (!networkError) Sentry.captureException(error);
+  }, [error, networkError]);
 
   // Blank for the split second before the reload takes over.
   if (recovering) return null;
 
   return (
     <div className="mx-auto max-w-md px-4 py-24 text-center">
-      <p className="animate-wiggle text-7xl">🙈</p>
-      <h1 className="mt-4 font-display text-4xl font-700">That didn&apos;t load right</h1>
+      <p className="animate-wiggle text-7xl">{networkError ? "📡" : "🙈"}</p>
+      <h1 className="mt-4 font-display text-4xl font-700">
+        {networkError ? "You look offline" : "That didn&apos;t load right"}
+      </h1>
       <p className="mt-2 text-ink/70">
-        {chunkError
-          ? "This page was still running an older version of the site. Reloading should sort it out."
-          : "Something went wrong on our end. Give it another go — the events are still here."}
+        {networkError
+          ? "We couldn't reach Vegas Kiddos just now. Check your connection, then try again."
+          : chunkError
+            ? "This page was still running an older version of the site. Reloading should sort it out."
+            : "Something went wrong on our end. Give it another go — the events are still here."}
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <button
           type="button"
-          onClick={() => (chunkError ? retryReload() : reset())}
+          onClick={() => (chunkError || networkError ? retryReload() : reset())}
           className="hover-pop rounded-full bg-coral-btn px-5 py-3 font-800 text-white shadow-pop"
         >
           {chunkError ? "Reload the page" : "Try again"}

@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/nextjs';
 import NextError from 'next/error';
 import { useEffect, useState } from 'react';
 import { isChunkLoadError, reloadOnChunkError } from '@/lib/chunkReload';
+import { isTransientNetworkError } from '@/lib/networkError';
 
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   // A visitor on pre-deploy HTML asks for chunks the deploy deleted, hydration
@@ -15,7 +16,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
   useEffect(() => {
     if (reloadOnChunkError(error)) return; // document is being replaced
     setRecovering(false);
-    Sentry.captureException(error);
+    if (!isTransientNetworkError(error)) Sentry.captureException(error);
   }, [error]);
 
   return (
